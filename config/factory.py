@@ -14,6 +14,9 @@ from repositories.entity_repository import EntityRepository
 from repositories.extraction_repository import ExtractionRepository
 from repositories.mail_metrics_repository import MailMetricsRepository
 from repositories.mongo import get_database
+from repositories.notification_repository import NotificationRepository
+from repositories.platform_settings_repository import PlatformSettingsRepository
+from repositories.property_recipient_repository import PropertyRecipientRepository
 from repositories.review_repository import ReviewRepository
 from repositories.revoked_token_repository import RevokedTokenRepository
 from repositories.user_repository import UserRepository
@@ -24,6 +27,7 @@ from services.extraction import ExtractionService
 from services.grounding import GroundingService
 from services.indexing import EmbeddingClient, EmbeddingFn, IndexingService
 from services.ingestion import IngestionService
+from services.notification_service import NotificationService
 from services.openai_client import OpenAIClient
 from services.response_generation import ResponseGenerationService
 from services.retrieval import RetrievalService
@@ -48,6 +52,8 @@ class AppContext:
     metrics_repo: MailMetricsRepository
     user_repo: UserRepository
     revoked_token_repo: RevokedTokenRepository
+    platform_settings_repo: PlatformSettingsRepository
+    property_recipient_repo: PropertyRecipientRepository
 
 
 def build_app_context(settings: Settings | None = None) -> AppContext:
@@ -63,6 +69,16 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
     metrics_repo = MailMetricsRepository(db)
     user_repo = UserRepository(db)
     revoked_token_repo = RevokedTokenRepository(db)
+    notification_repo = NotificationRepository(db)
+    property_recipient_repo = PropertyRecipientRepository(db)
+    platform_settings_repo = PlatformSettingsRepository(db)
+    notification_service = NotificationService(
+        cfg,
+        notification_repo,
+        user_repo,
+        property_recipient_repo,
+        platform_settings_repo,
+    )
 
     alerts = AlertService(webhook_url=cfg.webhook_alert_url)
     tracing = configure_langfuse_env(cfg) and tracing_enabled(cfg)
@@ -136,6 +152,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         alerts=alerts,
         mail_cost=mail_cost,
         review_repo=review_repo,
+        notification_service=notification_service,
         checkpointer=checkpointer,
         tracing=tracing,
     )
@@ -151,4 +168,6 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         metrics_repo=metrics_repo,
         user_repo=user_repo,
         revoked_token_repo=revoked_token_repo,
+        platform_settings_repo=platform_settings_repo,
+        property_recipient_repo=property_recipient_repo,
     )

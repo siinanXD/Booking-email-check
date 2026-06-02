@@ -7,6 +7,7 @@ import {
   MessageSquare,
   ClipboardCheck,
   DollarSign,
+  Building2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardStats } from "@/api/dashboard";
@@ -17,6 +18,7 @@ const links = [
   { to: "/cancellations", label: "Stornos", icon: XCircle },
   { to: "/changes", label: "Änderungen", icon: RefreshCw },
   { to: "/messages", label: "Nachrichten", icon: MessageSquare },
+  { to: "/properties", label: "Unterkünfte", icon: Building2 },
   { to: "/review", label: "Review", icon: ClipboardCheck, badge: true },
   { to: "/costs", label: "API-Kosten", icon: DollarSign },
 ];

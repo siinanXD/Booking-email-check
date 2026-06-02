@@ -20,15 +20,27 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
-COPY adapters config models routers prompts schemas services workflows \
-    repositories observability utils web wsgi.py gunicorn.conf.py scripts ./
+COPY adapters/ ./adapters/
+COPY config/ ./config/
+COPY models/ ./models/
+COPY routers/ ./routers/
+COPY prompts/ ./prompts/
+COPY schemas/ ./schemas/
+COPY services/ ./services/
+COPY workflows/ ./workflows/
+COPY repositories/ ./repositories/
+COPY observability/ ./observability/
+COPY utils/ ./utils/
+COPY web/ ./web/
+COPY wsgi.py gunicorn.conf.py ./
+COPY scripts/ ./scripts/
 
 RUN pip install --no-cache-dir ".[prod]"
 
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 COPY scripts/docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8000
 

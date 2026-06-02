@@ -85,6 +85,58 @@ export interface ReviewQueueResponse {
   total: number;
 }
 
+export interface PropertyRecipientItem {
+  property_name: string;
+  phones: string[];
+}
+
+export interface UserProfileSettings {
+  whatsapp_phone_e164: string | null;
+  whatsapp_enabled: boolean;
+}
+
+export interface PlatformSettingsResponse {
+  whatsapp_enabled: boolean;
+  whatsapp_access_token_set: boolean;
+  whatsapp_phone_number_id: string;
+  whatsapp_api_version: string;
+  whatsapp_template_language: string;
+  whatsapp_template_cleaning_task: string;
+  whatsapp_template_status_notice: string;
+  whatsapp_template_guest_inquiry: string;
+  whatsapp_default_recipients: string;
+  whatsapp_test_recipient: string;
+  outlook_mailbox: string;
+  property_recipients: PropertyRecipientItem[];
+  user_profile: UserProfileSettings;
+}
+
+export interface PlatformSettingsUpdate {
+  whatsapp_enabled?: boolean;
+  whatsapp_access_token?: string;
+  whatsapp_phone_number_id?: string;
+  whatsapp_api_version?: string;
+  whatsapp_template_language?: string;
+  whatsapp_template_cleaning_task?: string;
+  whatsapp_template_status_notice?: string;
+  whatsapp_template_guest_inquiry?: string;
+  whatsapp_default_recipients?: string;
+  whatsapp_test_recipient?: string;
+  outlook_mailbox?: string;
+  property_recipients?: PropertyRecipientItem[];
+  user_profile?: UserProfileSettings;
+}
+
+export interface WhatsAppTestResponse {
+  success: boolean;
+  provider_message_id?: string | null;
+  error?: string | null;
+}
+
+export interface WipeDataResponse {
+  deleted: Record<string, number>;
+}
+
 export interface ApiError {
   error: string;
   code: number;

@@ -9,6 +9,7 @@ from web.api.costs import costs_bp
 from web.api.dashboard import dashboard_bp
 from web.api.emails import emails_bp
 from web.api.review import review_bp
+from web.api.settings import settings_bp
 
 
 def register_api_blueprints(app: Flask) -> None:
@@ -18,3 +19,4 @@ def register_api_blueprints(app: Flask) -> None:
     app.register_blueprint(bookings_bp)
     app.register_blueprint(review_bp)
     app.register_blueprint(costs_bp)
+    app.register_blueprint(settings_bp)

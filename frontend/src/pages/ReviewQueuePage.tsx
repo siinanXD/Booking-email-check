@@ -60,9 +60,10 @@ export function ReviewQueuePage() {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-semibold text-slate-800">Review-Warteschlange</h2>
-        <p className="mt-1 text-sm text-amber-700">
-          Testmodus: Freigabe speichert den Entwurf — es wird noch nichts wirklich
-          versendet.
+        <p className="mt-1 text-sm text-slate-600">
+          Der LLM-Entwurf ist die E-Mail-Antwort an den Gast. Nach Freigabe wird
+          er gespeichert und WhatsApp-Benachrichtigungen versendet (Host +
+          Putzfrau bei neuer Buchung).
         </p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -122,7 +123,7 @@ export function ReviewQueuePage() {
               </div>
               <div>
                 <p className="mb-1 text-xs font-medium uppercase text-slate-500">
-                  LLM-Entwurf (bearbeitbar, Vorschau vor Freigabe)
+                  E-Mail-Antwort an Gast (bearbeitbar)
                 </p>
                 <textarea
                   className="h-48 w-full rounded-lg border border-slate-300 p-3 text-sm"
@@ -135,7 +136,7 @@ export function ReviewQueuePage() {
                   onClick={() => approveMut.mutate()}
                   disabled={approveMut.isPending || !draftEdit.trim()}
                 >
-                  So freigeben (Test – kein Versand)
+                  Freigeben (Entwurf speichern + WhatsApp)
                 </Button>
               </div>
               <div className="border-t pt-4">

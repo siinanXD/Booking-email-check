@@ -7,7 +7,9 @@ import { CostsPage } from "@/pages/CostsPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MessagesPage } from "@/pages/MessagesPage";
+import { PropertiesPage } from "@/pages/PropertiesPage";
 import { ReviewQueuePage } from "@/pages/ReviewQueuePage";
+import { SettingsPage } from "@/pages/SettingsPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 
 export function App() {
@@ -22,7 +24,9 @@ export function App() {
             <Route path="cancellations" element={<CancellationsPage />} />
             <Route path="changes" element={<ChangesPage />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="properties" element={<PropertiesPage />} />
             <Route path="review" element={<ReviewQueuePage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="costs" element={<CostsPage />} />
           </Route>
         </Route>

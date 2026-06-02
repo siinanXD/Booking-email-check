@@ -103,6 +103,35 @@ class Settings(BaseSettings):
         alias="WEB_USE_MEMORY_CHECKPOINTER",
     )
 
+    whatsapp_enabled: bool = Field(default=False, alias="WHATSAPP_ENABLED")
+    whatsapp_access_token: str = Field(default="", alias="WHATSAPP_ACCESS_TOKEN")
+    whatsapp_phone_number_id: str = Field(default="", alias="WHATSAPP_PHONE_NUMBER_ID")
+    whatsapp_api_version: str = Field(default="v21.0", alias="WHATSAPP_API_VERSION")
+    whatsapp_template_language: str = Field(
+        default="de",
+        alias="WHATSAPP_TEMPLATE_LANGUAGE",
+    )
+    whatsapp_template_cleaning_task: str = Field(
+        default="booking_cleaning_task_de",
+        alias="WHATSAPP_TEMPLATE_CLEANING_TASK",
+    )
+    whatsapp_template_status_notice: str = Field(
+        default="booking_status_notice_de",
+        alias="WHATSAPP_TEMPLATE_STATUS_NOTICE",
+    )
+    whatsapp_template_guest_inquiry: str = Field(
+        default="booking_guest_inquiry_de",
+        alias="WHATSAPP_TEMPLATE_GUEST_INQUIRY",
+    )
+    whatsapp_default_recipients: str = Field(
+        default="",
+        alias="WHATSAPP_DEFAULT_RECIPIENTS",
+    )
+    whatsapp_test_recipient: str = Field(
+        default="",
+        alias="WHATSAPP_TEST_RECIPIENT",
+    )
+
 
 def get_settings() -> Settings:
     """Factory für Settings; lädt Werte aus Umgebung / `.env`."""

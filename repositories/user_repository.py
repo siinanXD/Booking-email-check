@@ -19,6 +19,8 @@ class UserRecord(BaseModel):
     email: str
     password_hash: str
     role: str = "admin"
+    whatsapp_phone_e164: str | None = None
+    whatsapp_enabled: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -68,3 +70,36 @@ class UserRepository:
         if existing is not None:
             return existing
         return self.create(email, password_hash, role="admin")
+
+    def list_whatsapp_recipient_phones(self) -> list[str]:
+        """E.164-Nummern aktiver WhatsApp-Empfänger (Dashboard-Benutzer)."""
+        phones: list[str] = []
+        query = {
+            "whatsapp_enabled": True,
+            "whatsapp_phone_e164": {"$exists": True, "$nin": [None, ""]},
+        }
+        for doc in self._col.find(query):
+            phone = str(doc.get("whatsapp_phone_e164") or "").strip()
+            if phone:
+                phones.append(phone)
+        return phones
+
+    def update_whatsapp_profile(
+        self,
+        user_id: str,
+        *,
+        whatsapp_phone_e164: str | None,
+        whatsapp_enabled: bool,
+    ) -> UserRecord | None:
+        """Aktualisiert WhatsApp-Profil des Benutzers."""
+        phone = (whatsapp_phone_e164 or "").strip() or None
+        self._col.update_one(
+            {"_id": user_id},
+            {
+                "$set": {
+                    "whatsapp_phone_e164": phone,
+                    "whatsapp_enabled": whatsapp_enabled,
+                }
+            },
+        )
+        return self.get_by_id(user_id)

@@ -20,6 +20,7 @@ from services.classification import ClassificationService
 from services.extraction import ExtractionService
 from services.indexing import IndexingService
 from services.ingestion import IngestionService
+from services.notification_service import NotificationService
 from services.response_generation import ResponseGenerationService
 from services.retrieval import RetrievalService
 from services.validation import ValidationService
@@ -43,6 +44,7 @@ class EmailWorkflow:
         alerts: AlertService | None = None,
         mail_cost: MailCostTracker | None = None,
         review_repo: ReviewRepository | None = None,
+        notification_service: NotificationService | None = None,
         checkpointer: object | None = None,
         *,
         tracing: bool = False,
@@ -60,6 +62,7 @@ class EmailWorkflow:
         self._alerts = alerts
         self._mail_cost = mail_cost
         self._review_repo = review_repo
+        self._notification_service = notification_service
         self._tracing = tracing
         self._graph = self._build()
         from langgraph.checkpoint.memory import MemorySaver
@@ -165,7 +168,7 @@ class EmailWorkflow:
             approved_body=approved_body,
             reviewer_note=reviewer_note,
         )
-        self._app.update_state(config, {"review": review}, as_node="draft_response")
+        self._app.update_state(config, {"review": review}, as_node="human_review")
         result_dict: dict[str, Any] | None = None
         try:
             result_dict = dict(self._app.invoke(None, config=config))
@@ -402,6 +405,13 @@ class EmailWorkflow:
         else:
             proc = ProcessingState.PENDING_REVIEW
         self._email_repo.update_processing_state(email.message_id, proc)
+        if status == "approved" and self._notification_service is not None:
+            extraction = state.get("extraction")
+            if extraction is not None:
+                self._notification_service.dispatch_after_approval(
+                    email.correlation_id,
+                    extraction,
+                )
         return {
             "review": ReviewStatus(
                 correlation_id=email.correlation_id,
