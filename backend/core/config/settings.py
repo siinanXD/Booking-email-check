@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Immer Projekt-`.env`, nicht abhaengig vom aktuellen Terminal-Verzeichnis
@@ -141,6 +141,14 @@ class Settings(BaseSettings):
         default=300, alias="MAIL_POLL_INTERVAL_SECONDS"
     )
     mail_poll_run_once: bool = Field(default=False, alias="MAIL_POLL_RUN_ONCE")
+
+    @field_validator("mongodb_uri")
+    @classmethod
+    def validate_mongodb_uri(cls, value: str) -> str:
+        """URI muss ein gültiges MongoDB-Schema verwenden."""
+        if not value.startswith(("mongodb://", "mongodb+srv://")):
+            raise ValueError("MONGODB_URI must start with mongodb:// or mongodb+srv://")
+        return value
 
     @property
     def frontend_url(self) -> str:
