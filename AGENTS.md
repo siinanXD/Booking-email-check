@@ -41,3 +41,11 @@ Sicherheit → Korrektheit → Kosten → Wartbarkeit → Performance. Regeln un
 
 Siehe `docs/SPEC.md` (Abschnitt „Erste Lieferreihenfolge“) – nicht alles parallel bauen.
 Agenten-Startprompt: `docs/KICKOFF.md`. Verifikation: `docs/VERIFICATION.md`.
+
+## Cursor Cloud specific instructions
+
+- **Kein HTTP-Server im MVP:** Die „Anwendung“ ist eine Python-Bibliothek plus LangGraph-Workflow. Starten heißt: venv aktivieren und Tests bzw. `build_app_context()` / `EmailWorkflow.run()` aufrufen (`docs/REUSE.md`).
+- **Python 3.11:** Ubuntu-Images liefern oft nur 3.12. Einmalig: `sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.11 python3.11-venv python3.11-dev`, dann `python3.11 -m venv .venv`.
+- **Standardbefehle** (immer mit `source .venv/bin/activate`): siehe Abschnitt „Build & Test“ oben; Verifikationsmatrix in `docs/VERIFICATION.md`.
+- **Externe Dienste für Default-Tests nicht nötig:** `pytest -q` nutzt mongomock und `MockLLM`. Live Mongo: `pytest -m integration` (skip ohne `MONGODB_URI`). Live OpenAI-Eval: `EVAL_LLM_MODE=live pytest tests/eval/ -m live_eval` (Kosten, nicht in CI).
+- **`build_app_context()` / `.env`:** Erfordert alle Pflicht-Keys aus `.env.example` (`OPENAI_API_KEY`, `MONGODB_URI`, Langfuse). Für lokale Pipeline-Demos ohne Secrets die Test-Fixtures bzw. mongomock + `tests.mocks.MockLLM` verwenden (wie in `tests/test_workflow.py`).
