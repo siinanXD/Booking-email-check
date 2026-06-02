@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from langfuse.decorators import langfuse_context
-
 from backend.ai.services.llm_types import LLMCompletion
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import log_mail_cost
 
 if TYPE_CHECKING:
     from backend.infrastructure.repositories.mail_metrics_repository import (
@@ -64,10 +63,7 @@ class MailCostTracker:
             "cost_usd": cost,
         }
         if self._tracing and usage["total_tokens"] > 0:
-            langfuse_context.update_current_trace(
-                session_id=correlation_id,
-                metadata={"mail_cost": usage},
-            )
+            log_mail_cost(correlation_id, usage)
         if self._alerts is not None and usage["total_tokens"] > 0:
             self._alerts.check_cost_per_mail(cost, correlation_id)
         if self._metrics_repo is not None and usage["total_tokens"] > 0:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 from typing import Protocol
 
 from langfuse.decorators import langfuse_context, observe
@@ -96,10 +97,12 @@ class IndexingService:
                 name=f"index-{correlation_id}",
             )
         except RuntimeError:
-            try:
-                asyncio.run(self._index_async(correlation_id, body, extraction))
-            except Exception:
-                logger.exception("Indexing failed for %s", correlation_id)
+            threading.Thread(
+                target=asyncio.run,
+                args=(self._index_async(correlation_id, body, extraction),),
+                daemon=True,
+                name=f"index-{correlation_id}",
+            ).start()
 
     async def _index_async(
         self,

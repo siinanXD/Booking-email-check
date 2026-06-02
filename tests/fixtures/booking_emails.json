@@ -1,7 +1,7 @@
 [
   {
     "message_id": "msg-booking-001@airbnb.com",
-    "from_address": "guest@example.com",
+    "from_address": "guest@airbnb.com",
     "to_addresses": ["host@example.com"],
     "subject": "Neue Buchung #AB12345",
     "body_text": "Hallo, ich habe für den 12.06.-15.06.2026 gebucht. 2 Gäste. Danke!",

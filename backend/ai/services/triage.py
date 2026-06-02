@@ -87,10 +87,8 @@ class TriageService:
                     reason="phishing_pattern",
                 )
 
-        if (
-            from_domain
-            and not any(known in from_domain for known in _KNOWN_BOOKING_DOMAINS)
-            and email.platform is None
+        if from_domain and not any(
+            known in from_domain for known in _KNOWN_BOOKING_DOMAINS
         ):
             return TriageResult(
                 outcome=TriageOutcome.UNKNOWN_DOMAIN,

@@ -47,3 +47,17 @@ def test_triage_empty_noreply() -> None:
     )
     result = TriageService().triage(email)
     assert result.outcome == TriageOutcome.SPAM_PHISHING
+
+
+def test_triage_unknown_domain_ignores_platform_hint() -> None:
+    """Platform-Hint darf unbekannte Absender-Domain nicht überstimmen."""
+    email = IncomingEmail(
+        message_id="m4",
+        from_address="unknown@random.org",
+        subject="Hello",
+        body_text="Generic inquiry",
+        received_at=datetime.now(UTC),
+        platform="airbnb",
+    )
+    result = TriageService().triage(email)
+    assert result.outcome == TriageOutcome.UNKNOWN_DOMAIN
