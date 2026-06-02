@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v0.3.0 (2026-06-02)
+
+
 ## v0.2.1 (2026-06-02)
 
 ### Bug Fixes
@@ -10,6 +13,17 @@
 
 Logout tokens are stored in MongoDB with TTL so revocation works across Gunicorn workers. Fixes MyPy
   CI errors, Docker admin seed failures, demo credentials in .env.example, and missing docstrings.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Features
+
+- Whatsapp-benachrichtigungen und Einstellungs-Dashboard
+  ([`9c69290`](https://github.com/siinanXD/Booking-email-checl/commit/9c692901251d7719a3f475bca50b54cbdb6cacd8))
+
+Nach Review-Freigabe werden WhatsApp-Templates an Host und Putzfrau versendet. Einstellungen und
+  Unterkuenfte werden persistent in MongoDB gespeichert (mit .env-Vorausfuellung), inkl. Test-Button
+  und Daten-Loeschen. Docker-Build und SPA-Auslieferung wurden repariert.
 
 Co-authored-by: Cursor <cursoragent@cursor.com>
 
