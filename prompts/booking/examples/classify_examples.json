@@ -1,0 +1,12 @@
+[
+  {
+    "subject": "Neue Buchung",
+    "body": "Ich habe gerade für nächste Woche gebucht.",
+    "intent": "new_booking"
+  },
+  {
+    "subject": "Stornierung AB99",
+    "body": "Bitte stornieren Sie meine Reservierung AB99.",
+    "intent": "cancellation"
+  }
+]

@@ -1,0 +1,1 @@
+"""Datenzugriff (MongoDB Atlas)."""

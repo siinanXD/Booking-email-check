@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      { "command": "python .cursor/hooks/format_after_edit.py" }
+    ],
+    "beforeShellExecution": [
+      { "command": "python .cursor/hooks/guard_shell.py" }
+    ]
+  }
+}

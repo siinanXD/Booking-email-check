@@ -8,6 +8,7 @@ E-Commerce-Bestellungen oder Support ausgelegt.
 
 > Diese README ist für Menschen. Die operativen Regeln für KI-Coding-Agenten
 > stehen in `AGENTS.md` (Repo-Kontext) und in `.cursor/` (Cursor-spezifisch).
+> Architektur: `docs/SPEC.md` · Kickoff-Checkliste: `docs/KICKOFF.md`.
 > Sie wird hier bewusst nicht wiederholt, um Doppelpflege zu vermeiden.
 
 ## Was das System tut

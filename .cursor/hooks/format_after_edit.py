@@ -10,6 +10,7 @@ Hinweis: Das Hook-Schema ist in Cursor noch Beta. Prüfe die Feldnamen des
 Payloads (insb. 'file_path') gegen die aktuelle Cursor-Doku, falls sich das
 Format geändert hat.
 """
+
 from __future__ import annotations
 
 import json
@@ -18,19 +19,15 @@ import sys
 
 
 def main() -> int:
-    # Payload von stdin lesen; bei kaputtem/leerem Input nicht den Agenten stoppen.
     try:
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         return 0
 
     file_path = payload.get("file_path", "")
-    # Nur Python-Dateien formatieren; alles andere ignorieren.
     if not file_path.endswith(".py"):
         return 0
 
-    # Ruff übernimmt Lint-Autofix + Import-Sortierung, Black die finale Formatierung.
-    # check=False: ein Formatter-Fehler soll den Agenten-Loop nicht hart abbrechen.
     subprocess.run(["ruff", "check", "--fix", file_path], check=False)
     subprocess.run(["ruff", "format", file_path], check=False)
     subprocess.run(["black", file_path], check=False)

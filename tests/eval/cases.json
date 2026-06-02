@@ -1,0 +1,64 @@
+[
+  {
+    "message_id": "eval-001",
+    "from_address": "guest@airbnb.com",
+    "subject": "Neue Buchung",
+    "body_text": "Buchung AB123 für 12.06.-15.06.2026, 2 Gäste.",
+    "received_at": "2026-06-01T10:00:00Z",
+    "platform": "airbnb",
+    "expected_intent": "new_booking",
+    "expected_extraction": {
+      "intent": "new_booking",
+      "booking_number": "AB123",
+      "check_in": "2026-06-12",
+      "check_out": "2026-06-15",
+      "guest_count": 2
+    }
+  },
+  {
+    "message_id": "eval-002",
+    "from_address": "guest@booking.com",
+    "subject": "Stornierung",
+    "body_text": "Bitte Reservierung XY999 stornieren.",
+    "received_at": "2026-06-01T11:00:00Z",
+    "platform": "booking.com",
+    "expected_intent": "cancellation",
+    "expected_extraction": {
+      "intent": "cancellation",
+      "booking_number": "XY999"
+    }
+  },
+  {
+    "message_id": "eval-003",
+    "from_address": "unknown@random.org",
+    "subject": "Frage",
+    "body_text": "",
+    "received_at": "2026-06-01T12:00:00Z",
+    "expected_intent": "other"
+  },
+  {
+    "message_id": "eval-004",
+    "from_address": "guest@airbnb.com",
+    "subject": "Zahlung fehlgeschlagen",
+    "body_text": "Meine Zahlung für Buchung PAY55 wurde abgelehnt.",
+    "received_at": "2026-06-01T13:00:00Z",
+    "platform": "airbnb",
+    "expected_intent": "payment_issue",
+    "expected_extraction": {
+      "intent": "payment_issue",
+      "booking_number": "PAY55"
+    }
+  },
+  {
+    "message_id": "eval-005",
+    "from_address": "guest@expedia.com",
+    "subject": "Bewertung",
+    "body_text": "Vielen Dank für den tollen Aufenthalt!",
+    "received_at": "2026-06-01T14:00:00Z",
+    "platform": "expedia",
+    "expected_intent": "review",
+    "expected_extraction": {
+      "intent": "review"
+    }
+  }
+]

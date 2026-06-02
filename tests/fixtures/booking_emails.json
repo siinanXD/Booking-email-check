@@ -1,0 +1,42 @@
+[
+  {
+    "message_id": "msg-booking-001@airbnb.com",
+    "from_address": "guest@example.com",
+    "to_addresses": ["host@example.com"],
+    "subject": "Neue Buchung #AB12345",
+    "body_text": "Hallo, ich habe für den 12.06.-15.06.2026 gebucht. 2 Gäste. Danke!",
+    "received_at": "2026-06-01T10:00:00Z",
+    "platform": "airbnb"
+  },
+  {
+    "message_id": "msg-phish-001@evil.com",
+    "from_address": "security@evil.com",
+    "subject": "Urgent action required",
+    "body_text": "Click here immediately to verify your account password expiring.",
+    "received_at": "2026-06-01T11:00:00Z"
+  },
+  {
+    "message_id": "msg-empty-001@unknown.org",
+    "from_address": "noreply@mailer-daemon.local",
+    "subject": "",
+    "body_text": "",
+    "received_at": "2026-06-01T12:00:00Z"
+  },
+  {
+    "message_id": "msg-quote-001@booking.com",
+    "from_address": "guest@booking.com",
+    "subject": "Änderung Reservierung",
+    "body_text": "Bitte Check-in auf den 14.06. ändern.\n\nOn Mon, Jun 1, 2026 host wrote:\n> Alte Nachricht",
+    "received_at": "2026-06-01T13:00:00Z",
+    "platform": "booking.com"
+  },
+  {
+    "message_id": "msg-html-001@airbnb.com",
+    "from_address": "guest@airbnb.com",
+    "subject": "HTML only",
+    "body_text": "",
+    "body_html": "<p>Nur <b>HTML</b> Inhalt</p>",
+    "received_at": "2026-06-01T14:00:00Z",
+    "platform": "airbnb"
+  }
+]

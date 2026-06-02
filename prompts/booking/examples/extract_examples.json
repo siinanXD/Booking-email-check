@@ -1,0 +1,21 @@
+[
+  {
+    "subject": "Neue Buchung AB123",
+    "body": "Buchung AB123 für 12.06.-15.06.2026, 2 Gäste.",
+    "output": {
+      "intent": "new_booking",
+      "booking_number": "AB123",
+      "check_in": "2026-06-12",
+      "check_out": "2026-06-15",
+      "guest_count": 2
+    }
+  },
+  {
+    "subject": "Stornierung",
+    "body": "Bitte Reservierung XY999 stornieren.",
+    "output": {
+      "intent": "cancellation",
+      "booking_number": "XY999"
+    }
+  }
+]

@@ -1,0 +1,122 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "email-platform"
+version = "0.1.0"                       # wird ab Release-1 automatisch von semantic-release gepflegt
+description = "AI Email Processing Platform (Booking-Domäne, branchenoffen)"
+# Python 3.11 only (CI, Produktion, lokal).
+requires-python = ">=3.11,<3.12"
+
+# Runtime-Abhängigkeiten. Achtung: langchain/langgraph/langfuse entwickeln sich
+# schnell. Diese Bounds sind ein vernünftiger Startpunkt; locke die EXAKTEN
+# Versionen beim ersten Setup (siehe "Versionen pinnen" unten) und prüfe die
+# aktuell veröffentlichten Releases, bevor du dich festlegst.
+dependencies = [
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.7,<3",
+    "langgraph>=0.2,<0.3",
+    "langchain>=0.3,<0.4",
+    "langchain-openai>=0.2,<0.3",
+    "openai>=1.40,<2",
+    "pymongo>=4.8,<5",
+    "langfuse>=2.50,<3",
+    "python-dotenv>=1.0,<2",
+    "tenacity>=8.5,<9",                 # Retry/Backoff für externe Aufrufe
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "config*",
+    "models*",
+    "routers*",
+    "prompts*",
+    "schemas*",
+    "services*",
+    "workflows*",
+    "repositories*",
+    "observability*",
+    "utils*",
+]
+exclude = ["tests*", "docs*", ".cursor*", ".github*"]
+
+[tool.setuptools.package-data]
+prompts = ["**/*.md", "**/*.json"]
+
+[project.optional-dependencies]
+# Dev-Tooling exakt auf die Versionen in .pre-commit-config.yaml abgestimmt,
+# damit lokal, in pre-commit und in der CI dasselbe läuft.
+dev = [
+    "ruff==0.6.9",
+    "black==24.10.0",
+    "mypy==1.13.0",
+    "pytest==8.3.3",
+    "pre-commit==4.0.1",
+    "commitizen==3.29.1",
+    "python-semantic-release==9.8.9",
+    "mongomock==4.2.0.post1",           # Mongo für Tests ohne echtes Atlas
+]
+
+# ----------------------------------------------------------------------------
+# Werkzeug-Konfiguration
+# ----------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["."]
+
+[tool.ruff.lint]
+# E/F = pyflakes+pycodestyle, I = isort, UP = pyupgrade, B = bugbear.
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.black]
+target-version = ["py311"]
+line-length = 88
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["workflows.*"]
+disable_error_code = ["arg-type"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disable_error_code = [
+    "no-untyped-def",
+    "arg-type",
+    "attr-defined",
+    "type-arg",
+    "union-attr",
+    "unused-ignore",
+    "misc",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-m", "not live_eval"]
+markers = [
+    "integration: requires live MongoDB (MONGODB_URI)",
+    "live_eval: requires OPENAI_API_KEY and EVAL_LLM_MODE=live",
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "v$version"
+
+# python-semantic-release v9: liest die Conventional-Commit-History und
+# aktualisiert project.version, setzt Tag + Changelog.
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+build_command = "pip install build && python -m build"
+upload_to_pypi = false                  # wir veröffentlichen kein PyPI-Paket
