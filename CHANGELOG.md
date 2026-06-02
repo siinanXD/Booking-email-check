@@ -1,6 +1,20 @@
 # CHANGELOG
 
 
+## v0.4.0 (2026-06-02)
+
+### Features
+
+- Multi-tenant SaaS with mail onboarding and automatic polling
+  ([`2dadfd6`](https://github.com/siinanXD/Booking-email-checl/commit/2dadfd6986a8f9364a411e0341658f06cfc56942))
+
+Enable open registration with admin approval, strict account_id isolation across APIs and data,
+  per-tenant IMAP/Outlook mailbox setup with onboarding wizard, and a dedicated poll worker for all
+  active tenants.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+
 ## v0.3.0 (2026-06-02)
 
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "email-platform"
-version = "0.3.0"                       # wird ab Release-1 automatisch von semantic-release gepflegt
+version = "0.4.0"                       # wird ab Release-1 automatisch von semantic-release gepflegt
 description = "AI Email Processing Platform (Booking-Domäne, branchenoffen)"
 requires-python = ">=3.11,<3.12"
 dependencies = [
@@ -45,6 +45,7 @@ dev = [
 # ----------------------------------------------------------------------------
 # Werkzeug-Konfiguration
 # ----------------------------------------------------------------------------
+
 
 
 
