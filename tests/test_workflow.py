@@ -32,6 +32,7 @@ def _build_workflow(
     extraction_repo,
     embedding_repo,
     mail_cost: MailCostTracker | None = None,
+    review_repo=None,
 ) -> EmailWorkflow:
     llm = MockLLM()
     retrieval = RetrievalService(entity_repo, email_repo)
@@ -55,6 +56,7 @@ def _build_workflow(
         extraction_repo=extraction_repo,
         indexing=indexing,
         mail_cost=mail_cost,
+        review_repo=review_repo,
     )
 
 
@@ -76,16 +78,21 @@ def test_workflow_stops_with_review_pending(
         received_at=datetime.now(UTC),
         platform="airbnb",
     )
+    from repositories.review_repository import ReviewRepository
+
     wf = _build_workflow(
         ingestion_service,
         email_repo,
         entity_repo,
         extraction_repo,
         EmbeddingRepository(mock_db),
+        review_repo=ReviewRepository(mock_db),
     )
     result = wf.run(payload, thread_id="thread-wf-001")
     assert "draft" in result
-    assert result.get("review") is None
+    review = result.get("review")
+    assert review is not None
+    assert review.status == "pending"
     stored = extraction_repo.get_by_correlation_id(payload.correlation_id)
     assert stored is not None
     assert stored.booking_number == "AB200"

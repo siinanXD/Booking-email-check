@@ -5,7 +5,7 @@ export function ChangesPage() {
     <EmailListPage
       title="Änderungen"
       subtitle="Buchungsänderungen"
-      params={{ intent: "change" }}
+      params={{ intent: "change", booking_related: true }}
     />
   );
 }

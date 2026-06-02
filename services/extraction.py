@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, datetime
 from typing import Any, cast
 
@@ -109,5 +110,15 @@ class ExtractionService:
                 payload["intent"] = BookingIntent(payload["intent"])
             except ValueError:
                 payload["intent"] = BookingIntent.OTHER
+        if "price" in payload and isinstance(payload["price"], str):
+            price_raw = str(payload["price"]).strip().replace(",", ".")
+            match = re.search(r"[\d.]+", price_raw)
+            if match:
+                try:
+                    payload["price"] = float(match.group())
+                except ValueError:
+                    payload.pop("price", None)
+            else:
+                payload.pop("price", None)
         payload.setdefault("confidence", 0.8)
         return payload

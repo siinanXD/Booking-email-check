@@ -78,6 +78,9 @@ src = ["."]
 # E/F = pyflakes+pycodestyle, I = isort, UP = pyupgrade, B = bugbear.
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/*.py" = ["E402", "E501"]
+
 
 [tool.black]
 target-version = ["py311"]
@@ -109,6 +112,10 @@ disable_error_code = [
 [[tool.mypy.overrides]]
 module = ["web.*"]
 disable_error_code = ["misc"]
+
+[[tool.mypy.overrides]]
+module = ["scripts.*"]
+disable_error_code = ["no-untyped-def", "type-arg"]
 
 
 [tool.pytest.ini_options]

@@ -6,6 +6,10 @@ import re
 
 from models.email import IncomingEmail
 from schemas.booking.triage import TriageOutcome, TriageResult
+from services.booking_relevance import (
+    is_probable_booking_mail,
+    is_probable_non_booking_mail,
+)
 
 _BLOCKLIST_DOMAINS = frozenset(
     {
@@ -13,6 +17,9 @@ _BLOCKLIST_DOMAINS = frozenset(
         "noreply",
         "no-reply",
         "donotreply",
+        "comigo",
+        "lumigita",
+        "lomigata",
     }
 )
 
@@ -59,6 +66,17 @@ class TriageService:
             return TriageResult(
                 outcome=TriageOutcome.SPAM_PHISHING,
                 reason="empty_body_and_subject",
+            )
+
+        if is_probable_non_booking_mail(email):
+            return TriageResult(
+                outcome=TriageOutcome.SPAM_PHISHING,
+                reason="non_booking_mail",
+            )
+
+        if is_probable_booking_mail(email):
+            return TriageResult(
+                outcome=TriageOutcome.RELEVANT, reason="booking_heuristic"
             )
 
         combined = f"{email.subject}\n{body}"

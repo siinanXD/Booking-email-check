@@ -1,22 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { fetchEmailDetail, fetchEmails } from "@/api/emails";
-import { approveReview, rejectReview } from "@/api/review";
+import { useState } from "react";
+import { fetchEmailDetail } from "@/api/emails";
+import { approveReview, fetchReviewPending, rejectReview } from "@/api/review";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import type { EmailListItem } from "@/types/api";
+import type { ReviewQueueItem } from "@/types/api";
 
 export function ReviewQueuePage() {
-  const [selected, setSelected] = useState<EmailListItem | null>(null);
+  const [selected, setSelected] = useState<ReviewQueueItem | null>(null);
   const [draftEdit, setDraftEdit] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const queryClient = useQueryClient();
 
-  const { data: list, isLoading } = useQuery({
+  const { data: queue, isLoading } = useQuery({
     queryKey: ["review-queue"],
-    queryFn: () => fetchEmails({ status: "pending_review", limit: 50 }),
+    queryFn: () => fetchReviewPending(50),
+    refetchInterval: 30_000,
   });
 
   const { data: detail } = useQuery({
@@ -35,6 +36,7 @@ export function ReviewQueuePage() {
       approveReview(selected!.correlation_id, draftEdit || undefined),
     onSuccess: () => {
       setSelected(null);
+      setDraftEdit("");
       invalidate();
     },
   });
@@ -48,30 +50,34 @@ export function ReviewQueuePage() {
     },
   });
 
-  useEffect(() => {
-    if (detail?.draft_body) {
-      setDraftEdit(detail.draft_body);
-    }
-  }, [detail?.correlation_id, detail?.draft_body]);
-
-  function selectItem(item: EmailListItem) {
+  function selectItem(item: ReviewQueueItem) {
     setSelected(item);
-    setDraftEdit("");
+    setDraftEdit(item.draft_body);
     setRejectReason("");
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-slate-800">Review-Warteschlange</h2>
+      <div>
+        <h2 className="text-xl font-semibold text-slate-800">Review-Warteschlange</h2>
+        <p className="mt-1 text-sm text-amber-700">
+          Testmodus: Freigabe speichert den Entwurf — es wird noch nichts wirklich
+          versendet.
+        </p>
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="max-h-[70vh] overflow-y-auto p-0">
           {isLoading ? (
             <p className="p-4 text-slate-500">Lade…</p>
-          ) : (list?.items.length ?? 0) === 0 ? (
-            <p className="p-4 text-slate-500">Keine ausstehenden Reviews</p>
+          ) : (queue?.items.length ?? 0) === 0 ? (
+            <p className="p-4 text-slate-500">
+              Keine ausstehenden Entwürfe. Pipeline-Lauf oder{" "}
+              <code className="text-xs">scripts/backfill_review_drafts.py</code>{" "}
+              ausführen.
+            </p>
           ) : (
             <ul>
-              {list!.items.map((item) => (
+              {queue!.items.map((item) => (
                 <li key={item.correlation_id}>
                   <button
                     type="button"
@@ -82,7 +88,7 @@ export function ReviewQueuePage() {
                     }`}
                     onClick={() => selectItem(item)}
                   >
-                    <p className="font-medium text-sm">{item.subject}</p>
+                    <p className="text-sm font-medium">{item.subject}</p>
                     <p className="text-xs text-slate-500">{item.from_address}</p>
                     <div className="mt-1 flex gap-2">
                       <Badge label={item.intent ?? "—"} tone="pending" />
@@ -99,39 +105,37 @@ export function ReviewQueuePage() {
 
         <Card>
           {!selected ? (
-            <p className="text-slate-500">E-Mail aus der Liste wählen</p>
-          ) : !detail ? (
-            <p className="text-slate-500">Lade Detail…</p>
+            <p className="text-slate-500">Eintrag aus der Liste wählen</p>
           ) : (
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium">{detail.subject}</h3>
-                <p className="text-sm text-slate-500">{detail.from_address}</p>
+                <h3 className="font-medium">{selected.subject}</h3>
+                <p className="text-sm text-slate-500">{selected.from_address}</p>
               </div>
               <div>
                 <p className="mb-1 text-xs font-medium uppercase text-slate-500">
                   Original
                 </p>
-                <pre className="max-h-32 overflow-auto rounded bg-slate-50 p-3 text-xs whitespace-pre-wrap">
-                  {detail.body_text || "—"}
+                <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs">
+                  {detail?.body_text || "Lade Original…"}
                 </pre>
               </div>
               <div>
                 <p className="mb-1 text-xs font-medium uppercase text-slate-500">
-                  Entwurf (bearbeitbar)
+                  LLM-Entwurf (bearbeitbar, Vorschau vor Freigabe)
                 </p>
                 <textarea
-                  className="h-40 w-full rounded-lg border border-slate-300 p-3 text-sm"
-                  value={draftEdit || detail.draft_body}
+                  className="h-48 w-full rounded-lg border border-slate-300 p-3 text-sm"
+                  value={draftEdit}
                   onChange={(e) => setDraftEdit(e.target.value)}
                 />
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => approveMut.mutate()}
-                  disabled={approveMut.isPending}
+                  disabled={approveMut.isPending || !draftEdit.trim()}
                 >
-                  Freigeben
+                  So freigeben (Test – kein Versand)
                 </Button>
               </div>
               <div className="border-t pt-4">

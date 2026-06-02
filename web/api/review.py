@@ -7,9 +7,27 @@ from typing import Any
 from flask import Blueprint, g, jsonify, request
 
 from web.middleware.auth_guard import require_auth
-from web.schemas.review import ReviewApproveRequest, ReviewRejectRequest
+from web.schemas.review import (
+    ReviewApproveRequest,
+    ReviewQueueResponse,
+    ReviewRejectRequest,
+)
+from web.services.query_service import QueryService
 
 review_bp = Blueprint("review", __name__, url_prefix="/api/review")
+
+
+@review_bp.get("/pending")
+@require_auth
+def list_pending() -> tuple[Any, int]:
+    """Ausstehende Entwürfe inkl. LLM-Antworttext."""
+    limit = min(max(int(request.args.get("limit", 50)), 1), 100)
+    svc = QueryService(g.ctx)
+    items = svc.list_review_pending(limit=limit)
+    return (
+        jsonify(ReviewQueueResponse(items=items, total=len(items)).model_dump()),
+        200,
+    )
 
 
 @review_bp.post("/approve")

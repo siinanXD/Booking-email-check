@@ -23,8 +23,10 @@ def list_bookings() -> tuple[Any, int]:
     result = svc.list_emails(
         status=request.args.get("status"),
         intent=BookingIntent.NEW_BOOKING.value,
+        intents=None,
         platform=request.args.get("platform"),
         search=request.args.get("search"),
+        booking_related=True,
         page=page,
         limit=limit,
     )

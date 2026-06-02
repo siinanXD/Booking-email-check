@@ -9,6 +9,7 @@ from pymongo.collection import Collection
 
 from models.email import ProcessingState, StoredEmail
 from repositories.mongo import Db
+from services.booking_relevance import mongo_noise_exclusion
 
 
 class EmailRepository:
@@ -79,13 +80,19 @@ class EmailRepository:
         *,
         status: str | None = None,
         intent: str | None = None,
+        intents: list[str] | None = None,
         platform: str | None = None,
         search: str | None = None,
+        booking_related: bool = False,
         page: int = 1,
         limit: int = 20,
     ) -> tuple[list[StoredEmail], int]:
         """Paginierte Liste mit optionalen Filtern."""
         base_match: dict[str, Any] = {}
+        if booking_related:
+            noise = mongo_noise_exclusion()
+            if noise:
+                base_match = {"$and": [base_match, noise]} if base_match else noise
         if status:
             base_match["processing_state"] = status
         if platform:
@@ -98,8 +105,24 @@ class EmailRepository:
             ]
 
         skip = max(page - 1, 0) * limit
-        if intent:
-            match_stage = {**base_match, "ext.extraction.intent": intent}
+        intent_filter: list[str] = []
+        if intents:
+            intent_filter = intents
+        elif intent:
+            intent_filter = [intent]
+        if intent_filter:
+            intent_match: Any = (
+                intent_filter[0] if len(intent_filter) == 1 else {"$in": intent_filter}
+            )
+            match_stage: dict[str, Any] = {
+                **base_match,
+                "ext.extraction.intent": intent_match,
+            }
+            if booking_related:
+                match_stage = self._apply_booking_related_match(
+                    match_stage,
+                    intent_filter,
+                )
             pipeline: list[dict[str, Any]] = [
                 {
                     "$lookup": {
@@ -151,3 +174,47 @@ class EmailRepository:
     def count_updated_since(self, since_iso: str) -> int:
         """Alle Mails mit Update seit Zeitstempel."""
         return int(self._col.count_documents({"updated_at": {"$gte": since_iso}}))
+
+    def count_received_since(self, since_iso: str) -> int:
+        """Eingegangene Mails seit Zeitstempel (received_at, ISO)."""
+        return int(self._col.count_documents({"received_at": {"$gte": since_iso}}))
+
+    @staticmethod
+    def _apply_booking_related_match(
+        match_stage: dict[str, Any],
+        intent_filter: list[str],
+    ) -> dict[str, Any]:
+        """Verschärft Filter: Storno/Gästeanfrage nur mit Buchungsbezug."""
+        intent_set = set(intent_filter)
+        extra: list[dict[str, Any]] = []
+        has_bn = {
+            "ext.extraction.booking_number": {
+                "$exists": True,
+                "$nin": [None, ""],
+            }
+        }
+        booking_subject = {
+            "subject": {
+                "$regex": (
+                    r"buchung|booking|reservierung|storno|beds24|airbnb|"
+                    r"gäste|guest|anreise|übernacht"
+                ),
+                "$options": "i",
+            }
+        }
+        if "cancellation" in intent_set and intent_set <= {"cancellation"}:
+            extra.append(
+                {
+                    "$and": [
+                        has_bn,
+                        booking_subject,
+                    ]
+                }
+            )
+        elif "guest_inquiry" in intent_set and intent_set <= {"guest_inquiry"}:
+            extra.append({"$or": [has_bn, booking_subject]})
+        elif intent_set <= {"change"}:
+            extra.append({"$or": [has_bn, booking_subject]})
+        if not extra:
+            return match_stage
+        return {"$and": [match_stage, *extra]}

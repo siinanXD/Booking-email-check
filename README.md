@@ -97,6 +97,20 @@ npm run dev
 
 Browser: `http://localhost:5173` — Login mit `ADMIN_EMAIL` / `ADMIN_PASSWORD` aus `.env` (nach `seed_admin.py`).
 
+Dashboard-KPI „Eingegangen“ zählt nach `received_at`. Kategorie-Listen filtern Marketing (z. B. Comigo/Lumigita) und Stornos ohne Buchungsnummer. **Nachrichten** = `guest_inquiry` mit Buchungsbezug. Review zeigt LLM-Entwürfe (Testmodus, kein Versand).
+
+Backfill (optional):
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python scripts/fix_noise_intents.py
+python scripts/backfill_mail_metrics.py
+python scripts/backfill_review_drafts.py
+```
+
+Ohne venv schlägt es fehl (`ModuleNotFoundError: langfuse`). Alternativ:
+`.\.venv\Scripts\python.exe scripts\backfill_review_drafts.py`
+
 Produktion: `cd frontend && npm run build` erzeugt `frontend/dist/`; Flask liefert das Bundle aus, wenn `FLASK_ENV=production` und der Ordner existiert.
 
 Frontend-Tests: `cd frontend && npm test`.

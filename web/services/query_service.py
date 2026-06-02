@@ -8,11 +8,13 @@ from math import ceil
 from typing import Any
 
 from config.factory import AppContext
-from models.email import ProcessingState
+from models.email import ProcessingState, StoredEmail
 from schemas.booking.taxonomy import BookingIntent
+from services.booking_relevance import classify_booking_mail, count_booking_mails
 from web.schemas.costs import CostSeriesPoint, CostsResponse
 from web.schemas.dashboard import DashboardStats
 from web.schemas.emails import EmailDetail, EmailListItem, EmailListResponse
+from web.schemas.review import ReviewQueueItem
 
 
 class QueryService:
@@ -31,12 +33,10 @@ class QueryService:
         week_iso = week_start.isoformat()
 
         email_repo = self._ctx.email_repo
-        review_repo = self._ctx.review_repo
         metrics_repo = self._ctx.metrics_repo
 
-        total_today = email_repo.count_updated_since(today_iso)
-        total_week = email_repo.count_updated_since(week_iso)
-        pending = review_repo.count_pending()
+        total_today = email_repo.count_received_since(today_iso)
+        total_week = email_repo.count_received_since(week_iso)
         processed_today = email_repo.count_by_state_since(
             ProcessingState.APPROVED,
             today_iso,
@@ -51,12 +51,26 @@ class QueryService:
         avg_cost = cost_week / mail_count_week if mail_count_week else 0.0
 
         grounding_today = self._count_grounding_since(today_iso)
-        intents_today = self._intent_counts_since(today_iso)
+        _, booking_week, _ = count_booking_mails(
+            email_repo,
+            self._ctx.extraction_repo,
+            since_iso=week_iso,
+        )
+        _, booking_total, _ = count_booking_mails(
+            email_repo,
+            self._ctx.extraction_repo,
+        )
+        _, _, intents_today = count_booking_mails(
+            email_repo,
+            self._ctx.extraction_repo,
+            since_iso=today_iso,
+        )
+        pending_booking = self._count_pending_booking_reviews()
 
         return DashboardStats(
             total_emails_today=total_today,
             total_emails_week=total_week,
-            pending_review=pending,
+            pending_review=pending_booking,
             processed_today=processed_today,
             spam_discarded_today=spam_today,
             new_bookings_today=intents_today.get(BookingIntent.NEW_BOOKING.value, 0),
@@ -65,6 +79,8 @@ class QueryService:
                 0,
             ),
             changes_today=intents_today.get(BookingIntent.CHANGE.value, 0),
+            booking_emails_total=booking_total,
+            booking_emails_week=booking_week,
             cost_today_usd=round(cost_today, 4),
             cost_week_usd=round(cost_week, 4),
             avg_cost_per_mail_usd=round(avg_cost, 4),
@@ -82,6 +98,8 @@ class QueryService:
             new_bookings_today=5,
             cancellations_today=1,
             changes_today=2,
+            booking_emails_total=12,
+            booking_emails_week=12,
             cost_today_usd=0.42,
             cost_week_usd=2.1,
             avg_cost_per_mail_usd=0.044,
@@ -93,20 +111,37 @@ class QueryService:
         *,
         status: str | None,
         intent: str | None,
+        intents: list[str] | None,
         platform: str | None,
         search: str | None,
+        booking_related: bool,
         page: int,
         limit: int,
     ) -> EmailListResponse:
         """Paginierte E-Mail-Liste."""
+        fetch_limit = 500 if booking_related else limit
+        fetch_page = 1 if booking_related else page
         emails, total = self._ctx.email_repo.list_filtered(
             status=status,
             intent=intent,
+            intents=intents,
             platform=platform,
             search=search,
-            page=page,
-            limit=limit,
+            booking_related=booking_related,
+            page=fetch_page,
+            limit=fetch_limit,
         )
+        if booking_related:
+            strict: list[StoredEmail] = []
+            for email in emails:
+                ext = self._ctx.extraction_repo.get_by_correlation_id(
+                    email.correlation_id
+                )
+                if classify_booking_mail(email, ext).is_booking:
+                    strict.append(email)
+            total = len(strict)
+            offset = max(page - 1, 0) * limit
+            emails = strict[offset : offset + limit]
         items: list[EmailListItem] = []
         for email in emails:
             ext = self._ctx.extraction_repo.get_by_correlation_id(email.correlation_id)
@@ -166,6 +201,38 @@ class QueryService:
             approved_body=review.approved_body if review else None,
         )
 
+    def list_review_pending(self, *, limit: int = 50) -> list[ReviewQueueItem]:
+        """Review-Warteschlange — nur echte Buchungs-Mails."""
+        items: list[ReviewQueueItem] = []
+        for record in self._ctx.review_repo.list_pending(limit=200):
+            email = self._ctx.email_repo.get_by_correlation_id(record.correlation_id)
+            if email is None:
+                continue
+            ext = self._ctx.extraction_repo.get_by_correlation_id(record.correlation_id)
+            if not classify_booking_mail(email, ext).is_booking:
+                continue
+            items.append(
+                ReviewQueueItem(
+                    correlation_id=record.correlation_id,
+                    message_id=record.message_id,
+                    subject=email.subject,
+                    from_address=email.from_address,
+                    intent=record.intent,
+                    draft_body=record.draft_body,
+                    grounding_flag=record.grounding_flag,
+                    review_status=record.review_status,
+                    received_at=(
+                        email.received_at.isoformat() if email.received_at else None
+                    ),
+                )
+            )
+            if len(items) >= limit:
+                break
+        return items
+
+    def _count_pending_booking_reviews(self) -> int:
+        return len(self.list_review_pending(limit=500))
+
     def costs(
         self,
         *,
@@ -199,16 +266,31 @@ class QueryService:
         )
 
     def _intent_counts_since(self, since_iso: str) -> dict[str, int]:
+        from services.booking_relevance import mongo_noise_exclusion
+
+        received_match: dict[str, Any] = {"received_at": {"$gte": since_iso}}
+        noise = mongo_noise_exclusion()
+        if noise:
+            received_match = {"$and": [received_match, noise]}
         pipeline: Sequence[Mapping[str, Any]] = [
-            {"$match": {"updated_at": {"$gte": since_iso}}},
+            {"$match": received_match},
+            {
+                "$lookup": {
+                    "from": "extractions",
+                    "localField": "correlation_id",
+                    "foreignField": "_id",
+                    "as": "ext",
+                }
+            },
+            {"$unwind": {"path": "$ext", "preserveNullAndEmptyArrays": False}},
             {
                 "$group": {
-                    "_id": "$extraction.intent",
+                    "_id": "$ext.extraction.intent",
                     "count": {"$sum": 1},
                 }
             },
         ]
-        col = self._ctx.extraction_repo._col
+        col = self._ctx.email_repo._col
         result: dict[str, int] = {}
         for row in col.aggregate(pipeline):
             key = row.get("_id")

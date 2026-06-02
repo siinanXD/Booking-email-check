@@ -36,10 +36,15 @@ export function DashboardPage() {
       <h2 className="text-xl font-semibold text-slate-800">Übersicht</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="E-Mails heute"
-          value={stats.total_emails_today}
-          hint={`${stats.total_emails_week} diese Woche`}
+          title="Buchungs-Mails erkannt"
+          value={stats.booking_emails_week}
+          hint={`${stats.booking_emails_total} gesamt · ${stats.total_emails_week} E-Mails (7 T.)`}
           icon={<Mail size={22} />}
+        />
+        <StatCard
+          title="Eingegangen heute"
+          value={stats.total_emails_today}
+          hint="alle Posteingänge"
         />
         <StatCard
           title="Review ausstehend"

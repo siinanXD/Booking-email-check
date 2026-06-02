@@ -19,6 +19,8 @@ export interface DashboardStats {
   new_bookings_today: number;
   cancellations_today: number;
   changes_today: number;
+  booking_emails_total: number;
+  booking_emails_week: number;
   cost_today_usd: number;
   cost_week_usd: number;
   avg_cost_per_mail_usd: number;
@@ -64,6 +66,23 @@ export interface CostSeriesPoint {
 export interface CostsResponse {
   series: CostSeriesPoint[];
   total_usd: number;
+}
+
+export interface ReviewQueueItem {
+  correlation_id: string;
+  message_id: string;
+  subject: string;
+  from_address: string;
+  intent: string | null;
+  draft_body: string;
+  grounding_flag: boolean;
+  review_status: string;
+  received_at: string | null;
+}
+
+export interface ReviewQueueResponse {
+  items: ReviewQueueItem[];
+  total: number;
 }
 
 export interface ApiError {

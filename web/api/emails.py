@@ -18,12 +18,21 @@ def list_emails() -> tuple[Any, int]:
     """Paginierte E-Mail-Liste."""
     page = max(int(request.args.get("page", 1)), 1)
     limit = min(max(int(request.args.get("limit", 20)), 1), 100)
+    intents_raw = request.args.get("intents", "")
+    intents = [s.strip() for s in intents_raw.split(",") if s.strip()] or None
+    booking_related = request.args.get("booking_related", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     svc = QueryService(g.ctx)
     result = svc.list_emails(
         status=request.args.get("status"),
         intent=request.args.get("intent"),
+        intents=intents,
         platform=request.args.get("platform"),
         search=request.args.get("search"),
+        booking_related=booking_related,
         page=page,
         limit=limit,
     )

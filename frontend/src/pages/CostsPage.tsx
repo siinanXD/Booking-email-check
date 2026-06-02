@@ -39,7 +39,14 @@ export function CostsPage() {
           </div>
           <Card>
             <h3 className="mb-4 font-medium text-slate-800">Verlauf</h3>
-            <CostChart series={data?.series ?? []} />
+            <CostChart
+              series={data?.series ?? []}
+              emptyHint={
+                totalMails === 0
+                  ? "Keine Kostendaten: Es wurden noch keine Mails mit LLM-Verarbeitung abgeschlossen. Nach einem Pipeline-Lauf erscheinen hier Tageswerte."
+                  : undefined
+              }
+            />
           </Card>
         </>
       )}

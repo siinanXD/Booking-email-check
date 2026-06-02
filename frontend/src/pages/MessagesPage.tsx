@@ -4,8 +4,11 @@ export function MessagesPage() {
   return (
     <EmailListPage
       title="Nachrichten"
-      subtitle="Gästeanfragen und sonstige Kommunikation"
-      params={{ intent: "guest_inquiry" }}
+      subtitle="Gästeanfragen mit Buchungsbezug (bestehende Buchung oder Interesse)"
+      params={{
+        intent: "guest_inquiry",
+        booking_related: true,
+      }}
     />
   );
 }

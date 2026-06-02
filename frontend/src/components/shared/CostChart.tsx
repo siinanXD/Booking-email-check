@@ -9,10 +9,19 @@ import {
 } from "recharts";
 import type { CostSeriesPoint } from "@/types/api";
 
-export function CostChart({ series }: { series: CostSeriesPoint[] }) {
+const DEFAULT_EMPTY_HINT =
+  "Noch keine API-Kosten in der Datenbank. Metriken entstehen, wenn Mails durch die LLM-Pipeline laufen (Klassifikation, Extraktion, Entwurf).";
+
+export function CostChart({
+  series,
+  emptyHint = DEFAULT_EMPTY_HINT,
+}: {
+  series: CostSeriesPoint[];
+  emptyHint?: string;
+}) {
   if (series.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-slate-500">Keine Kostendaten</p>
+      <p className="px-4 py-8 text-center text-sm text-slate-500">{emptyHint}</p>
     );
   }
 

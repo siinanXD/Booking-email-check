@@ -4,6 +4,9 @@ import type { EmailDetail, EmailListResponse } from "@/types/api";
 export interface EmailListParams {
   status?: string;
   intent?: string;
+  /** Komma-getrennte Intent-Liste (z. B. guest_inquiry,other) */
+  intents?: string;
+  booking_related?: boolean;
   platform?: string;
   search?: string;
   page?: number;

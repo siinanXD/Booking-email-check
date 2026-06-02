@@ -5,7 +5,7 @@ export function CancellationsPage() {
     <EmailListPage
       title="Stornos"
       subtitle="Stornierungen"
-      params={{ intent: "cancellation" }}
+      params={{ intent: "cancellation", booking_related: true }}
     />
   );
 }

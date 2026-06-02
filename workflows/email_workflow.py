@@ -15,6 +15,7 @@ from repositories.email_repository import EmailRepository
 from repositories.extraction_repository import ExtractionRepository
 from repositories.review_repository import ReviewRepository
 from schemas.booking.triage import TriageOutcome, TriageResult
+from services.booking_relevance import classify_booking_mail
 from services.classification import ClassificationService
 from services.extraction import ExtractionService
 from services.indexing import IndexingService
@@ -66,7 +67,7 @@ class EmailWorkflow:
         self._checkpointer = checkpointer or MemorySaver()
         self._app = self._graph.compile(
             checkpointer=self._checkpointer,
-            interrupt_before=["human_review"],
+            interrupt_after=["human_review"],
         )
 
     def _build(self) -> StateGraph:
@@ -212,13 +213,21 @@ class EmailWorkflow:
 
     def _after_validate(self, state: EmailWorkflowState) -> Literal["end", "retrieve"]:
         errors = state.get("validation_errors") or []
+        email = state["email"]
         if errors:
             if self._alerts:
-                email = state["email"]
                 self._alerts.check_extraction_failure(
                     email.correlation_id,
                     "; ".join(errors),
                 )
+            return "end"
+        extraction = state.get("extraction")
+        if not classify_booking_mail(email, extraction).is_booking:
+            self._email_repo.update_processing_state(
+                email.message_id,
+                ProcessingState.DISCARDED,
+                triage_outcome="not_booking_mail",
+            )
             return "end"
         return "retrieve"
 
@@ -330,6 +339,20 @@ class EmailWorkflow:
             email.message_id,
             ProcessingState.DRAFTED,
         )
+        intent_val = state.get("intent")
+        intent_str: str | None = None
+        if intent_val is not None:
+            intent_str = (
+                intent_val.value if hasattr(intent_val, "value") else str(intent_val)
+            )
+        if self._review_repo is not None:
+            self._review_repo.upsert_pending(
+                correlation_id=email.correlation_id,
+                message_id=email.message_id,
+                draft_body=draft.body,
+                grounding_flag=grounding_flag,
+                intent=intent_str,
+            )
         return {
             "draft": draft,
             "grounding_flag": grounding_flag,

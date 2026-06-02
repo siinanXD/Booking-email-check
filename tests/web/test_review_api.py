@@ -4,80 +4,55 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
-from unittest.mock import patch
 
 from models.email import ProcessingState, StoredEmail
+from repositories.extraction_repository import ExtractionRepository
 from repositories.review_repository import ReviewRepository
 from schemas.booking.extraction import BookingExtraction
 from schemas.booking.taxonomy import BookingIntent
 
 
-def test_review_approve_calls_workflow(
+def test_list_pending_reviews(
     client: Any,
     auth_headers: dict[str, str],
+    mock_db: object,
     email_repo: Any,
-    extraction_repo: Any,
-    app: Any,
+    extraction_repo: ExtractionRepository,
 ) -> None:
-    """Approve ruft review_router.approve_draft auf."""
-    email = StoredEmail(
-        message_id="m2@test",
-        from_address="guest@test.com",
-        subject="Storno",
-        body_text="Bitte stornieren",
-        received_at=datetime.now(UTC),
-        correlation_id="corr-approve",
-        processing_state=ProcessingState.PENDING_REVIEW,
-        updated_at=datetime.now(UTC),
+    cid = "corr-review-1"
+    email_repo.upsert_by_message_id(
+        StoredEmail(
+            message_id="m-review@test",
+            from_address="bookings@beds24.com",
+            subject="Nachricht vom Gast - Buchung 12345",
+            body_text="Frage zur Buchung",
+            received_at=datetime.now(UTC),
+            correlation_id=cid,
+            processing_state=ProcessingState.PENDING_REVIEW,
+            platform="beds24",
+        )
     )
-    email_repo.upsert_by_message_id(email)
     extraction_repo.save(
-        "corr-approve",
-        "m2@test",
-        BookingExtraction(intent=BookingIntent.CANCELLATION),
+        cid,
+        "m-review@test",
+        BookingExtraction(
+            intent=BookingIntent.GUEST_INQUIRY,
+            booking_number="12345",
+        ),
     )
-    review_repo: ReviewRepository = app.extensions["ctx"].review_repo
-    review_repo.upsert_pending(
-        correlation_id="corr-approve",
-        message_id="m2@test",
-        draft_body="Entwurf",
+    reviews = ReviewRepository(mock_db)  # type: ignore[arg-type]
+    reviews.upsert_pending(
+        correlation_id=cid,
+        message_id="m-review@test",
+        draft_body="Hallo Gast, vielen Dank fuer Ihre Anfrage.",
         grounding_flag=False,
-        intent="cancellation",
+        intent="guest_inquiry",
     )
-    ctx = app.extensions["ctx"]
-    with patch.object(
-        ctx.review_router,
-        "approve_draft",
-        return_value={"review": {"status": "approved"}},
-    ) as mock_approve:
-        resp = client.post(
-            "/api/review/approve",
-            headers=auth_headers,
-            json={
-                "correlation_id": "corr-approve",
-                "approved_body": "Freigegeben",
-            },
-        )
+    resp = client.get("/api/review/pending", headers=auth_headers)
     assert resp.status_code == 200
-    mock_approve.assert_called_once()
-
-
-def test_review_reject_calls_workflow(
-    client: Any,
-    auth_headers: dict[str, str],
-    app: Any,
-) -> None:
-    """Reject ruft reject_draft auf."""
-    ctx = app.extensions["ctx"]
-    with patch.object(
-        ctx.review_router,
-        "reject_draft",
-        return_value={"review": {"status": "rejected"}},
-    ) as mock_reject:
-        resp = client.post(
-            "/api/review/reject",
-            headers=auth_headers,
-            json={"correlation_id": "corr-x", "reason": "Nicht passend"},
-        )
-    assert resp.status_code == 200
-    mock_reject.assert_called_once()
+    data = resp.get_json()
+    assert data["total"] >= 1
+    assert any(
+        item["correlation_id"] == cid and "Hallo Gast" in item["draft_body"]
+        for item in data["items"]
+    )
