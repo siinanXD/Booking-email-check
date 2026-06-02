@@ -67,6 +67,19 @@ Oder nach `Activate.ps1`: `python scripts/run_outlook_ingest.py`.
 
 Langfuse (`@observe` ohne Rohprompt-Capture): siehe `docs/LANGFUSE.md`.
 
+### Web-API (Dev)
+
+Flask-Backend für das Dashboard (JWT, Review ohne Auto-Versand):
+
+```powershell
+python scripts/seed_admin.py
+flask --app web.app:create_app run --debug --port 5000
+```
+
+Optional: `pip install langgraph-checkpoint-mongodb==0.1.4` für durable LangGraph-Checkpoints in Mongo (nicht im Standard-Resolver wegen `langgraph` 0.2.x). Sonst `WEB_USE_MEMORY_CHECKPOINTER=true` nur für Tests.
+
+API: `GET /health`, `POST /api/auth/login`, geschützte Routes unter `/api/dashboard`, `/api/emails`, `/api/review`, `/api/costs`.
+
 ## Konfiguration (Environment-Variablen)
 
 Alle Secrets ausschließlich über Umgebungsvariablen, nie im Code. Erwartet

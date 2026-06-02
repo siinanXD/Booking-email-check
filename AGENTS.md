@@ -25,6 +25,14 @@ black --check .
 mypy .
 ```
 
+Web-API (Flask):
+
+```bash
+python scripts/seed_admin.py
+flask --app web.app:create_app run --debug --port 5000
+pytest tests/web -q
+```
+
 ## Nicht-offensichtliche Projektregeln
 
 - **Zwei Flüsse:** Antwort-Pfad (synchron, kritisch) vs. Indexierung (async). Embedding-Latenz nicht an den Antwortpfad hängen.
