@@ -35,6 +35,10 @@ class ReviewRepository:
     def __init__(self, db: Db) -> None:
         """Initialize the instance with its dependencies."""
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
+        self._col.create_index(
+            [("review_status", 1), ("account_id", 1), ("updated_at", -1)],
+            name="idx_review_status_account_updated",
+        )
 
     def upsert_pending(
         self,

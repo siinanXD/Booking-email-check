@@ -41,6 +41,7 @@ pytest tests/web -q
 - **Domänen-Packs** (Booking, später Orders/Support) erweitern die Engine über `backend/ai/domain/` + Prompts – Engine und diese Datei nicht anfassen beim neuen Pack.
 - **Entity Resolution** ist fachlich zentral (Relay-Adressen, mehrdeutige Namen) – keine Einzeiler-Lösung.
 - **DSGVO-Löschung** über Mongo, Vektorindex **und** Langfuse-Traces hinweg.
+- **Repository-Indexes:** Jedes neue Repository legt seine MongoDB-Indexes im `__init__` an — kein separater Migrations-Schritt.
 
 ## Prioritäten
 

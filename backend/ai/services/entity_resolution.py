@@ -24,7 +24,12 @@ class EntityResolutionService:
         extraction: BookingExtraction,
         from_address: str,
     ) -> tuple[Guest | None, float]:
-        """Löst einen Gast mit Konfidenzschwelle auf."""
+        """Löst einen Gast mit Konfidenzschwelle auf.
+
+        Priorität: E-Mail (1.0) → Buchungsnummer (0.9) → Name+Plattform (0.7).
+        Kein Kandidaten-Vergleich — erster Treffer über Schwelle 0.6 gewinnt.
+        Bewusste Entscheidung: Buchungsnummer schlägt Name+Plattform auch bei Konflikt.
+        """
         for email in (extraction.email, from_address):
             if not email or "@" not in email:
                 continue
