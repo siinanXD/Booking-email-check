@@ -51,6 +51,7 @@ class Settings(BaseSettings):
         default="text-embedding-3-small",
         alias="EMBEDDING_MODEL",
     )
+    similarity_use_atlas: bool = Field(default=False, alias="SIMILARITY_USE_ATLAS")
     max_tokens_per_mail: int = Field(default=8000, alias="MAX_TOKENS_PER_MAIL")
     webhook_alert_url: str | None = Field(default=None, alias="WEBHOOK_ALERT_URL")
     langgraph_checkpoint_uri: str | None = Field(

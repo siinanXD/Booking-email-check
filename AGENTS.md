@@ -42,6 +42,7 @@ pytest tests/web -q
 - **Entity Resolution** ist fachlich zentral (Relay-Adressen, mehrdeutige Namen) – keine Einzeiler-Lösung.
 - **DSGVO-Löschung** über Mongo, Vektorindex **und** Langfuse-Traces hinweg.
 - **Repository-Indexes:** Jedes neue Repository legt seine MongoDB-Indexes im `__init__` an — kein separater Migrations-Schritt.
+- **Atlas Vector Search:** Der Index `embedding_vector_index` muss manuell in der Atlas UI oder per CLI angelegt werden — Feldname `embedding`, Dimensionen 1536 (`text-embedding-3-small`) oder 3072 (`text-embedding-3-large`), Similarity `cosine`. Ohne Index fällt `search_by_vector_atlas()` auf In-Memory Dot-Product zurück.
 
 ## Prioritäten
 

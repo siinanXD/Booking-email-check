@@ -6,8 +6,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from pymongo.collection import Collection
+from pymongo.errors import OperationFailure
 
 from backend.infrastructure.repositories.mongo import Db
+
+VECTOR_INDEX_NAME = "embedding_vector_index"
 
 
 class EmbeddingRepository:
@@ -42,9 +45,11 @@ class EmbeddingRepository:
         self,
         query_embedding: list[float],
         limit: int = 5,
+        filter: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Einfache Ähnlichkeitssuche (Dot-Product auf kleinen MVP-Daten)."""
-        docs = list(self._col.find({}))
+        query = filter or {}
+        docs = list(self._col.find(query))
         scored: list[tuple[float, dict[str, Any]]] = []
         for doc in docs:
             emb = doc.get("embedding") or []
@@ -54,6 +59,32 @@ class EmbeddingRepository:
             scored.append((score, doc))
         scored.sort(key=lambda x: x[0], reverse=True)
         return [d for _, d in scored[:limit]]
+
+    def search_by_vector_atlas(
+        self,
+        query_embedding: list[float],
+        limit: int = 5,
+        filter: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Nutzt Atlas $vectorSearch Aggregation Pipeline."""
+        try:
+            vector_search: dict[str, Any] = {
+                "index": VECTOR_INDEX_NAME,
+                "path": "embedding",
+                "queryVector": query_embedding,
+                "numCandidates": max(limit * 10, 50),
+                "limit": limit,
+            }
+            if filter:
+                vector_search["filter"] = filter
+            pipeline = [{"$vectorSearch": vector_search}]
+            return list(self._col.aggregate(pipeline))
+        except OperationFailure:
+            return self.search_by_vector(
+                query_embedding,
+                limit=limit,
+                filter=filter,
+            )
 
 
 def _dot(a: list[float], b: list[float]) -> float:

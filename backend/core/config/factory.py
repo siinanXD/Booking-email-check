@@ -164,7 +164,11 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         mail_cost=mail_cost,
     )
     validation = ValidationService()
-    similarity = SimilaritySearchService(embedding_repo, embed_client)
+    similarity = SimilaritySearchService(
+        embedding_repo,
+        embed_client,
+        use_atlas=cfg.similarity_use_atlas,
+    )
     entity_resolution = EntityResolutionService(entity_repo)
     retrieval = RetrievalService(
         entity_repo,
