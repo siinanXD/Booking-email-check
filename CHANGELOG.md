@@ -1,6 +1,57 @@
 # CHANGELOG
 
 
+## v0.6.0 (2026-06-03)
+
+### Bug Fixes
+
+- **review-queue**: Add compound index on review_status + account_id + updated_at
+  ([`4d4b8a3`](https://github.com/siinanXD/Booking-email-checl/commit/4d4b8a3314daf31a4ed7efb57c587a998178148c))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Documentation
+
+- Add Cursor Cloud dev environment notes to AGENTS.md
+  ([`4a2f82d`](https://github.com/siinanXD/Booking-email-checl/commit/4a2f82df802c3b81167349e4d44ce3521f21c536))
+
+Co-authored-by: siinanXD <siinanXD@users.noreply.github.com>
+
+### Features
+
+- **alerts**: Retrieval empty alert test
+  ([`be6cd2d`](https://github.com/siinanXD/Booking-email-checl/commit/be6cd2d185bfafee693529ddc64b8a1a737008e5))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **entity-resolution**: Guest matching with confidence thresholds
+  ([`3bf22f0`](https://github.com/siinanXD/Booking-email-checl/commit/3bf22f002f98815887ed9a1fa82151bc062d07b7))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **retrieval**: Entity resolution, caps, and empty-booking alerts
+  ([`0df908c`](https://github.com/siinanXD/Booking-email-checl/commit/0df908cfed5bb743fa34c594b449e4eeebad71fc))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **review**: Reject alias and rejection flow tests
+  ([`8c2e7eb`](https://github.com/siinanXD/Booking-email-checl/commit/8c2e7ebb027c4a2b68f3a4c30ca0a1851e182538))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **review-queue**: Review repository aliases and persistence tests
+  ([`1f0c453`](https://github.com/siinanXD/Booking-email-checl/commit/1f0c45362d7ee671d3ceb6d6d63b555d57578947))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Testing
+
+- **eval**: Add retrieval and entity resolution cases
+  ([`e8fef07`](https://github.com/siinanXD/Booking-email-checl/commit/e8fef0767a1e88dd5a9cc8a60c8bd59f52bc175a))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+
 ## v0.5.1 (2026-06-02)
 
 ### Bug Fixes
