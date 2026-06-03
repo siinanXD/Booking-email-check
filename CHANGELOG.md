@@ -1,6 +1,95 @@
 # CHANGELOG
 
 
+## v0.7.0 (2026-06-03)
+
+### Bug Fixes
+
+- **grounding**: Filter false-positive guest name matches in draft
+  ([`5aeafc4`](https://github.com/siinanXD/Booking-email-checl/commit/5aeafc49d7bb5c9596a6a9da78f600d37b41fedf))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **pre-push**: Log atlas fallback, tighten name grounding, add edit-distance alert
+  ([`2023b5e`](https://github.com/siinanXD/Booking-email-checl/commit/2023b5e722ed1e20e16a55e1e1bc212b0d7c4cc2))
+
+Log silent Atlas vector search fallback, require two token overlaps for guest names, and alert when
+  draft edit distance exceeds 0.4.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **tests**: Use patch.object for atlas aggregate mocks
+  ([`5885ad0`](https://github.com/siinanXD/Booking-email-checl/commit/5885ad0d9a227573cdf03aab3108dd8ac1151a94))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Features
+
+- **dashboard**: Add timestamps and reviewed_today KPI
+  ([`2e185a9`](https://github.com/siinanXD/Booking-email-checl/commit/2e185a9eadf96da81e1eef953d9328e34e14d588))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **draft**: Platform tone and grounding instructions in prompt template
+  ([`1c3ba8c`](https://github.com/siinanXD/Booking-email-checl/commit/1c3ba8ce84559abc2039fa2451ea09d429c6eed0))
+
+Extend draft.md with platform_tone, grounding rules, and response structure; add _platform_tone and
+  _build_prompt helpers.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **feedback-loop**: Track draft edit distance via Langfuse scores
+  ([`d729823`](https://github.com/siinanXD/Booking-email-checl/commit/d72982336be775e042b43f2404d1bea3a85357d7))
+
+Add LangfuseTracer.log_score, ReviewFeedbackTracker with difflib distance, and wire record() into
+  WorkflowNodes.finalize on approval.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **grounding**: Add check_with_detail with guest and date validation
+  ([`54e8ee9`](https://github.com/siinanXD/Booking-email-checl/commit/54e8ee9367b34f2dc87bc79c029e4b07086febd8))
+
+Extend grounding beyond booking refs to guest names and dates, returning GroundingResult with
+  failed_fields and confidence while keeping check() as wrapper.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **indexing**: Alert on async indexing failures
+  ([`b21738f`](https://github.com/siinanXD/Booking-email-checl/commit/b21738f943dc793e99d6c065c5a5d32b2181fb25))
+
+Wrap _index_async in try/except and report errors via AlertService with indexing: prefix.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **mail-sync**: Fast manual sync, expose errors, background reprocess
+  ([`5732f72`](https://github.com/siinanXD/Booking-email-checl/commit/5732f72ebe1bbfab50b959b2ad18712a9261be99))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **mongo**: Auto-create domain collections and tenant-scoped entities
+  ([`186ea90`](https://github.com/siinanXD/Booking-email-checl/commit/186ea90e90d981e97106c3eca1cc538196b8680c))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- **vector-search**: Atlas vector search with in-memory fallback
+  ([`156aa9d`](https://github.com/siinanXD/Booking-email-checl/commit/156aa9da2d7b00d459e754a6586d125bdde4d8cd))
+
+Add search_by_vector_atlas with OperationFailure fallback, SIMILARITY_USE_ATLAS setting, and
+  AGENTS.md index setup note.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Testing
+
+- **eval**: Add complaint and direct-booking eval cases
+  ([`3aeaade`](https://github.com/siinanXD/Booking-email-checl/commit/3aeaadefb070b4f1b00efd021cf39a7fd5042ace))
+
+Add eval-009 for complaint with guest name and eval-010 for direct booking without platform; extend
+  MockLLM responses.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+
 ## v0.6.0 (2026-06-03)
 
 ### Bug Fixes
