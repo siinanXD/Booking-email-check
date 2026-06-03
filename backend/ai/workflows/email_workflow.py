@@ -155,6 +155,14 @@ class EmailWorkflow:
             reviewer_note=reason,
         )
 
+    def reject_after_review(
+        self,
+        thread_id: str,
+        reason: str | None = None,
+    ) -> dict[str, Any]:
+        """Alias für resume_after_rejection."""
+        return self.resume_after_rejection(thread_id, reason=reason)
+
     def _resume_review(
         self,
         thread_id: str,

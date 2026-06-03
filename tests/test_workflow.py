@@ -176,6 +176,52 @@ def test_resume_after_approval_persists_approved_state(
     assert result["review"].approved_body == "Freigegebener Text"
 
 
+def test_resume_after_rejection_persists_rejected_state(
+    ingestion_service,
+    email_repo,
+    entity_repo,
+    extraction_repo,
+    mock_db,
+) -> None:
+    """Verify rejection resume persists rejected processing state."""
+    from backend.infrastructure.repositories.embedding_repository import (
+        EmbeddingRepository,
+    )
+    from backend.infrastructure.repositories.review_repository import ReviewRepository
+
+    review_repo = ReviewRepository(mock_db)
+    payload = IncomingEmail(
+        message_id="wf-reject-001",
+        from_address="guest@airbnb.com",
+        subject="Stornierung AB200",
+        body_text="Stornierung AB200 bitte.",
+        received_at=datetime.now(UTC),
+        platform="airbnb",
+    )
+    wf = _build_workflow(
+        ingestion_service,
+        email_repo,
+        entity_repo,
+        extraction_repo,
+        EmbeddingRepository(mock_db),
+        review_repo=review_repo,
+    )
+    wf.run(payload, thread_id=payload.correlation_id)
+    result = wf.reject_after_review(
+        payload.correlation_id,
+        reason="Inaccurate draft",
+    )
+
+    email = email_repo.get_by_message_id("wf-reject-001")
+    assert email is not None
+    assert email.processing_state == ProcessingState.REJECTED
+    assert result["review"].status == "rejected"
+    record = review_repo.get(payload.correlation_id)
+    assert record is not None
+    assert record.review_status == "rejected"
+    assert record.reviewer_note == "Inaccurate draft"
+
+
 def test_workflow_finalize_cost_after_spam_discard(
     ingestion_service,
     email_repo,
