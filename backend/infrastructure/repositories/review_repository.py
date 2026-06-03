@@ -8,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 from pymongo.collection import Collection
 
+from backend.core.models.response import ReviewStatus
 from backend.infrastructure.repositories.mongo import Db
 from backend.infrastructure.repositories.tenant_scope import with_account_filter
 
@@ -114,3 +115,106 @@ class ReviewRepository:
         query = with_account_filter({"review_status": "pending"}, account_id)
         cursor = self._col.find(query).sort("updated_at", -1).limit(limit)
         return [ReviewRecord.model_validate(doc) for doc in cursor]
+
+    def save(
+        self,
+        review: ReviewStatus,
+        *,
+        message_id: str,
+        draft_body: str = "",
+        grounding_flag: bool = False,
+        intent: str | None = None,
+        account_id: str | None = None,
+    ) -> ReviewRecord:
+        """Alias: persistiert ReviewStatus (pending oder finaler Status)."""
+        if review.status == "pending":
+            return self.upsert_pending(
+                correlation_id=review.correlation_id,
+                message_id=message_id,
+                draft_body=draft_body,
+                grounding_flag=grounding_flag,
+                intent=intent,
+                account_id=account_id,
+            )
+        record = self.update_status(
+            review.correlation_id,
+            review.status,
+            account_id=account_id,
+            approved_body=review.approved_body,
+            reviewer_note=review.reviewer_note,
+        )
+        if record is not None:
+            return record
+        return ReviewRecord(
+            correlation_id=review.correlation_id,
+            message_id=message_id,
+            draft_body=draft_body,
+            grounding_flag=grounding_flag,
+            review_status=review.status,
+            reviewer_note=review.reviewer_note,
+            approved_body=review.approved_body,
+            intent=intent,
+        )
+
+    def get_by_correlation_id(
+        self,
+        correlation_id: str,
+        *,
+        account_id: str | None = None,
+    ) -> ReviewStatus | None:
+        """Alias: lädt ReviewStatus für correlation_id."""
+        record = self.get(correlation_id, account_id=account_id)
+        if record is None:
+            return None
+        return _record_to_status(record)
+
+    def list_pending_statuses(
+        self,
+        limit: int = 50,
+        *,
+        account_id: str | None = None,
+    ) -> list[ReviewStatus]:
+        """Alias: ausstehende Reviews als ReviewStatus."""
+        return [
+            _record_to_status(record)
+            for record in self.list_pending(limit, account_id=account_id)
+        ]
+
+    def mark_approved(
+        self,
+        correlation_id: str,
+        approved_body: str,
+        *,
+        account_id: str | None = None,
+    ) -> ReviewRecord | None:
+        """Alias: markiert Review als freigegeben."""
+        return self.update_status(
+            correlation_id,
+            "approved",
+            account_id=account_id,
+            approved_body=approved_body,
+        )
+
+    def mark_rejected(
+        self,
+        correlation_id: str,
+        reason: str,
+        *,
+        account_id: str | None = None,
+    ) -> ReviewRecord | None:
+        """Alias: markiert Review als abgelehnt."""
+        return self.update_status(
+            correlation_id,
+            "rejected",
+            account_id=account_id,
+            reviewer_note=reason,
+        )
+
+
+def _record_to_status(record: ReviewRecord) -> ReviewStatus:
+    return ReviewStatus(
+        correlation_id=record.correlation_id,
+        status=record.review_status,
+        reviewer_note=record.reviewer_note,
+        approved_body=record.approved_body,
+    )
