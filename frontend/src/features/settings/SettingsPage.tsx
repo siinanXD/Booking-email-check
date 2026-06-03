@@ -242,6 +242,12 @@ export function SettingsPage() {
               >
                 {mailData.status}
               </span>
+              {mailData.last_sync_at && (
+                <span className="block text-xs text-slate-500">
+                  Letzter Sync:{" "}
+                  {new Date(mailData.last_sync_at).toLocaleString("de-DE")}
+                </span>
+              )}
               {mailData.last_error && (
                 <span className="block text-xs text-red-600">
                   {mailData.last_error}

@@ -15,8 +15,14 @@ from backend.api.schemas.mail import (
     MailTestResponse,
 )
 from backend.features.mail.mail_connection_service import MailConnectionService
-from backend.features.mail.mail_poll_service import build_mail_poll_service_from_context
-from backend.features.mail.mail_reprocess_service import build_mail_reprocess_service
+from backend.features.mail.mail_poll_service import (
+    AccountPollSummary,
+    build_mail_poll_service_from_context,
+)
+from backend.features.mail.mail_reprocess_service import (
+    MailReprocessResult,
+    build_mail_reprocess_service,
+)
 from backend.features.mail.outlook_oauth_service import OutlookOAuthService
 from backend.infrastructure.repositories.mail_connection_repository import (
     MailConnectionRepository,
@@ -45,6 +51,56 @@ def _oauth_service() -> OutlookOAuthService:
         g.settings,
         g.ctx.mail_connection_repo,
         g.ctx.outlook_oauth_flow_repo,
+    )
+
+
+def _sync_reprocess_requested() -> bool:
+    value = request.args.get("reprocess", "").strip().lower()
+    return value in {"1", "true", "yes"}
+
+
+def _build_sync_response(
+    account_id: str,
+    summary: AccountPollSummary,
+    *,
+    reprocess: MailReprocessResult | None = None,
+) -> tuple[Any, int]:
+    reprocess = reprocess or MailReprocessResult()
+    updated = g.ctx.mail_connection_repo.get(account_id)
+    last_sync = (
+        updated.last_sync_at.isoformat() if updated and updated.last_sync_at else None
+    )
+    item_errors = [err for err in summary.item_errors if err]
+    reprocess_errors = list(reprocess.errors)
+    error_count = len(item_errors) + len(reprocess_errors)
+    reprocessed = reprocess.completed
+    if error_count:
+        message = (
+            f"{summary.processed} neue Mail(s), {summary.duplicates} Duplikat(e), "
+            f"{reprocessed} nachverarbeitet, {error_count} Fehler."
+        )
+    else:
+        message = (
+            f"{summary.processed} neue Mail(s) verarbeitet, "
+            f"{summary.duplicates} bereits bekannt"
+            + (f", {reprocessed} nachverarbeitet" if reprocessed else "")
+            + "."
+        )
+    return (
+        jsonify(
+            MailSyncResponse(
+                success=error_count == 0,
+                processed=summary.processed,
+                duplicates=summary.duplicates,
+                error_count=error_count,
+                reprocessed=reprocessed,
+                message=message,
+                last_sync_at=last_sync,
+                item_errors=item_errors,
+                reprocess_errors=reprocess_errors,
+            ).model_dump()
+        ),
+        200,
     )
 
 
@@ -102,10 +158,12 @@ def sync_mailbox() -> tuple[Any, int]:
         )
     poll = build_mail_poll_service_from_context(g.ctx, g.settings)
     result = poll.run_all(account_ids=[account_id])
-    reprocess = build_mail_reprocess_service(g.ctx).reprocess_stuck_bookings(
-        account_id,
-        limit=25,
-    )
+    reprocess = MailReprocessResult()
+    if _sync_reprocess_requested():
+        reprocess = build_mail_reprocess_service(g.ctx).reprocess_stuck_bookings(
+            account_id,
+            limit=25,
+        )
     summary = result.summaries[0] if result.summaries else None
     if summary is None:
         return (
@@ -118,50 +176,21 @@ def sync_mailbox() -> tuple[Any, int]:
             400,
         )
     if summary.fetch_error:
+        item_errors = [err for err in summary.item_errors if err]
         return (
             jsonify(
                 MailSyncResponse(
                     success=False,
                     processed=summary.processed,
                     duplicates=summary.duplicates,
-                    error_count=len(summary.item_errors),
+                    error_count=len(item_errors),
                     message=f"Postfach-Abruf fehlgeschlagen: {summary.fetch_error}",
+                    item_errors=item_errors,
                 ).model_dump()
             ),
             502,
         )
-    updated = g.ctx.mail_connection_repo.get(account_id)
-    last_sync = (
-        updated.last_sync_at.isoformat() if updated and updated.last_sync_at else None
-    )
-    error_count = len(summary.item_errors) + len(reprocess.errors)
-    reprocessed = reprocess.completed
-    if error_count:
-        message = (
-            f"{summary.processed} neue Mail(s), {summary.duplicates} Duplikat(e), "
-            f"{reprocessed} nachverarbeitet, {error_count} Fehler."
-        )
-    else:
-        message = (
-            f"{summary.processed} neue Mail(s) verarbeitet, "
-            f"{summary.duplicates} bereits bekannt"
-            + (f", {reprocessed} nachverarbeitet" if reprocessed else "")
-            + "."
-        )
-    return (
-        jsonify(
-            MailSyncResponse(
-                success=error_count == 0,
-                processed=summary.processed,
-                duplicates=summary.duplicates,
-                error_count=error_count,
-                reprocessed=reprocessed,
-                message=message,
-                last_sync_at=last_sync,
-            ).model_dump()
-        ),
-        200,
-    )
+    return _build_sync_response(account_id, summary, reprocess=reprocess)
 
 
 @mail_bp.post("/test")

@@ -58,6 +58,8 @@ export interface MailSyncResponse {
   reprocessed?: number;
   message: string;
   last_sync_at?: string | null;
+  item_errors?: string[];
+  reprocess_errors?: string[];
 }
 
 export interface RegisterRequest {
@@ -109,6 +111,11 @@ export interface DashboardStats {
   cost_week_usd: number;
   avg_cost_per_mail_usd: number;
   grounding_failures_today: number;
+  reviewed_today: number;
+  last_sync_at?: string | null;
+  last_email_received_at?: string | null;
+  last_booking_detected_at?: string | null;
+  mail_fetch_unread_only?: boolean;
 }
 
 export interface EmailListItem {

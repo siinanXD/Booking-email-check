@@ -70,3 +70,5 @@ class MailSyncResponse(BaseModel):
     reprocessed: int = 0
     message: str
     last_sync_at: str | None = None
+    item_errors: list[str] = Field(default_factory=list)
+    reprocess_errors: list[str] = Field(default_factory=list)

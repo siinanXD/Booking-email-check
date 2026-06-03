@@ -128,10 +128,23 @@ def _start_dev_mail_poll(app: Flask, settings: Settings) -> None:
                     ctx = app.extensions["ctx"]
                     service = build_mail_poll_service_from_context(ctx, settings)
                     result = service.run_all()
+                    from backend.features.mail.mail_reprocess_service import (
+                        build_mail_reprocess_service,
+                    )
+
+                    reprocess_svc = build_mail_reprocess_service(ctx)
+                    reprocessed = 0
+                    for summary in result.summaries:
+                        batch = reprocess_svc.reprocess_stuck_bookings(
+                            summary.account_id,
+                            limit=5,
+                        )
+                        reprocessed += batch.completed
                     logger.info(
-                        "Dev mail poll: accounts=%s processed=%s",
+                        "Dev mail poll: accounts=%s processed=%s reprocessed=%s",
                         result.accounts_polled,
                         result.total_processed,
+                        reprocessed,
                     )
             except Exception:
                 logger.exception("Dev mail poll failed")

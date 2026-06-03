@@ -127,9 +127,14 @@ def test_mail_sync_runs_poll(
     record.outlook_token_cache = '{"AccessToken": {"secret": "x"}}'
     ctx.mail_connection_repo.save(record)
 
-    with patch(
-        "backend.api.blueprints.mail.build_mail_poll_service_from_context"
-    ) as mock_build:
+    with (
+        patch(
+            "backend.api.blueprints.mail.build_mail_poll_service_from_context"
+        ) as mock_build,
+        patch(
+            "backend.api.blueprints.mail.build_mail_reprocess_service"
+        ) as mock_reprocess_build,
+    ):
         poll = MagicMock()
         from backend.features.mail.mail_poll_service import (
             AccountPollSummary,
@@ -145,6 +150,7 @@ def test_mail_sync_runs_poll(
                     provider="outlook",
                     processed=2,
                     duplicates=1,
+                    item_errors=["workflow failed: m1"],
                 )
             ],
         )
@@ -153,10 +159,81 @@ def test_mail_sync_runs_poll(
 
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data["success"] is True
+    assert data["success"] is False
     assert data["processed"] == 2
     assert data["duplicates"] == 1
+    assert data["error_count"] == 1
+    assert data["item_errors"] == ["workflow failed: m1"]
+    assert data["reprocessed"] == 0
     poll.run_all.assert_called_once_with(account_ids=[tenant_account_id])
+    mock_reprocess_build.assert_not_called()
+
+
+def test_mail_sync_reprocess_when_requested(
+    client: object, auth_headers: dict[str, str], tenant_account_id: str
+) -> None:
+    client.put(  # type: ignore[union-attr]
+        "/api/mail/connection",
+        headers=auth_headers,
+        json={
+            "provider": "outlook",
+            "outlook_auth_mode": "oauth",
+            "onboarding_completed": True,
+        },
+    )
+    app = client.application  # type: ignore[union-attr]
+    ctx = app.extensions["ctx"]
+    record = ctx.mail_connection_repo.get_or_create(tenant_account_id)
+    record.outlook_token_cache = '{"AccessToken": {"secret": "x"}}'
+    ctx.mail_connection_repo.save(record)
+
+    with (
+        patch(
+            "backend.api.blueprints.mail.build_mail_poll_service_from_context"
+        ) as mock_build,
+        patch(
+            "backend.api.blueprints.mail.build_mail_reprocess_service"
+        ) as mock_reprocess_build,
+    ):
+        poll = MagicMock()
+        from backend.features.mail.mail_poll_service import (
+            AccountPollSummary,
+            MailPollBatchResult,
+        )
+        from backend.features.mail.mail_reprocess_service import MailReprocessResult
+
+        poll.run_all.return_value = MailPollBatchResult(
+            accounts_polled=1,
+            total_processed=0,
+            summaries=[
+                AccountPollSummary(
+                    account_id=tenant_account_id,
+                    provider="outlook",
+                    processed=0,
+                    duplicates=0,
+                )
+            ],
+        )
+        reprocess = MagicMock()
+        reprocess.reprocess_stuck_bookings.return_value = MailReprocessResult(
+            completed=1,
+            errors=["corr-x: timeout"],
+        )
+        mock_build.return_value = poll
+        mock_reprocess_build.return_value = reprocess
+        resp = client.post(  # type: ignore[union-attr]
+            "/api/mail/sync?reprocess=true",
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["reprocessed"] == 1
+    assert data["reprocess_errors"] == ["corr-x: timeout"]
+    reprocess.reprocess_stuck_bookings.assert_called_once_with(
+        tenant_account_id,
+        limit=25,
+    )
 
 
 def test_auth_me_includes_mail_onboarding(
