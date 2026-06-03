@@ -21,7 +21,9 @@ from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.response import ReviewStatus
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import LangfuseTracer
 from backend.infrastructure.observability.mail_cost import MailCostTracker
+from backend.infrastructure.observability.review_feedback import ReviewFeedbackTracker
 from backend.infrastructure.repositories.email_repository import EmailRepository
 from backend.infrastructure.repositories.extraction_repository import (
     ExtractionRepository,
@@ -48,6 +50,8 @@ class EmailWorkflow:
         review_repo: ReviewRepository | None = None,
         notification_service: NotificationService | None = None,
         checkpointer: object | None = None,
+        feedback_tracker: ReviewFeedbackTracker | None = None,
+        langfuse_tracer: LangfuseTracer | None = None,
         *,
         tracing: bool = False,
     ) -> None:
@@ -69,6 +73,8 @@ class EmailWorkflow:
             alerts=alerts,
             review_repo=review_repo,
             notification_service=notification_service,
+            feedback_tracker=feedback_tracker,
+            langfuse_tracer=langfuse_tracer,
         )
         self._alerts = alerts
         self._graph = self._build()

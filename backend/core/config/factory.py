@@ -23,11 +23,13 @@ from backend.application.review import ReviewRouter
 from backend.core.config.settings import Settings, get_settings
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import LangfuseTracer
 from backend.infrastructure.observability.langfuse_setup import (
     configure_langfuse_env,
     tracing_enabled,
 )
 from backend.infrastructure.observability.mail_cost import MailCostTracker
+from backend.infrastructure.observability.review_feedback import ReviewFeedbackTracker
 from backend.infrastructure.repositories.account_repository import AccountRepository
 from backend.infrastructure.repositories.email_repository import EmailRepository
 from backend.infrastructure.repositories.embedding_repository import EmbeddingRepository
@@ -112,6 +114,13 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
 
     alerts = AlertService(webhook_url=cfg.webhook_alert_url)
     tracing = configure_langfuse_env(cfg) and tracing_enabled(cfg)
+    langfuse_tracer = LangfuseTracer(
+        enabled=tracing,
+        public_key=cfg.langfuse_public_key or None,
+        secret_key=cfg.langfuse_secret_key or None,
+        host=cfg.langfuse_host,
+    )
+    feedback_tracker = ReviewFeedbackTracker()
 
     llm_mode = cfg.llm_mode.strip().lower()
     # Raw mail prompts must not be auto-captured by provider wrappers.
@@ -191,6 +200,8 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         review_repo=review_repo,
         notification_service=notification_service,
         checkpointer=checkpointer,
+        feedback_tracker=feedback_tracker,
+        langfuse_tracer=langfuse_tracer,
         tracing=tracing,
     )
 

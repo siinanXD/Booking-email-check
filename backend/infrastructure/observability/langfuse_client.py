@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from langfuse import Langfuse
 from langfuse.decorators import langfuse_context
 
 from backend.infrastructure.observability.langfuse_setup import (
@@ -9,7 +10,49 @@ from backend.infrastructure.observability.langfuse_setup import (
     tracing_enabled,
 )
 
-__all__ = ["configure_langfuse_env", "log_mail_cost", "tracing_enabled"]
+__all__ = [
+    "LangfuseTracer",
+    "configure_langfuse_env",
+    "log_mail_cost",
+    "tracing_enabled",
+]
+
+
+class LangfuseTracer:
+    """Langfuse-Client für Scores und andere Trace-Ergänzungen."""
+
+    def __init__(
+        self,
+        enabled: bool,
+        public_key: str | None = None,
+        secret_key: str | None = None,
+        host: str | None = None,
+    ) -> None:
+        self._enabled = enabled
+        self._client: Langfuse | None = None
+        if enabled and public_key and secret_key:
+            self._client = Langfuse(
+                public_key=public_key,
+                secret_key=secret_key,
+                host=host or "https://cloud.langfuse.com",
+            )
+
+    def log_score(
+        self,
+        trace_id: str,
+        name: str,
+        value: float,
+        comment: str | None = None,
+    ) -> None:
+        """Schreibt einen numerischen Score auf einen bestehenden Trace."""
+        if not self._enabled or self._client is None:
+            return
+        self._client.score(
+            trace_id=trace_id,
+            name=name,
+            value=value,
+            comment=comment,
+        )
 
 
 def log_mail_cost(correlation_id: str, usage: dict[str, float | int]) -> None:

@@ -15,6 +15,8 @@ from backend.core.models.email import IncomingEmail, ProcessingState, StoredEmai
 from backend.core.models.response import ReviewStatus
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import LangfuseTracer
+from backend.infrastructure.observability.review_feedback import ReviewFeedbackTracker
 from backend.infrastructure.repositories.email_repository import EmailRepository
 from backend.infrastructure.repositories.extraction_repository import (
     ExtractionRepository,
@@ -50,6 +52,8 @@ class WorkflowNodes:
         alerts: AlertService | None,
         review_repo: ReviewRepository | None,
         notification_service: NotificationService | None,
+        feedback_tracker: ReviewFeedbackTracker | None = None,
+        langfuse_tracer: LangfuseTracer | None = None,
     ) -> None:
         self._ingestion = ingestion
         self._classification = classification
@@ -63,6 +67,8 @@ class WorkflowNodes:
         self._alerts = alerts
         self._review_repo = review_repo
         self._notification_service = notification_service
+        self._feedback_tracker = feedback_tracker
+        self._langfuse_tracer = langfuse_tracer
 
     def ingest(self, state: EmailWorkflowState) -> EmailWorkflowState:
         raw = state.get("email")
@@ -226,6 +232,21 @@ class WorkflowNodes:
                     extraction,
                     account_id=email.account_id,
                 )
+        approved_body = review.approved_body if review else None
+        if (
+            status == "approved"
+            and approved_body
+            and self._feedback_tracker is not None
+            and self._langfuse_tracer is not None
+        ):
+            draft = state.get("draft")
+            draft_body = draft.body if draft is not None else ""
+            self._feedback_tracker.record(
+                email.correlation_id,
+                draft_body,
+                approved_body,
+                self._langfuse_tracer,
+            )
         return {
             "review": ReviewStatus(
                 correlation_id=email.correlation_id,
