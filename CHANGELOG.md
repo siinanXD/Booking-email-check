@@ -1,6 +1,50 @@
 # CHANGELOG
 
 
+## v0.9.0 (2026-06-04)
+
+### Chores
+
+- **mvp**: Verification docs, integration smoke, and quality fixes
+  ([`f2a26ed`](https://github.com/siinanXD/Booking-email-checl/commit/f2a26ed869c6f9a282646a600837e5ca35b8a45d))
+
+Add PR_STEP_4_5 checklist, expand VERIFICATION for steps 4-5 and workflows, document eval baseline,
+  fix live workflow triage test, mypy on admin aggregates, and optional Mongo embedding integration
+  test.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Documentation
+
+- Add GitHub PR merge instructions to PR_STEP_4_5
+  ([`1a6200c`](https://github.com/siinanXD/Booking-email-checl/commit/1a6200c99f80474190be40489d3be1e97144ebf6))
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Features
+
+- **workflows**: Gemini multimodal suggest, preview, and workflow rubrics
+  ([`7e5fd55`](https://github.com/siinanXD/Booking-email-checl/commit/7e5fd55b139d3f3ae2c669d17f5e1bc840beb8ba))
+
+Add Gemini client integration for screenshot-based workflow suggestions and multimodal extract
+  preview, extend tenant workflow APIs and admin routes, and wire the dashboard with workflow rubric
+  navigation. Includes CI fixes (ruff, mypy, pytest, frontend build) and temporary line-limit skips
+  for oversized MVP branch files pending split before merge to main.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Refactoring
+
+- Split oversized files for 300-line CI limit
+  ([`7de840a`](https://github.com/siinanXD/Booking-email-checl/commit/7de840a195b67ffdc5e849d5e60fcf2007f5d9d0))
+
+Extract modules for workflows UI, API types, pipeline review, admin overview metrics, and tests.
+  Remove temporary SKIP_FILES entries so check_max_file_lines enforces the limit on all production
+  code.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+
 ## v0.8.0 (2026-06-04)
 
 ### Features
