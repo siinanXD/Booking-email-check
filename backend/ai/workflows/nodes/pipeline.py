@@ -16,9 +16,9 @@ from backend.ai.services.tenant_workflow_runtime import (
     WorkflowRouter,
 )
 from backend.ai.services.validation import ValidationService
+from backend.ai.workflows.nodes.pipeline_review import PipelineReviewMixin
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.email import IncomingEmail, ProcessingState, StoredEmail
-from backend.core.models.response import ReviewStatus
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
 from backend.infrastructure.observability.langfuse_client import LangfuseTracer
@@ -43,7 +43,7 @@ def triage_from_email(email: StoredEmail) -> TriageResult:
     return TriageResult(outcome=outcome, reason="ingested")
 
 
-class WorkflowNodes:
+class WorkflowNodes(PipelineReviewMixin):
     """Node callables bound to workflow services."""
 
     def __init__(
@@ -262,78 +262,6 @@ class WorkflowNodes:
                 account_id=email.account_id,
             )
         return {"draft": draft, "grounding_flag": grounding_flag}
-
-    def human_review(self, state: EmailWorkflowState) -> EmailWorkflowState:
-        email = state["email"]
-        review = state.get("review") or ReviewStatus(
-            correlation_id=email.correlation_id,
-            status="pending",
-        )
-        if review.status == "approved":
-            proc = ProcessingState.APPROVED
-        elif review.status == "rejected":
-            proc = ProcessingState.REJECTED
-        else:
-            proc = ProcessingState.PENDING_REVIEW
-        self._email_repo.update_processing_state(
-            email.message_id, proc, account_id=email.account_id
-        )
-        if review.status == "pending" and self._review_repo is not None:
-            draft = state.get("draft")
-            draft_body = draft.body if draft is not None else ""
-            self._review_repo.upsert_pending(
-                correlation_id=email.correlation_id,
-                message_id=email.message_id,
-                draft_body=draft_body,
-                grounding_flag=bool(state.get("grounding_flag")),
-                intent=_intent_str(state.get("intent")),
-                account_id=email.account_id,
-            )
-        return {"review": review}
-
-    def finalize(self, state: EmailWorkflowState) -> EmailWorkflowState:
-        email = state["email"]
-        review = state.get("review")
-        status = review.status if review else "approved"
-        if status == "approved":
-            proc = ProcessingState.APPROVED
-        elif status == "rejected":
-            proc = ProcessingState.REJECTED
-        else:
-            proc = ProcessingState.PENDING_REVIEW
-        self._email_repo.update_processing_state(
-            email.message_id, proc, account_id=email.account_id
-        )
-        if status == "approved" and self._notification_service is not None:
-            extraction = state.get("extraction")
-            if extraction is not None:
-                self._notification_service.dispatch_after_approval(
-                    email.correlation_id,
-                    extraction,
-                    account_id=email.account_id,
-                )
-        approved_body = review.approved_body if review else None
-        if (
-            status == "approved"
-            and approved_body
-            and self._feedback_tracker is not None
-            and self._langfuse_tracer is not None
-        ):
-            draft = state.get("draft")
-            draft_body = draft.body if draft is not None else ""
-            self._feedback_tracker.record(
-                email.correlation_id,
-                draft_body,
-                approved_body,
-                self._langfuse_tracer,
-            )
-        return {
-            "review": ReviewStatus(
-                correlation_id=email.correlation_id,
-                status=status,
-                approved_body=review.approved_body if review else None,
-            ),
-        }
 
 
 def _intent_str(intent_val: object | None) -> str | None:

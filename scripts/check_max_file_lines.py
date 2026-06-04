@@ -11,15 +11,6 @@ EXTENSIONS = {".py", ".ts", ".tsx"}
 SKIP_FILES = {
     "scripts/restructure_backend.py",
     "scripts/restructure_frontend.py",
-    # MVP step 4/5 branch: split before merging to main (see ARCHITECTURE.md)
-    "backend/ai/workflows/nodes/pipeline.py",
-    "backend/api/services/admin_overview_queries.py",
-    "frontend/src/features/admin/AdminLlmConfigPage.tsx",
-    "frontend/src/features/settings/SettingsPage.tsx",
-    "frontend/src/features/workflows/WorkflowsPage.tsx",
-    "frontend/src/lib/types/api.ts",
-    "tests/test_workflow.py",
-    "tests/web/test_mail_api.py",
 }
 SKIP_DIRS = {
     ".git",

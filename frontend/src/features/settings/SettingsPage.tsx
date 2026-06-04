@@ -12,6 +12,8 @@ import {
   testWhatsApp,
   wipeAllData,
 } from "@/lib/api/settings";
+import { SettingsDangerZone } from "@/features/settings/SettingsDangerZone";
+import { SettingsWhatsAppCard } from "@/features/settings/SettingsWhatsAppCard";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
@@ -168,77 +170,22 @@ export function SettingsPage() {
         </label>
       </Card>
 
-      <Card className="space-y-4">
-        <h3 className="font-medium text-slate-800">WhatsApp (Meta Cloud API)</h3>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            checked={whatsappEnabled}
-            onChange={(e) => setWhatsappEnabled(e.target.checked)}
-          />
-          WhatsApp-Versand aktiv
-        </label>
-        <label className="block text-sm text-slate-600">
-          Access Token
-          {data?.whatsapp_access_token_set && (
-            <span className="ml-2 text-xs text-green-700">(hinterlegt)</span>
-          )}
-          <Input
-            className="mt-1"
-            type="password"
-            value={accessToken}
-            onChange={(e) => setAccessToken(e.target.value)}
-            placeholder={
-              data?.whatsapp_access_token_set
-                ? "Leer lassen = unverändert"
-                : "Meta Access Token"
-            }
-          />
-        </label>
-        <label className="block text-sm text-slate-600">
-          Phone Number ID (nur Ziffern, aus Meta API Setup)
-          <Input
-            className="mt-1"
-            value={phoneNumberId}
-            onChange={(e) => setPhoneNumberId(e.target.value)}
-            placeholder="123456789012345"
-          />
-        </label>
-        <label className="block text-sm text-slate-600">
-          Standard-Empfänger (kommagetrennt, E.164)
-          <Input
-            className="mt-1"
-            value={defaultRecipients}
-            onChange={(e) => setDefaultRecipients(e.target.value)}
-            placeholder="+491701234567"
-          />
-        </label>
-        <label className="block text-sm text-slate-600">
-          Test-Empfänger (hello_world)
-          <Input
-            className="mt-1"
-            value={testRecipient}
-            onChange={(e) => setTestRecipient(e.target.value)}
-            placeholder="+491701234567"
-          />
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => testMut.mutate()}
-            disabled={testMut.isPending}
-          >
-            WhatsApp-Verbindung testen
-          </Button>
-        </div>
-        {testMessage && (
-          <p
-            className={`text-sm ${testMessage.startsWith("Test erfolgreich") ? "text-green-700" : "text-red-600"}`}
-          >
-            {testMessage}
-          </p>
-        )}
-      </Card>
+      <SettingsWhatsAppCard
+        data={data}
+        whatsappEnabled={whatsappEnabled}
+        onWhatsappEnabledChange={setWhatsappEnabled}
+        accessToken={accessToken}
+        onAccessTokenChange={setAccessToken}
+        phoneNumberId={phoneNumberId}
+        onPhoneNumberIdChange={setPhoneNumberId}
+        defaultRecipients={defaultRecipients}
+        onDefaultRecipientsChange={setDefaultRecipients}
+        testRecipient={testRecipient}
+        onTestRecipientChange={setTestRecipient}
+        testPending={testMut.isPending}
+        onTest={() => testMut.mutate()}
+        testMessage={testMessage}
+      />
 
       <Card className="space-y-4">
         <div className="flex items-center justify-between gap-2">
@@ -306,25 +253,12 @@ export function SettingsPage() {
       </div>
       {saveMessage && <p className="text-sm text-slate-700">{saveMessage}</p>}
 
-      <Card className="space-y-3 border-red-200 bg-red-50">
-        <h3 className="font-medium text-red-800">Gefahrenzone</h3>
-        <p className="text-sm text-red-700">
-          Löscht alle E-Mails, Reviews, Metriken und gespeicherten
-          Einstellungen. Login-Benutzer bleiben erhalten.
-        </p>
-        <Input
-          value={wipeConfirm}
-          onChange={(e) => setWipeConfirm(e.target.value)}
-          placeholder='Tippe "ALLE DATEN LOESCHEN" zur Bestätigung'
-        />
-        <Button
-          variant="danger"
-          disabled={wipeConfirm !== "ALLE DATEN LOESCHEN" || wipeMut.isPending}
-          onClick={() => wipeMut.mutate()}
-        >
-          Alle Daten löschen
-        </Button>
-      </Card>
+      <SettingsDangerZone
+        wipeConfirm={wipeConfirm}
+        onWipeConfirmChange={setWipeConfirm}
+        onWipe={() => wipeMut.mutate()}
+        wipePending={wipeMut.isPending}
+      />
     </div>
   );
 }
