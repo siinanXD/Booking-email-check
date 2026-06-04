@@ -123,8 +123,8 @@ def test_live_tenant_workflow_in_pipeline(
     )
     payload = IncomingEmail(
         message_id="live-wf-1",
-        from_address="shop@example.com",
-        subject="Ihre Bestellung ORD-9912",
+        from_address="shop@notifications.booking.com",
+        subject="Ihre Bestellung Buchung ORD-9912",
         body_text="Bestellnummer ORD-9912 vom ExampleShop.",
         received_at=datetime.now(UTC),
         account_id="tenant-live",

@@ -36,3 +36,31 @@ Trefferquote in der Konsole, z. B.:
 ## Schwellwert (nur Mock)
 
 `EVAL_MIN_CASE_RATE=1.0` (Default) – unterhalb schlägt pytest fehl.
+
+## Eval-Fälle (Stand)
+
+`cases.json` enthält **10** anonymisierte Fälle (`eval-001` … `eval-010`), u. a.:
+
+| ID | Intent | Schwerpunkt |
+|----|--------|-------------|
+| eval-001 | new_booking | Daten + Gästezahl |
+| eval-002 | cancellation | Buchungsnummer |
+| eval-006 | change | Check-in-Verschiebung |
+| eval-008 | guest_inquiry | Relay-Absender |
+| eval-009 | complaint | Gastname + Buchungsnr. |
+| eval-010 | new_booking | Direktbuchung |
+
+Neue Produktionsmails: JSON-Eintrag ergänzen, Mock-Lauf grün halten, dann optional Live-Baseline.
+
+## Live-Baseline (Owner, lokal)
+
+Nach Änderungen an Prompts oder `cases.json`:
+
+```bash
+set EVAL_LLM_MODE=live
+set OPENAI_API_KEY=sk-...
+pytest tests/eval/test_offline_eval.py -v -s --no-cov
+```
+
+Ergebnis (z. B. `field_accuracy`, `case_hit_rate`) hier oder im PR-Kommentar festhalten.
+**Mock=1.0** bedeutet nicht, dass Live=1.0 ist — Live misst Modellqualität.

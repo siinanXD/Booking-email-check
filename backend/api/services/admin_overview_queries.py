@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Literal
+from typing import Any, Literal
 
 from backend.api.schemas.accounts import AccountListItem
 from backend.api.schemas.admin_overview import (
@@ -159,7 +159,7 @@ def _account_tokens(
     start: datetime,
     end: datetime,
 ) -> int:
-    pipeline = [
+    pipeline: list[dict[str, Any]] = [
         {
             "$match": {
                 "account_id": account_id,
