@@ -4,10 +4,12 @@ import type { EmailListItem } from "@/lib/types/api";
 export function EmailTable({
   items,
   onRowClick,
+  selectedCorrelationId,
   emptyMessage = "Keine Einträge",
 }: {
   items: EmailListItem[];
   onRowClick?: (item: EmailListItem) => void;
+  selectedCorrelationId?: string | null;
   emptyMessage?: string;
 }) {
   if (items.length === 0) {
@@ -34,6 +36,7 @@ export function EmailTable({
             <EmailRow
               key={item.correlation_id}
               item={item}
+              selected={item.correlation_id === selectedCorrelationId}
               onClick={onRowClick ? () => onRowClick(item) : undefined}
             />
           ))}

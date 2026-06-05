@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -59,49 +60,75 @@ class MailPollService:
         self,
         *,
         account_ids: list[str] | None = None,
+        max_workers: int = 1,
     ) -> MailPollBatchResult:
-        """Pollt alle aktiven Mandanten mit konfiguriertem Postfach."""
+        """Pollt alle aktiven Mandanten mit konfiguriertem Postfach.
+
+        max_workers > 1 aktiviert paralleles Polling (ThreadPoolExecutor).
+        Jeder Account ist per thread_id isoliert; MongoClient ist thread-safe.
+        """
         active_ids = {a.id for a in self._account_repo.list_by_status("active")}
         pollable = self._mail_repo.list_pollable()
         if account_ids is not None:
             allowed = set(account_ids)
             pollable = [r for r in pollable if r.account_id in allowed]
 
+        active_pollable = [r for r in pollable if r.account_id in active_ids]
+        for r in pollable:
+            if r.account_id not in active_ids:
+                logger.debug("Skip poll for account %s (not active)", r.account_id)
+
         summaries: list[AccountPollSummary] = []
         total_processed = 0
 
-        for record in pollable:
-            if record.account_id not in active_ids:
-                logger.debug(
-                    "Skip poll for account %s (not active)",
-                    record.account_id,
-                )
-                continue
-
-            summary = self._poll_account(record.account_id, record.provider)
-            summaries.append(summary)
-            total_processed += summary.processed
-            self._update_connection_status(record.account_id, summary)
-            if summary.fetch_error is None:
-                self._account_repo.mark_initial_sync_completed(record.account_id)
-
-            logger.info(
-                (
-                    "Polled account=%s provider=%s processed=%s "
-                    "duplicates=%s errors=%s fetch_error=%s"
-                ),
-                record.account_id,
-                record.provider,
-                summary.processed,
-                summary.duplicates,
-                len(summary.item_errors),
-                summary.fetch_error,
-            )
+        if max_workers <= 1:
+            for record in active_pollable:
+                summary = self._poll_account(record.account_id, record.provider)
+                summaries.append(summary)
+                total_processed += summary.processed
+                self._finalize_account(record.account_id, summary)
+        else:
+            with ThreadPoolExecutor(max_workers=max_workers) as pool:
+                futures = {
+                    pool.submit(self._poll_account, r.account_id, r.provider): r
+                    for r in active_pollable
+                }
+                for fut in as_completed(futures):
+                    record = futures[fut]
+                    try:
+                        summary = fut.result()
+                    except Exception as exc:  # noqa: BLE001
+                        summary = AccountPollSummary(
+                            account_id=record.account_id,
+                            provider=record.provider,
+                            processed=0,
+                            duplicates=0,
+                            fetch_error=str(exc),
+                        )
+                    summaries.append(summary)
+                    total_processed += summary.processed
+                    self._finalize_account(record.account_id, summary)
 
         return MailPollBatchResult(
             accounts_polled=len(summaries),
             total_processed=total_processed,
             summaries=summaries,
+        )
+
+    def _finalize_account(self, account_id: str, summary: AccountPollSummary) -> None:
+        """Schreibt Status und loggt Ergebnis nach dem Poll."""
+        self._update_connection_status(account_id, summary)
+        if summary.fetch_error is None:
+            self._account_repo.mark_initial_sync_completed(account_id)
+        logger.info(
+            "Polled account=%s provider=%s processed=%s duplicates=%s "
+            "errors=%s fetch_error=%s",
+            account_id,
+            summary.provider,
+            summary.processed,
+            summary.duplicates,
+            len(summary.item_errors),
+            summary.fetch_error,
         )
 
     def _poll_account(self, account_id: str, provider: str) -> AccountPollSummary:

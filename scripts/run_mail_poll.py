@@ -71,7 +71,7 @@ def run_poll() -> int:
     )
     ctx = build_app_context(settings)
     service = build_mail_poll_service_from_context(ctx, settings)
-    result = service.run_all()
+    result = service.run_all(max_workers=settings.mail_poll_max_workers)
     for summary in result.summaries:
         if summary.fetch_error:
             logger.error(

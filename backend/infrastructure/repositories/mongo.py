@@ -2,16 +2,49 @@
 
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
 
-from pymongo import MongoClient
+from pymongo import MongoClient, monitoring
 from pymongo.database import Database
 
 if TYPE_CHECKING:
     from backend.core.config.settings import Settings
 
+logger = logging.getLogger(__name__)
+
 Db: TypeAlias = Database[dict[str, object]]
+
+_SLOW_QUERY_THRESHOLD_MS = 100
+
+
+class _SlowQueryLogger(monitoring.CommandListener):  # type: ignore[misc]
+    """Loggt MongoDB-Kommandos die das Schwellenlimit überschreiten."""
+
+    def started(self, event: Any) -> None:  # noqa: ANN401
+        pass
+
+    def succeeded(self, event: Any) -> None:
+        ms = event.duration_micros / 1000
+        if ms > _SLOW_QUERY_THRESHOLD_MS:
+            logger.warning(
+                "Slow MongoDB %s: %.0fms (request_id=%s)",
+                event.command_name,
+                ms,
+                event.request_id,
+            )
+
+    def failed(self, event: Any) -> None:
+        logger.error(
+            "MongoDB command failed: %s (request_id=%s, failure=%s)",
+            event.command_name,
+            event.request_id,
+            event.failure,
+        )
+
+
+monitoring.register(_SlowQueryLogger())
 
 
 @lru_cache(maxsize=4)

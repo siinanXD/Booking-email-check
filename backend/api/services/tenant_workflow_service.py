@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from backend.ai.services.gemini_setup import gemini_available, gemini_configured
+from backend.ai.services.ocr_service import ocr_available
 from backend.ai.services.tenant_workflow_gemini import gemini_ready
 from backend.ai.services.tenant_workflow_suggest_gemini import (
     SuggestRequiresGeminiError,
-    gemini_required_message,
     mock_suggest_from_example,
     run_gemini_suggest_from_example,
 )
@@ -39,6 +39,7 @@ from backend.api.services.tenant_workflow_suggest_fallback import (
     _llm_suggest,
     _mock_suggest,
 )
+from backend.api.services.tenant_workflow_suggest_ocr import run_ocr_suggest
 from backend.core.config.factory import AppContext
 from backend.core.config.settings import Settings
 
@@ -49,6 +50,7 @@ def gemini_status(settings: Settings, ctx: AppContext) -> GeminiStatusResponse:
         configured=gemini_configured(settings),
         available=gemini_available(settings),
         model=settings.gemini_model_extract,
+        ocr_available=ocr_available(),
     )
 
 
@@ -160,13 +162,18 @@ def suggest_workflow(
     if body.attachments:
         if settings.llm_mode.strip().lower() == "mock":
             return mock_suggest_from_example(body)
-        if not gemini_ready(settings, ctx.gemini_client):
-            raise SuggestRequiresGeminiError(gemini_required_message())
-        assert ctx.gemini_client is not None
-        return run_gemini_suggest_from_example(
-            gemini=ctx.gemini_client,
-            settings=settings,
-            body=body,
+        if gemini_ready(settings, ctx.gemini_client):
+            assert ctx.gemini_client is not None
+            return run_gemini_suggest_from_example(
+                gemini=ctx.gemini_client,
+                settings=settings,
+                body=body,
+            )
+        if ocr_available():
+            return run_ocr_suggest(ctx, settings, body)
+        raise SuggestRequiresGeminiError(
+            "Für Vorschläge aus Bildern wird GEMINI_API_KEY oder PaddleOCR benötigt. "
+            "Alternativ nur Text-Beschreibung nutzen."
         )
     if settings.llm_mode.strip().lower() == "mock":
         return _mock_suggest(body)

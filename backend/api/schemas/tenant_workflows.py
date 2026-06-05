@@ -215,6 +215,7 @@ class GeminiStatusResponse(BaseModel):
     configured: bool
     available: bool
     model: str
+    ocr_available: bool = False
 
 
 class TenantWorkflowTestCaseResult(BaseModel):

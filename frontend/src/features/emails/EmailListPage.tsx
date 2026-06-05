@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchBookings, fetchEmails, type EmailListParams } from "@/lib/api/emails";
 import { defaultDateRange, dateRangeQueryParams } from "@/lib/dateRange";
+import type { EmailListItem } from "@/lib/types/api";
 import { DateRangeFilter } from "@/shared/components/DateRangeFilter";
+import { EmailDetailSideCard } from "@/shared/components/EmailDetailSideCard";
 import { EmailTable } from "@/shared/components/EmailTable";
 import { Input } from "@/shared/ui/Input";
 
@@ -22,6 +24,7 @@ export function EmailListPage({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState(defaultDateRange);
+  const [selected, setSelected] = useState<EmailListItem | null>(null);
 
   const queryParams: EmailListParams = {
     ...params,
@@ -63,8 +66,14 @@ export function EmailListPage({
               Gasttext (Name, E-Mail, Buchungswunsch), nicht nur PMS-Mails.
             </p>
           )}
-          <EmailTable items={data?.items ?? []} />
-          {data && data.pages > 1 && (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            <div className="space-y-4">
+              <EmailTable
+                items={data?.items ?? []}
+                selectedCorrelationId={selected?.correlation_id}
+                onRowClick={(item) => setSelected(item)}
+              />
+              {data && data.pages > 1 && (
             <div className="flex items-center justify-between text-sm text-slate-600">
               <span>
                 Seite {data.page} von {data.pages} ({data.total} gesamt)
@@ -88,7 +97,10 @@ export function EmailListPage({
                 </button>
               </div>
             </div>
-          )}
+              )}
+            </div>
+            <EmailDetailSideCard selected={selected} />
+          </div>
         </>
       )}
     </div>
