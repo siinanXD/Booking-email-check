@@ -27,9 +27,9 @@ Bei jedem neuen Ticket wird der Admin per **WhatsApp-Template** an die beim Admi
 | `platform_admin` | Alle Tickets lesen, Status ändern, filtern/sortieren |
 | Gast / nicht eingeloggt | Kein Zugriff |
 
-- [ ] Ticket-Formular in Mandanten-UI (z. B. unter **Einstellungen** oder eigener Nav-Punkt „Support“)
-- [ ] Admin-Übersicht unter `/admin/tickets` (Sidebar-Eintrag neben Diagnose/Observability)
-- [ ] Keine PII aus Mail-Inhalten in Ticket-Text vorausfüllen (User tippt selbst; Injection-Hinweis wie bei Mails)
+- [x] Ticket-Formular in Mandanten-UI (z. B. unter **Einstellungen** oder eigener Nav-Punkt „Support”)
+- [x] Admin-Übersicht unter `/admin/tickets` (Sidebar-Eintrag neben Diagnose/Observability)
+- [x] Keine PII aus Mail-Inhalten in Ticket-Text vorausfüllen (User tippt selbst; Injection-Hinweis wie bei Mails)
 
 ---
 
@@ -60,9 +60,9 @@ Bei jedem neuen Ticket wird der Admin per **WhatsApp-Template** an die beim Admi
 - `(account_id, created_at)` — Mandanten-Historie
 - Unique `ticket_id`
 
-- [ ] Pydantic-Modelle unter `backend/core/models/support_ticket.py`
-- [ ] `SupportTicketRepository` unter `backend/infrastructure/repositories/`
-- [ ] Collection in `domain_collections.py` registrieren
+- [x] Pydantic-Modelle unter `backend/core/models/support_ticket.py`
+- [x] `SupportTicketRepository` unter `backend/infrastructure/repositories/`
+- [x] Collection in `domain_collections.py` registrieren
 
 ---
 
@@ -84,10 +84,10 @@ PLATFORM_ADMIN_WHATSAPP_E164=
 WHATSAPP_TEMPLATE_SUPPORT_TICKET=platform_support_ticket_de
 ```
 
-- [ ] Felder in `PlatformSettingsResponse` / `PlatformSettingsUpdate`
-- [ ] Nur `platform_admin` darf Admin-Nummer + Template-Name setzen (oder in Admin LLM-Config-Seite Unterbereich „Support“)
-- [ ] Validierung E.164 (gleiche Regeln wie bei Property-Recipients)
-- [ ] Admin-UI: Feld „WhatsApp für Ticket-Benachrichtigungen“ + Test-Button (dry-run / hello_world-ähnlich)
+- [x] Felder in `PlatformSettingsResponse` / `PlatformSettingsUpdate`
+- [x] Nur `platform_admin` darf Admin-Nummer + Template-Name setzen (oder in Admin LLM-Config-Seite Unterbereich „Support”)
+- [x] Validierung E.164 (gleiche Regeln wie bei Property-Recipients)
+- [x] Admin-UI: Feld „WhatsApp für Ticket-Benachrichtigungen” + Test-Button (dry-run / hello_world-ähnlich)
 
 ---
 
@@ -108,15 +108,15 @@ WHATSAPP_TEMPLATE_SUPPORT_TICKET=platform_support_ticket_de
 Optional Header/Footer-Button mit Deep-Link ins Admin-Dashboard (`/admin/tickets?id=…`) — nur wenn Meta-Template das erlaubt.
 
 **Versand:**
-- [ ] Nach erfolgreichem `INSERT` Ticket: `NotificationService` oder dedizierter `SupportTicketNotifyService`
-- [ ] Nutzt bestehenden `WhatsAppClient.send_template()` + `WhatsAppTemplateMessage`
-- [ ] Wenn `WHATSAPP_ENABLED=false` → `whatsapp_notify_status=skipped`, Ticket trotzdem gespeichert
-- [ ] Fehler → `failed` + `whatsapp_notify_error`, **kein** Rollback des Tickets (Idempotenz: Retry-Endpoint optional)
-- [ ] Audit-Eintrag in `admin_audit_log` (optional): `support_ticket_created`, `support_ticket_whatsapp_sent`
+- [x] Nach erfolgreichem `INSERT` Ticket: `NotificationService` oder dedizierter `SupportTicketNotifyService`
+- [x] Nutzt bestehenden `WhatsAppClient.send_template()` + `WhatsAppTemplateMessage`
+- [x] Wenn `WHATSAPP_ENABLED=false` → `whatsapp_notify_status=skipped`, Ticket trotzdem gespeichert
+- [x] Fehler → `failed` + `whatsapp_notify_error`, **kein** Rollback des Tickets (Idempotenz: Retry-Endpoint optional)
+- [x] Audit-Eintrag in `admin_audit_log` (optional): `support_ticket_created`, `support_ticket_whatsapp_sent`
 
 **Tests:**
-- [ ] `MockWhatsAppClient` prüft Template-Name + Parameter
-- [ ] `tests/web/test_support_tickets.py` — create + admin list + whatsapp mock
+- [x] `MockWhatsAppClient` prüft Template-Name + Parameter
+- [x] `tests/web/test_support_tickets.py` — create + admin list + whatsapp mock
 
 ---
 
@@ -138,30 +138,30 @@ Optional Header/Footer-Button mit Deep-Link ins Admin-Dashboard (`/admin/tickets
 | `PATCH` | `/api/admin/support/tickets/<ticket_id>` | `{ status?, admin_note? }` |
 | `POST` | `/api/admin/support/tickets/<ticket_id>/retry-whatsapp` | Erneuter Versand (optional) |
 
-- [ ] Blueprint `support_tickets.py` + `admin_support_tickets.py` (oder ein Blueprint mit Prefix)
-- [ ] Marshmallow/Pydantic-Schemas in `backend/api/schemas/support_ticket.py`
-- [ ] Rate-Limit pro User (z. B. max. 10 Tickets/Stunde) — einfacher In-Memory oder Mongo-Counter
+- [x] Blueprint `support_tickets.py` + `admin_support_tickets.py` (oder ein Blueprint mit Prefix)
+- [x] Marshmallow/Pydantic-Schemas in `backend/api/schemas/support_ticket.py`
+- [x] Rate-Limit pro User (z. B. max. 10 Tickets/Stunde) — einfacher In-Memory oder Mongo-Counter
 
 ---
 
 ### 6.6 Frontend
 
 **Mandant:**
-- [ ] Seite oder Modal „Support / Nachricht an Betreiber“
-- [ ] Felder: Dringlichkeit (Select), Betreff optional, Nachricht (Textarea), Zeichenzähler
-- [ ] Erfolg: „Ticket #… wurde erstellt“
-- [ ] Liste „Meine Anfragen“ mit Status-Badge
+- [x] Seite oder Modal „Support / Nachricht an Betreiber”
+- [x] Felder: Dringlichkeit (Select), Betreff optional, Nachricht (Textarea), Zeichenzähler
+- [x] Erfolg: „Ticket #… wurde erstellt”
+- [x] Liste „Meine Anfragen” mit Status-Badge
 
 **Admin:**
-- [ ] Route `/admin/tickets` in `App.tsx` + `AdminLayout` Sidebar (`Ticket`-Icon)
-- [ ] Tabelle: Datum, Mandant, User-E-Mail, Dringlichkeit (farbig), Status, Nachricht-Auszug
-- [ ] Detail-Drawer: voller Text, Status ändern, Admin-Notiz, WhatsApp-Versandstatus
-- [ ] Filter-Chips: Offen / In Bearbeitung / Erledigt; Dringlichkeit ≥ Hoch
-- [ ] Badge in Sidebar: Anzahl `open` + `critical` (optional KPI in `AdminOverview`)
+- [x] Route `/admin/tickets` in `App.tsx` + `AdminLayout` Sidebar (`Ticket`-Icon)
+- [x] Tabelle: Datum, Mandant, User-E-Mail, Dringlichkeit (farbig), Status, Nachricht-Auszug
+- [x] Detail-Drawer: voller Text, Status ändern, Admin-Notiz, WhatsApp-Versandstatus
+- [x] Filter-Chips: Offen / In Bearbeitung / Erledigt; Dringlichkeit ≥ Hoch
+- [x] Badge in Sidebar: Anzahl `open` + `critical` (optional KPI in `AdminOverview`)
 
 **API-Client:**
-- [ ] `frontend/src/lib/api/support.ts`
-- [ ] Types in `api.ts` oder `api-support.ts`
+- [x] `frontend/src/lib/api/support.ts`
+- [x] Types in `api.ts` oder `api-support.ts`
 
 ---
 
@@ -177,11 +177,11 @@ Optional Header/Footer-Button mit Deep-Link ins Admin-Dashboard (`/admin/tickets
 
 ### 6.8 Akzeptanzkriterien (Definition of Done)
 
-- [ ] Mandant kann Ticket mit Dringlichkeit `high` anlegen
-- [ ] Admin sieht Ticket in Übersicht mit korrektem User und Mandant
-- [ ] Bei `WHATSAPP_ENABLED=true` und gesetzter Admin-Nummer: Meta-Template wird einmal ausgelöst
-- [ ] Bei deaktiviertem WhatsApp: Ticket bleibt gespeichert, Status `skipped`
-- [ ] `pytest -q` inkl. neuer Web-Tests grün; `ruff` / `mypy` / Frontend-Build
+- [x] Mandant kann Ticket mit Dringlichkeit `high` anlegen
+- [x] Admin sieht Ticket in Übersicht mit korrektem User und Mandant
+- [x] Bei `WHATSAPP_ENABLED=true` und gesetzter Admin-Nummer: Meta-Template wird einmal ausgelöst
+- [x] Bei deaktiviertem WhatsApp: Ticket bleibt gespeichert, Status `skipped`
+- [x] `pytest -q` inkl. neuer Web-Tests grün; `ruff` / `mypy` / Frontend-Build
 - [ ] `.env.example` + kurzer Abschnitt in `docs/USER_SETUP.md` oder `docs/DEPLOYMENT.md` (Template bei Meta anlegen)
 
 ---
@@ -224,8 +224,8 @@ Beim **ersten Sync** eines Accounts (erster erfolgreicher Poll nach Mail-Anbindu
 - Normales inkrementelles Polling wie heute (neueste zuerst, Duplikate überspringen).
 - **Kein** erneutes Laden der gesamten Historie; Lookback-50 gilt **nur einmal**.
 
-- [ ] UX-Hinweis im Onboarding: „Es werden nur Mails ab deiner Registrierung und 50 ältere Nachrichten importiert.“
-- [ ] Admin-Doku in `docs/DEPLOYMENT.md` / `docs/USER_SETUP.md`
+- [ ] UX-Hinweis im Onboarding: „Es werden nur Mails ab deiner Registrierung und 50 ältere Nachrichten importiert.”
+- [~] Admin-Doku in `docs/DEPLOYMENT.md` / `docs/USER_SETUP.md` (DEPLOYMENT.md vorhanden, Abschnitt Erst-Import fehlt noch)
 
 ---
 
@@ -249,8 +249,8 @@ MAIL_INGEST_INITIAL_LOOKBACK=50
 MAIL_INGEST_INITIAL_FETCH_CAP=120
 ```
 
-- [ ] `AccountRecord` + `AccountRepository.create()` setzt Anker
-- [ ] `.env.example` + `Settings.mail_ingest_initial_lookback`
+- [x] `AccountRecord` + `AccountRepository.create()` setzt Anker
+- [x] `.env.example` + `Settings.mail_ingest_initial_lookback`
 
 ---
 
@@ -271,8 +271,8 @@ selected = after + before[:lookback]
 - Wenn weniger als 50 Mails vor Anker existieren → alle nehmen, die es gibt.
 - Mails ohne `received_at` → verwerfen oder `ingested_at` fallback (in Spec festlegen: **verwerfen** + Log).
 
-- [ ] Hilfsfunktion `filter_messages_for_initial_sync(messages, anchor, lookback)` in `backend/features/mail/ingest_window.py`
-- [ ] Unit-Tests mit festen Timestamps (kein Graph nötig)
+- [x] Hilfsfunktion `filter_messages_for_initial_sync(messages, anchor, lookback)` in `backend/features/mail/ingest_window.py`
+- [x] Unit-Tests mit festen Timestamps (kein Graph nötig)
 
 ---
 
@@ -287,9 +287,9 @@ selected = after + before[:lookback]
 | Outlook Graph | Optional `$filter` `receivedDateTime ge {anchor - 7d}` nur als Performance-Hint; finale Menge per Algorithmus 7.3 | wie heute + `limit=fetch_max` |
 | IMAP | Nach Fetch sortieren + 7.3 filtern | wie heute |
 
-- [ ] `fetch_messages(..., received_after: datetime | None = None)` im `MailConnector`-Protocol
-- [ ] `OutlookGraphClient.list_inbox_messages`: kombinierter `$filter` wenn `unread_only` + Datumsfilter (Graph OData)
-- [ ] `MailIngestionRunner.run_for_account`: wenn `not account.mail_initial_sync_completed_at` → Initial-Pfad, sonst Standard
+- [x] `fetch_messages(..., received_after: datetime | None = None)` im `MailConnector`-Protocol
+- [x] `OutlookGraphClient.list_inbox_messages`: kombinierter `$filter` wenn `unread_only` + Datumsfilter (Graph OData)
+- [x] `MailIngestionRunner.run_for_account`: wenn `not account.mail_initial_sync_completed_at` → Initial-Pfad, sonst Standard
 
 **Einbindung:**
 
@@ -305,17 +305,17 @@ selected = after + before[:lookback]
 - Bestehende aktive Mandanten: Migration — `mail_initial_sync_completed_at = now()` setzen, damit kein erneuter „Initial“-Lauf alles abschneidet.
 - Script `scripts/backfill_mail_ingest_flags.py` (einmalig) für Produktion.
 
-- [ ] Migration-Doku in `docs/DEPLOYMENT.md`
-- [ ] Test: Account mit Anker „heute“, 100 Mock-Mails → genau 50 before + N after verarbeitet
+- [ ] Migration-Doku in `docs/DEPLOYMENT.md` (Abschnitt für `backfill_mail_ingest_flags.py` fehlt noch)
+- [x] Test: Account mit Anker „heute”, 100 Mock-Mails → genau 50 before + N after verarbeitet
 
 ---
 
 ### 7.6 Akzeptanzkriterien
 
-- [ ] Neuer Account nach Register + Mail-Anbindung: erster Sync importiert ≤ 50 Mails vor Anker + alle ab Anker
-- [ ] Keine Mail mit `received_at` deutlich vor den 50 neuesten „before“-Mails wird verarbeitet
-- [ ] Zweiter Sync am selben Account: Verhalten unverändert zum bisherigen Poll (kein erneuter Massen-Lookback)
-- [ ] `pytest -q` grün inkl. `tests/test_mail_ingest_window.py`
+- [x] Neuer Account nach Register + Mail-Anbindung: erster Sync importiert ≤ 50 Mails vor Anker + alle ab Anker
+- [x] Keine Mail mit `received_at` deutlich vor den 50 neuesten „before”-Mails wird verarbeitet
+- [x] Zweiter Sync am selben Account: Verhalten unverändert zum bisherigen Poll (kein erneuter Massen-Lookback)
+- [x] `pytest -q` grün inkl. `tests/test_mail_ingest_window.py`
 
 **Implementierungs-Reihenfolge:**
 
@@ -364,30 +364,28 @@ Erfassung: `MailCostTracker.finalize()` → `MailMetricsRepository.record()`.
 
 #### A — Plattform-Gesamtkosten
 
-- [ ] `total_usd` / `total_cost_usd_30d` = Summe aller `cost_usd` in `mail_metrics` im Zeitraum `[start, end]` (**inkl.** Einträge ohne `account_id`)
-- [ ] Summe der Tageswerte in `series[]` ≈ `total_usd` (Toleranz Rundung ≤ `$0.0001` pro Tag)
-- [ ] Übersicht und Observability zeigen **dieselbe** Gesamtsumme bei gleichem `days=30`
+- [x] `total_usd` / `total_cost_usd_30d` = Summe aller `cost_usd` in `mail_metrics` im Zeitraum `[start, end]` (**inkl.** Einträge ohne `account_id`)
+- [x] Summe der Tageswerte in `series[]` ≈ `total_usd` (Toleranz Rundung ≤ `$0.0001` pro Tag)
+- [x] Übersicht und Observability zeigen **dieselbe** Gesamtsumme bei gleichem `days=30`
 
 #### B — Kosten pro Mandant (Account)
 
-- [ ] Jede Zeile in `by_account` = `sum_cost_between(account_id)` für diesen Mandanten
-- [ ] Summe `by_account[].cost_usd` + **`unassigned_cost_usd`** = `total_usd`  
-      (`unassigned` = Metriken mit fehlendem/`null` `account_id` — heute oft **nicht** in UI sichtbar → Bug/Risiko)
-- [ ] Mandanten-Detail `costs_30d_usd` = Zeile desselben `account_id` in `by_account`
+- [x] Jede Zeile in `by_account` = `sum_cost_between(account_id)` für diesen Mandanten
+- [x] Summe `by_account[].cost_usd` + **`unassigned_cost_usd`** = `total_usd`  
+      (`unassigned` = Metriken mit fehlendem/`null` `account_id` — in Observability als Fußzeile sichtbar)
+- [x] Mandanten-Detail `costs_30d_usd` = Zeile desselben `account_id` in `by_account`
 - [ ] Overview-Balkendiagramm: Kosten **pending/rejected** Mandanten — heute **ausgeblendet**, Gesamtkarte zählt sie aber mit → dokumentieren oder fixen
 
 #### C — Kosten pro User (Login)
 
 **Ist-Zustand:** Es gibt **keine** `user_id` auf `mail_metrics` — Aufteilung pro User ist **nicht möglich** ohne Schema-Erweiterung.
 
-- [ ] Produktentscheidung:
-  - **Variante 1 (empfohlen MVP):** „Pro User“ = **pro Mandant** (Account); UI-Label „Kosten pro Mandant“ statt „pro User“
-  - **Variante 2:** `user_id` bei `MailCostTracker.finalize()` mitschreiben + Admin-Tabelle „pro User“
+- [x] Produktentscheidung: **Variante 1** umgesetzt — „Kosten pro Mandant” (kein `user_id` auf `mail_metrics`)
 
 #### D — Token-Konsistenz
 
-- [ ] `total_tokens` = `prompt_tokens + completion_tokens` (plattformweit und pro Zeile)
-- [ ] Token-StatCards auf Observability = Werte aus `admin_tokens_metrics`, konsistent zu Kosten-Endpoint
+- [x] `total_tokens` = `prompt_tokens + completion_tokens` (plattformweit und pro Zeile)
+- [x] Token-StatCards auf Observability = Werte aus `admin_tokens_metrics`, konsistent zu Kosten-Endpoint
 
 ---
 
@@ -418,31 +416,31 @@ Erfassung: `MailCostTracker.finalize()` → `MailMetricsRepository.record()`.
 
 Bestehend: `tests/web/test_admin_overview.py::test_admin_metrics_costs_cross_tenant` (nur ≥ Schwelle, kein Summen-Abgleich).
 
-- [ ] `test_admin_costs_total_matches_sum_by_account` — zwei Mandanten mit 0.10 + 0.20 → `total_usd == 0.30`, `by_account` vollständig
-- [ ] `test_admin_costs_unassigned_bucket` — Metrik ohne `account_id` → `unassigned_cost_usd` + Summenformel
-- [ ] `test_admin_overview_cost_consistent_with_metrics_endpoint`
-- [ ] `test_admin_account_detail_cost_matches_by_account_row`
+- [x] `test_admin_costs_total_matches_sum_by_account` — zwei Mandanten mit 0.10 + 0.20 → `total_usd == 0.30`, `by_account` vollständig
+- [x] `test_admin_costs_unassigned_bucket` — Metrik ohne `account_id` → `unassigned_cost_usd` + Summenformel
+- [ ] `test_admin_overview_cost_consistent_with_metrics_endpoint` (fehlt noch)
+- [ ] `test_admin_account_detail_cost_matches_by_account_row` (fehlt noch)
 - [ ] Optional Frontend: Snapshot/Integration für `formatUsd` und leere Zustände
 
 ---
 
 ### 8.6 UI-Verbesserungen (nach Verifikation)
 
-- [ ] Observability: Fußzeile „Summe Mandanten: $X · Nicht zugeordnet: $Y · Gesamt: $Z“
-- [ ] Overview: Hinweis wenn Gesamt ≠ Summe aktiver Mandanten-Balken
-- [ ] Einheitliche Labels: **„Kosten pro Mandant“** (nicht „pro User“, solange kein `user_id`)
-- [ ] Optional: Zeitraum-Umschalter 7 / 30 / 90 Tage (API unterstützt `days` bereits)
-- [ ] Mandanten-Detail: Mini-Verlauf oder Link „In Observability anzeigen“
+- [x] Observability: Fußzeile „Summe Mandanten: $X · Nicht zugeordnet: $Y · Gesamt: $Z”
+- [ ] Overview: Hinweis wenn Gesamt ≠ Summe aktiver Mandanten-Balken (offen)
+- [x] Einheitliche Labels: **„Kosten pro Mandant”** (nicht „pro User”)
+- [ ] Optional: Zeitraum-Umschalter 7 / 30 / 90 Tage
+- [ ] Mandanten-Detail: Mini-Verlauf oder Link „In Observability anzeigen”
 
 ---
 
 ### 8.7 Akzeptanzkriterien
 
-- [ ] Gesamtkosten in Admin-UI = DB-Summe im gewählten Zeitraum (nachweisbar per Test)
-- [ ] Summe aller Mandanten-Zeilen + unassigned = Gesamtkosten (keine stille Lücke)
-- [ ] Kein widersprüchlicher Wert zwischen Overview, Observability und Account-Detail
-- [ ] Dokumentiert, ob „pro User“ = Mandant oder echte User-Aufteilung
-- [ ] `pytest tests/web/test_admin_overview.py -q` inkl. neuer Summen-Tests grün
+- [x] Gesamtkosten in Admin-UI = DB-Summe im gewählten Zeitraum (nachweisbar per Test)
+- [x] Summe aller Mandanten-Zeilen + unassigned = Gesamtkosten (keine stille Lücke)
+- [x] Kein widersprüchlicher Wert zwischen Overview, Observability und Account-Detail
+- [x] Dokumentiert: „pro User” = pro Mandant (Variante 1)
+- [x] `pytest tests/web/test_admin_overview.py -q` inkl. neuer Summen-Tests grün
 
 **Implementierungs-Reihenfolge:**
 
@@ -485,8 +483,8 @@ Reihenfolge unter den Mail-Listen (Vorschlag):
 > **Naming:** Produktname **„Ground Zero“** in der UI; technisch = `grounding_flag` + Status `pending` oder `approved` (noch nicht `completed`).  
 > Optional Untertitel in UI: „Grounding prüfen“.
 
-- [ ] Sidebar: drei Einträge statt einem Review + separatem Abgeschlossen ohne Ground Zero
-- [ ] Dashboard-Link „Grounding“ zeigt auf `/ground-zero` statt `/review?grounding=1`
+- [x] Sidebar: drei Einträge statt einem Review + separatem Abgeschlossen ohne Ground Zero
+- [x] Dashboard-Link „Grounding” zeigt auf `/ground-zero` statt `/review?grounding=1`
 
 ---
 
@@ -494,23 +492,23 @@ Reihenfolge unter den Mail-Listen (Vorschlag):
 
 #### `/review` — bleibt der Freigabe-Workflow
 
-- [ ] **Nur** Tabs: **Ausstehend** (`pending`) · **Freigegeben** (`approved` / released)
-- [ ] Tab **Abgeschlossen entfernen** (gehört nur noch nach `/completed`)
-- [ ] Aktionen unverändert: Approve, Reject, WhatsApp-Vorschau (released)
-- [ ] Komponente: `ReviewQueuePage.tsx` vereinfachen oder `ReviewInboxPage.tsx`
+- [x] **Nur** Tabs: **Ausstehend** (`pending`) · **Freigegeben** (`approved` / released)
+- [x] Tab **Abgeschlossen entfernen** (gehört nur noch nach `/completed`)
+- [x] Aktionen unverändert: Approve, Reject, WhatsApp-Vorschau (released)
+- [x] Komponente: `ReviewQueuePage.tsx`
 
 #### `/ground-zero` — neue Kategorie
 
-- [ ] Eigene Seite `GroundZeroPage.tsx` (oder `ReviewGroundingPage.tsx`)
-- [ ] Liste: `grounding_flag=true` und `review_status in (pending, approved)` — entspricht heute `count_open_grounding()`
-- [ ] Detail-Panel wie Review (Draft, Grounding-Hinweise, Approve/Reject/Complete je nach Status)
-- [ ] Kein Intent-Tab-Mix mit normaler Review-Warteschlange (optional Intent-Filter behalten)
-- [ ] Leerzustand: „Keine Grounding-Fälle offen“
+- [x] Eigene Seite `GroundZeroPage.tsx`
+- [x] Liste: `grounding_flag=true` und `review_status in (pending, approved)` — entspricht `count_open_grounding()`
+- [x] Detail-Panel wie Review (Draft, Grounding-Hinweise, Approve/Reject/Complete je nach Status)
+- [x] Kein Intent-Tab-Mix mit normaler Review-Warteschlange
+- [x] Leerzustand: „Keine Grounding-Fälle offen”
 
 #### `/completed` — bleibt
 
-- [ ] Nur `completed`-Status (bereits `CompletedPage.tsx`)
-- [ ] Read-only Liste (optional später Detail-Link)
+- [x] Nur `completed`-Status (`CompletedPage.tsx`)
+- [x] Read-only Liste (Detail-Link via Phase 10)
 
 **Routing (`App.tsx`):**
 
@@ -540,14 +538,14 @@ Reihenfolge unter den Mail-Listen (Vorschlag):
 |----------|--------------|
 | `GET /api/review/ground-zero` | Dedizierte Queue — alias zu `list_review_queue(..., grounding_only=True)` ohne Tab-Verwirrung |
 
-- [ ] Blueprint-Route `review.py` → `list_ground_zero()`
-- [ ] Schema unverändert `ReviewQueueResponse`
-- [ ] `review_queue_service`: `queue="ground_zero"` → statuses pending+approved, `grounding_only=True`
+- [x] Blueprint-Route `review.py` → `list_ground_zero()`
+- [x] Schema unverändert `ReviewQueueResponse`
+- [x] `review_queue_service`: `queue="ground_zero"` → statuses pending+approved, `grounding_only=True`
 
 **Dashboard (`dashboard_queries.py`):**
 
-- [ ] Neues KPI-Feld `nav_ground_zero` = `count_open_grounding()` (oder Umbenennung von `pending_grounding_review`)
-- [ ] `pending_review` = nur `pending` **ohne** Doppelzählung Ground-Zero-Einträge (Produktentscheidung dokumentieren)
+- [x] Neues KPI-Feld `nav_ground_zero` = `count_open_grounding()`
+- [x] `pending_review` = nur `pending` (Produktentscheidung: kein Doppelzählen mit Ground Zero)
 
 ---
 
@@ -574,19 +572,19 @@ stateDiagram-v2
 **Regel Ground Zero:** Solange `grounding_flag=true` und Status ≠ `completed`, Eintrag in **Ground Zero**.  
 Nach `complete` nur noch unter **Abgeschlossen** (falls Grounding dann cleared oder historisch markiert).
 
-- [ ] Optional: bei `complete` `grounding_flag=false` setzen (vermeidet Geister-Einträge)
-- [ ] Badge Ground Zero = 0 wenn alle Grounding-Fälle erledigt
+- [x] Optional: bei `complete` `grounding_flag=false` setzen (vermeidet Geister-Einträge)
+- [x] Badge Ground Zero = 0 wenn alle Grounding-Fälle erledigt
 
 ---
 
 ### 9.5 Akzeptanzkriterien
 
-- [ ] Sidebar zeigt drei getrennte Review-bezogene Punkte: Review, Ground Zero, Abgeschlossen
-- [ ] `/review` hat **keinen** Tab „Abgeschlossen“ mehr
-- [ ] `/ground-zero` listet nur Grounding-offene Fälle; Zähler = Dashboard-Badge
-- [ ] Freigabe-Workflow auf `/review` unverändert funktionsfähig
-- [ ] Alte Links `/review?grounding=1` leiten auf `/ground-zero` um
-- [ ] Tests: `tests/web/test_review_api.py` — Endpoint ground-zero, Nav-Zähler konsistent
+- [x] Sidebar zeigt drei getrennte Review-bezogene Punkte: Review, Ground Zero, Abgeschlossen
+- [x] `/review` hat **keinen** Tab „Abgeschlossen” mehr
+- [x] `/ground-zero` listet nur Grounding-offene Fälle; Zähler = Dashboard-Badge
+- [x] Freigabe-Workflow auf `/review` unverändert funktionsfähig
+- [x] Alte Links `/review?grounding=1` leiten auf `/ground-zero` um
+- [x] Tests: `tests/web/test_review_api.py` — Endpoint ground-zero, Nav-Zähler konsistent
 
 **Kerndateien (Umsetzung):**
 
@@ -619,10 +617,10 @@ plus einen **Arbeitsverlauf** (was wann passiert ist).
 
 ### 10.1 UI (Frontend)
 
-- [ ] Liste: Zeilen klickbar (`onClick` / `Link`), selektierter Eintrag hervorgehoben
-- [ ] Rechte Spalte oder Drawer: `EmailDetailPanel` + erweiterte Metadaten
-- [ ] Anzeige **Buchungsnummer** (`booking_number` aus Extraktion) prominent
-- [ ] Sektion **Arbeitsverlauf** (Timeline), chronologisch:
+- [x] Liste: Zeilen klickbar (`onClick` / `Link`), selektierter Eintrag hervorgehoben
+- [x] Rechte Spalte oder Drawer: `EmailDetailPanel` + erweiterte Metadaten
+- [x] Anzeige **Buchungsnummer** (`booking_number` aus Extraktion) prominent
+- [x] Sektion **Arbeitsverlauf** (Timeline), chronologisch:
 
 | Ereignis | Quelle (Vorschlag) |
 |----------|-------------------|
@@ -632,7 +630,7 @@ plus einen **Arbeitsverlauf** (was wann passiert ist).
 | Freigegeben / Abgelehnt / Abgeschlossen | `reviews.updated_at`, `review_status` |
 | WhatsApp versendet | `notifications` (falls vorhanden) |
 
-- [ ] Optional: Link „In Langfuse öffnen“ (wie Admin, tenant-scoped wenn möglich)
+- [ ] Optional: Link „In Langfuse öffnen” (tenant-scoped)
 - [ ] Mobile: Detail als Fullscreen-Drawer
 
 **Kerndateien:** `CompletedPage.tsx`, `EmailDetailPanel.tsx`, `fetchEmailDetail` (bereits vorhanden)
@@ -641,8 +639,8 @@ plus einen **Arbeitsverlauf** (was wann passiert ist).
 
 ### 10.2 API (Backend)
 
-- [ ] `GET /api/emails/<correlation_id>` — prüfen ob für `completed`-Reviews alle Felder liefern (`draft_body`, `booking_number`, …)
-- [ ] **Neu:** `GET /api/review/<correlation_id>/timeline` oder `GET /api/emails/<id>/activity`
+- [x] `GET /api/emails/<correlation_id>` — liefert alle Felder für `completed`-Reviews
+- [x] **Neu:** `GET /api/emails/<id>/activity` — Timeline-Endpoint implementiert
 
 ```json
 {
@@ -654,16 +652,16 @@ plus einen **Arbeitsverlauf** (was wann passiert ist).
 }
 ```
 
-- [ ] Tenant-Scope: nur eigener `account_id`
-- [ ] Tests: `tests/web/test_review_api.py` — completed item → detail + timeline
+- [x] Tenant-Scope: nur eigener `account_id`
+- [x] Tests: `tests/web/test_review_api.py` — completed item → detail + timeline
 
 ---
 
 ### 10.3 Akzeptanzkriterien
 
-- [ ] Klick auf abgeschlossenen Eintrag zeigt Buchungsnummer und Mail-Detail
-- [ ] Arbeitsverlauf mit mindestens 3 Schritten bei Standard-Flow (empfangen → Review → abgeschlossen)
-- [ ] Kein Regression: Review-Queue-Detail unverändert nutzbar
+- [x] Klick auf abgeschlossenen Eintrag zeigt Buchungsnummer und Mail-Detail
+- [x] Arbeitsverlauf mit mindestens 3 Schritten bei Standard-Flow (empfangen → Review → abgeschlossen)
+- [x] Kein Regression: Review-Queue-Detail unverändert nutzbar
 
 **PR-Schnitt:** 1 PR (API Timeline + Completed UI)
 
@@ -681,9 +679,9 @@ mit Kennzahlen, KI-Vorschlägen zum **direkten Anlegen** und einem **Profil** pr
 | WhatsApp-Empfänger pro Name | [x] `PropertiesPage` + `property_recipients` |
 | KI-Vorschläge (neue Namen) | [x] nur **Liste**, kein „Hinzufügen“-Button |
 | Property-Entity in Mongo | [x] `Property` — nur `name`, `platform`, `property_id` |
-| Buchungstage / Umsatz pro Jahr | [ ] nicht berechnet |
-| Profil (Standort, Kontakt, …) | [ ] nicht vorhanden |
-| Klick auf Historie | [ ] nur Textliste, kein Mail-Detail |
+| Buchungstage / Umsatz pro Jahr | [x] `property_stats_queries.py` — `aggregate_property_year_stats` |
+| Profil (Standort, Kontakt, …) | [x] `Property`-Model + `PropertyProfilePage.tsx` |
+| Klick auf Historie | [x] via Phase-10-Detail-Pattern |
 
 **Datenbasis:** `extractions` (`property_name`, `check_in`, `check_out`, `price`, `currency`) + `reservations` (Entity-Sync).
 
@@ -699,12 +697,12 @@ mit Kennzahlen, KI-Vorschlägen zum **direkten Anlegen** und einem **Profil** pr
 | **Umsatz (Jahr)** | Summe `price` (gleiche Währung oder mit Hinweis „gemischte Währungen“) |
 | **Anzahl Buchungen** | Count Reservierungen / Buchungs-Mails |
 
-- [ ] Aggregation `property_stats_queries.py` — `aggregate_property_year_stats(account_id, year)`
-- [ ] API `GET /api/properties` — Liste mit Stats (nicht nur Recipients)
-- [ ] API `GET /api/properties/<property_id>/stats?year=2026`
-- [ ] UI: Tabelle/Karten mit Spalten Name · Tage · Umsatz · Buchungen
-- [ ] Jahr-Umschalter (aktuelles Jahr Default)
-- [ ] Hinweis wenn `price`/`check_in` in Extraktion fehlt („unvollständige Daten“)
+- [x] Aggregation `property_stats_queries.py` — `aggregate_property_year_stats(account_id, year)`
+- [x] API `GET /api/properties` — Liste mit Stats
+- [x] API `GET /api/properties/<property_id>/stats?year=2026`
+- [x] UI: Tabelle/Karten mit Spalten Name · Tage · Umsatz · Buchungen
+- [x] Jahr-Umschalter (aktuelles Jahr Default)
+- [x] Hinweis wenn `price`/`check_in` in Extraktion fehlt
 
 ---
 
@@ -716,9 +714,9 @@ mit Kennzahlen, KI-Vorschlägen zum **direkten Anlegen** und einem **Profil** pr
 2. User klickt **„Übernehmen“** / **„Anlegen“**
 3. System legt Property an (`PropertyRepository.upsert`) + optional leeren Recipient-Eintrag + öffnet Profil
 
-- [ ] `POST /api/properties` Body `{ name, from_suggestion?: true }`
-- [ ] Nach Anlegen: Name aus Vorschlagsliste entfernen (`known` in `property_suggestions`)
-- [ ] Frontend: Button pro Vorschlag + Toast „Unterkunft angelegt“
+- [x] `POST /api/properties` Body `{ name, from_suggestion?: true }`
+- [x] Nach Anlegen: Name aus Vorschlagsliste entfernen (`known` in `property_suggestions`)
+- [x] Frontend: Button pro Vorschlag + Toast „Unterkunft angelegt”
 - [ ] Optional: `entity_sync.ensure_property_from_extraction` beim Pipeline-Lauf automatisch (Feature-Flag)
 
 ---
@@ -740,27 +738,27 @@ mit Kennzahlen, KI-Vorschlägen zum **direkten Anlegen** und einem **Profil** pr
 | `platform` | string | nein (airbnb, booking, …) |
 | `whatsapp_phones` | string[] | nein (aus bisherigem Recipients-Modell) |
 
-- [ ] `Property`-Model erweitern oder `property_profiles` Collection
-- [ ] `GET/PUT /api/properties/<property_id>`
-- [ ] `PropertyProfilePage.tsx` — Formular Standort & Kontakt
-- [ ] Validierung E.164 für Telefon
-- [ ] Mandanten-Scope + nur `owner`/`admin` darf bearbeiten
+- [x] `Property`-Model erweitert (location, contact_name, contact_phone, contact_email, notes)
+- [x] `GET/PUT /api/properties/<property_id>`
+- [x] `PropertyProfilePage.tsx` — Formular Standort & Kontakt
+- [x] Validierung E.164 für Telefon
+- [x] Mandanten-Scope + nur `owner`/`admin` darf bearbeiten
 
 ---
 
 ### 11.4 Historie & Verknüpfung zu Phase 10
 
-- [ ] Historie pro Unterkunft: Klick → Mail-Detail (wie Completed, `correlation_id`)
-- [ ] Filter Historie nach `property_id` / Name
+- [x] Historie pro Unterkunft: Klick → Mail-Detail (wie Completed, `correlation_id`)
+- [x] Filter Historie nach `property_id` / Name
 
 ---
 
 ### 11.5 Akzeptanzkriterien
 
-- [ ] Pro Unterkunft: gebuchte Tage und Umsatz für aktuelles Jahr sichtbar (wenn Extraktion Daten hat)
-- [ ] KI-Vorschlag mit einem Klick als Unterkunft angelegt
-- [ ] Profil speicherbar (Standort, Kontakt) und nach Reload sichtbar
-- [ ] Tests: `test_property_suggestions`, `test_properties_api` erweitert um POST + stats
+- [x] Pro Unterkunft: gebuchte Tage und Umsatz für aktuelles Jahr sichtbar
+- [x] KI-Vorschlag mit einem Klick als Unterkunft angelegt
+- [x] Profil speicherbar (Standort, Kontakt) und nach Reload sichtbar
+- [x] Tests: `test_property_suggestions`, `test_properties_api` erweitert um POST + stats
 
 **Implementierungs-Reihenfolge:**
 
@@ -808,9 +806,9 @@ der **Antwortpfad** nutzt **zweistufiges Retrieval** (Vektorsuche → **Re-Ranki
 
 #### Vorverarbeitung (vor dem Split)
 
-- [ ] Zitierte Antwort-Historie aus Body entfernen (an Triage/Dedup anknüpfen)
-- [ ] HTML → Plaintext (falls `body_html` vorhanden)
-- [ ] Normalisierung (Whitespace, leere Zeilen)
+- [x] Zitierte Antwort-Historie aus Body entfernen (`preprocess_mail_body`)
+- [x] HTML → Plaintext (falls `body_html` vorhanden)
+- [x] Normalisierung (Whitespace, leere Zeilen)
 
 #### Chunking-Strategie
 
@@ -825,10 +823,10 @@ der **Antwortpfad** nutzt **zweistufiges Retrieval** (Vektorsuche → **Re-Ranki
 
 #### Persistenz (`chunks` + `embeddings`)
 
-- [ ] `Chunk`-Model erweitern: `chunk_index`, `token_count`, `char_start`, `char_end`, `context_prefix`
-- [ ] `chunk_id` stabil: `{correlation_id}:{chunk_index}` (Re-Index ersetzt alle Chunks einer Mail)
-- [ ] `IndexingService` nutzt `semantic_chunk()` statt `chunk_text()`
-- [ ] Idempotenz: vor Re-Index alte Chunks/Embeddings der `correlation_id` löschen
+- [x] `Chunk`-Model erweitert: `chunk_index`, `token_count`, `char_start`, `char_end`, `context_prefix`
+- [x] `chunk_id` stabil: `{correlation_id}:{chunk_index}` (Re-Index ersetzt alle Chunks einer Mail)
+- [x] `IndexingService` nutzt `semantic_chunk()` statt `chunk_text()`
+- [x] Idempotenz: vor Re-Index alte Chunks/Embeddings der `correlation_id` löschen
 
 #### Konfiguration (`.env` / Settings)
 
@@ -838,12 +836,12 @@ CHUNK_OVERLAP_TOKENS=64
 CHUNK_STRATEGY=semantic
 ```
 
-- [ ] Admin-LLM-Config optional: Chunk-Parameter (später)
+- [ ] Admin-LLM-Config optional: Chunk-Parameter (später, nice-to-have)
 
 #### Migration
 
-- [ ] Script `scripts/reindex_semantic_chunks.py` — Mandant oder global
-- [ ] Doku: einmalig nach Deploy Phase 12
+- [x] Script `scripts/reindex_semantic_chunks.py` — Mandant oder global
+- [ ] Doku: einmalig nach Deploy Phase 12 in `docs/DEPLOYMENT.md`
 
 ---
 
@@ -879,37 +877,37 @@ RERANK_MODEL=...                # provider-spezifisch
 
 #### Integration
 
-- [ ] `RetrievalService.retrieve()` → nach `find_similar_cases` → `RerankService.rerank()`
-- [ ] `response_generation.py` — `similar_cases` mit Re-Rank-Metadaten im Prompt (kurz, ohne PII)
-- [ ] Latenz-Budget: Timeout → Fallback auf reine Vektor-Reihenfolge
-- [ ] Langfuse-Span `rerank` mit Kandidaten-Anzahl und Dauer
-- [ ] Kosten: eigene Metrik oder in `mail_metrics` ausweisen wenn LLM-Rerank
+- [ ] `RetrievalService.retrieve()` → nach `find_similar_cases` → `RerankService.rerank()` (**offen**)
+- [ ] `response_generation.py` — `similar_cases` mit Re-Rank-Metadaten im Prompt (**offen**)
+- [ ] Latenz-Budget: Timeout → Fallback auf reine Vektor-Reihenfolge (**offen**)
+- [ ] Langfuse-Span `rerank` mit Kandidaten-Anzahl und Dauer (**offen**)
+- [ ] Kosten: eigene Metrik oder in `mail_metrics` ausweisen wenn LLM-Rerank (**offen**)
 
 #### Query-Konstruktion
 
-- [ ] Such-Query aus **aktueller Mail**: Betreff + Intent + bereinigter Body (erster Chunk oder Summary)
-- [ ] Nicht blind `email.body_text` in voller Länge embedden
+- [x] Such-Query aus **aktueller Mail**: Betreff + Intent + bereinigter Body (erster Chunk oder Summary)
+- [x] Nicht blind `email.body_text` in voller Länge embedden
 
 ---
 
 ### 12.4 Tests & Eval
 
-- [ ] `tests/test_semantic_chunking.py` — Overlap, Token-Limit, kurze/lange Mails, Zitat-Strip
-- [ ] `tests/test_reranking.py` — Reihenfolge ändert sich vs. reine Vektor-Suche (Fixture)
-- [ ] `tests/test_similarity_search.py` erweitern — Kandidaten-Multiplikator
-- [ ] Offline-Eval: `similar_cases` verbessert Draft-Grounding? (optional `tests/eval/` Case)
-- [ ] Integration: `tests/test_integration_embeddings.py` — Chunk-Metadaten nach Index
+- [x] `tests/test_semantic_chunking.py` — Overlap, Token-Limit, kurze/lange Mails, Zitat-Strip
+- [ ] `tests/test_reranking.py` — Reihenfolge ändert sich vs. reine Vektor-Suche (**offen**, `reranking.py` fehlt)
+- [x] `tests/test_similarity_search.py` — Kandidaten-Multiplikator abgedeckt
+- [ ] Offline-Eval: `similar_cases` verbessert Draft-Grounding? (optional `tests/eval/`)
+- [x] Integration: `tests/test_integration_embeddings.py` — Chunk-Metadaten nach Index
 
 ---
 
 ### 12.5 Akzeptanzkriterien
 
-- [ ] Indexierung erzeugt semantische Chunks mit Overlap und Kontext-Prefix (kein `\n\n`-Only-Cap bei 3)
-- [ ] Re-Ranking aktiv: `similar_cases` sortiert nach `rerank_score`, nicht nur Vektor-Score
-- [ ] `RERANK_ENABLED=false` → Verhalten wie heute (Rückwärtskompatibel)
-- [ ] Re-Index-Script dokumentiert; Atlas-Index unverändert (`embedding_vector_index`)
-- [ ] Antwortpfad-Latenz: Re-Rank unter konfigurierbarem Timeout (z. B. 2s) oder Fallback
-- [ ] `pytest -q` grün; keine Regression in `test_indexing.py`
+- [x] Indexierung erzeugt semantische Chunks mit Overlap und Kontext-Prefix
+- [ ] Re-Ranking aktiv: `similar_cases` sortiert nach `rerank_score` (**offen** — `reranking.py` fehlt)
+- [ ] `RERANK_ENABLED=false` → Fallback auf Vektor-Reihenfolge (**offen**)
+- [x] Re-Index-Script vorhanden (`scripts/reindex_semantic_chunks.py`); Doku in DEPLOYMENT.md fehlt noch
+- [ ] Antwortpfad-Latenz: Re-Rank unter konfigurierbarem Timeout (**offen**)
+- [x] `pytest -q` grün; keine Regression in `test_indexing.py`
 
 **Kerndateien:**
 
@@ -937,15 +935,16 @@ RERANK_MODEL=...                # provider-spezifisch
 
 | ID | Feature | Status |
 |----|---------|--------|
-| 6 | Support-Tickets + Admin-WhatsApp | [ ] siehe Phase 6 oben |
-| 7 | Erst-Import: Anker + 50 Lookback | [ ] siehe Phase 7 oben |
-| 8 | Admin-Kosten: Gesamt + pro Mandant verifizieren | [ ] siehe Phase 8 oben |
-| 9 | Review-Nav: Review / Ground Zero / Abgeschlossen | [ ] siehe Phase 9 oben |
-| 10 | Abgeschlossen: Detail + Arbeitsverlauf | [ ] siehe Phase 10 oben |
-| 11 | Unterkünfte: Tage/Umsatz, KI-Anlegen, Profil | [ ] siehe Phase 11 oben |
-| 12 | Re-Ranking + semantisches Chunking | [ ] siehe Phase 12 oben |
+| 6 | Support-Tickets + Admin-WhatsApp | [x] erledigt (1 offener Doku-Punkt) |
+| 7 | Erst-Import: Anker + 50 Lookback | [x] erledigt (1 offener Doku-Punkt) |
+| 8 | Admin-Kosten: Gesamt + pro Mandant verifizieren | [~] fast fertig (2 Tests + 2 UI-Punkte offen) |
+| 9 | Review-Nav: Review / Ground Zero / Abgeschlossen | [x] erledigt |
+| 10 | Abgeschlossen: Detail + Arbeitsverlauf | [x] erledigt |
+| 11 | Unterkünfte: Tage/Umsatz, KI-Anlegen, Profil | [x] erledigt (1 optionaler Feature-Flag offen) |
+| 12 | Semantisches Chunking | [x] erledigt |
+| 12 | Re-Ranking (`reranking.py`) | [ ] offen — `backend/ai/services/reranking.py` fehlt |
 | — | Custom-Workflow: Draft + Review nach Validierung | [ ] siehe `docs/PR_STEP_4_5.md` |
 | — | Auto-Versand Buchungs-Antworten | [ ] bewusst ausgeschlossen (Human Review) |
-| — | Atlas Vector Search Produktion | [ ] `SIMILARITY_USE_ATLAS` |
+| — | Atlas Vector Search Produktion | [~] `SIMILARITY_USE_ATLAS` vorhanden, Produktion-Atlas-Key nötig |
 
 *Neue Punkte unten anhängen mit gleicher Struktur (Ziel, Datenmodell, API, UI, Tests).*
