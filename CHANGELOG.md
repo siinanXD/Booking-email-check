@@ -1,6 +1,125 @@
 # CHANGELOG
 
 
+## v0.11.0 (2026-06-05)
+
+### Bug Fixes
+
+- **vector**: Eliminate >20GB RAM blow-up in chunking and vector search
+  ([`a6e6b8d`](https://github.com/siinanXD/Booking-email-checl/commit/a6e6b8d32203abf80d78db0006f90f1ab20ae722))
+
+## Problem Beim Start von `pytest` / der Pipeline schoss der RAM-Verbrauch auf über 20 GB
+  (Task-Manager: ~21 GB). Ursache war **nicht** ein lokales ML-Modell (es gibt keins — Embeddings
+  laufen rein über die OpenAI-API).
+
+## Root Causes (zwei) 1. **Endlosschleife im semantischen Chunking** (Hauptursache): Ein Segment
+  größer als `max_body_tokens` (langer Satz ohne Satzzeichen, URL, Base64, zitierte Tabelle) ließ
+  die Overlap-Logik den Index immer wieder auf denselben Start zurücksetzen → die `packed`-Liste
+  wuchs unendlich. Wird bei jedem `pytest`-Lauf getriggert. 2. **In-Memory-Vektorsuche**:
+  `search_by_vector` lud die gesamte `embeddings`-Collection in den RAM (Filter `{}` bei leerem
+  `account_id`).
+
+## Changes - **`semantic_chunking.py`**: garantierte Vorwärts-Progress-Sperre (`idx` nie vor
+  `chunk_start_idx+1`) + übergroße Sätze werden hart an Wortgrenzen in overlap-große Fenster
+  gesplittet (kein Segment überschreitet das Limit). - **`embedding_repository.py`**:
+  In-Memory-`search_by_vector` + `_dot` entfernt; bei Atlas-`OperationFailure` keine
+  Fallback-Berechnung mehr, sondern Warnung `vektordatenbank_offline` + leere Liste. -
+  **`similarity_search.py`**: bei `SIMILARITY_USE_ATLAS=false` → übersprungen + Warnung, ohne
+  `embed()`-Aufruf. Nur Atlas, sonst leer. - **`pyproject.toml`**: Integrationstests standardmäßig
+  ausgeschlossen (kein versehentlicher Lauf gegen echtes Atlas).
+
+## Verification - Volle Suite läuft jetzt in **~93 s ohne RAM-Spike** (vorher: Hang bei 21 GB). -
+  266 Tests grün; mypy (308 Dateien) + ruff sauber. - 2 verbleibende Fehler (`$substrCP`) sind
+  **vorbestehend** und unabhängig (mongomock- Limitierung in `booking_mail_counts.py`) — per
+  Stash-Test bestätigt.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+- **vector**: Eliminate RAM blow-up in chunking and vector search
+  ([`993fcf1`](https://github.com/siinanXD/Booking-email-checl/commit/993fcf1d7699929314eae1be8b967f98c76d69e4))
+
+Zwei Speicher-Probleme behoben, die zu >20GB RAM beim Test-/Pipeline-Lauf fuehrten:
+
+1. Endlosschleife im semantischen Chunking (Hauptursache des 25GB-Spikes): Ein Segment groesser als
+  max_body_tokens (langer Satz ohne Satzzeichen, URL, Base64, zitierte Tabelle) liess die
+  Overlap-Logik den Index immer wieder auf denselben Start zuruecksetzen -> packed-Liste wuchs
+  unendlich. - _pack_body_chunks: garantierte Vorwaerts-Progress-Sperre (idx nie vor
+  chunk_start_idx+1). - _split_segments: uebergrosse Saetze werden hart an Wortgrenzen in
+  overlap-grosse Fenster geteilt; kein Segment ueberschreitet das Limit.
+
+2. In-Memory-Vektorsuche entfernt (RAM-Risiko + 25GB-Mitursache): search_by_vector lud die gesamte
+  embeddings-Collection in den RAM. - search_by_vector + _dot entfernt. - search_by_vector_atlas:
+  bei OperationFailure kein Fallback mehr, sondern Warnung 'vektordatenbank_offline' + leere Liste.
+  - SimilaritySearchService: use_atlas=False -> uebersprungen + Warnung, ohne embed()-Aufruf. Nur
+  Atlas, sonst leer.
+
+3. pyproject.toml: Integrationstests standardmaessig ausgeschlossen, damit pytest nie unbeabsichtigt
+  gegen echtes Atlas laeuft.
+
+Volle Suite laeuft jetzt in ~93s ohne RAM-Spike (266 passed; 2 vorbestehende
+  mongomock-$substrCP-Fehler unberuehrt).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Documentation
+
+- **roadmap**: Sync checkboxes with implemented phases 6-12
+  ([`7f35528`](https://github.com/siinanXD/Booking-email-checl/commit/7f3552802fb586edd50f59c9660ebf3ad582e0e9))
+
+Die Checkbox-Stati standen noch auf [ ], obwohl die Features (Support-Tickets, Erst-Import,
+  Admin-Kosten, Review-Nav, Abgeschlossen-Detail, Unterkuenfte, semantisches Chunking) laengst
+  implementiert sind. Stati an den realen Code-Stand angeglichen.
+
+Echt offen bleiben: Re-Ranking (bewusst zurueckgestellt, AGENTS.md), optionale UI-Politur (Phase
+  8.6/10), manueller Meta-Template-Ops-Schritt, Onboarding-Hinweis.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Features
+
+- **platform**: Gdpr Langfuse trace wipe, Phase-8 cost tests, deploy docs
+  ([`d198e71`](https://github.com/siinanXD/Booking-email-checl/commit/d198e71feaa98b31479e13281439c2dd1e7062e1))
+
+## Summary Setzt die offenen Roadmap-Punkte um. **Baut auf `fix/vector-search-no-memory-fallback`
+  auf** — daher bitte diesen RAM-Fix-PR zuerst mergen (oder diesen hier, er enthält den Fix
+  bereits).
+
+## Changes - **DSGVO – Langfuse-Trace-Löschung**: neuer `LangfuseWipeService` löscht Traces pro
+  `correlation_id` (= session_id) nach dem Mongo-Wipe; Fehler werden geloggt, kein Rollback.
+  `DataWipeService` sammelt die IDs vor dem Löschen und meldet einen `langfuse_traces`-Zähler.
+  Verdrahtet in `settings/wipe-all` wenn Langfuse-Keys gesetzt. - **Phase 8 – Kosten-Konsistenz**:
+  zwei fehlende Tests (`overview` ↔ `metrics/costs`, `account-detail` ↔ `by_account`). - **Phase 8 –
+  Frontend**: `AdminOverviewPage` warnt, wenn Gesamtkosten ≠ Summe aktiver Mandanten
+  (pending/rejected oder nicht zugeordnete Metriken). - **DEPLOYMENT.md**: Erst-Import (Phase 7) +
+  semantisches Re-Index (Phase 12) mit Migrations-Befehlen. - **ROADMAP.md**: Checkboxen der Phasen
+  6–12 an den realen Code-Stand angeglichen.
+
+## Test plan - [x] `pytest tests/test_langfuse_wipe.py tests/web/test_admin_overview.py
+  tests/web/test_settings_api.py` → 19 grün - [x] mypy (310 Dateien) + ruff sauber - [x]
+  Frontend-Build grün - [ ] CI grün abwarten
+
+## Notes Re-Ranking (`reranking.py`) bleibt bewusst zurückgestellt (siehe AGENTS.md). Die 2
+  vorbestehenden `$substrCP`-Testfehler (mongomock) sind nicht Teil dieses PRs.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+- **platform**: Gdpr Langfuse trace wipe, Phase-8 cost tests, deploy docs
+  ([`db91489`](https://github.com/siinanXD/Booking-email-checl/commit/db914892ed8a2b42412b5972dc738a3d52047bac))
+
+Setzt die offenen Punkte aus der Roadmap um:
+
+- DSGVO: LangfuseWipeService loescht Traces pro session_id (correlation_id) nach dem Mongo-Wipe;
+  Fehler werden geloggt, kein Rollback. DataWipeService sammelt correlation_ids vor dem Loeschen und
+  meldet langfuse_traces-Zaehler. settings/wipe-all verdrahtet den Service wenn Langfuse-Keys
+  gesetzt sind. - Phase 8: zwei fehlende Kosten-Konsistenz-Tests (overview vs metrics/costs,
+  account-detail vs by_account). - Phase 8: AdminOverviewPage warnt, wenn Gesamtkosten != Summe
+  aktiver Mandanten (pending/rejected oder nicht zugeordnete Metriken). - DEPLOYMENT.md: Erst-Import
+  (Phase 7) + semantisches Re-Index (Phase 12) mit Migrations-Befehlen. - ROADMAP: erledigte
+  Phase-8-Punkte abgehakt.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+
 ## v0.10.0 (2026-06-05)
 
 ### Bug Fixes
