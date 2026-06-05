@@ -7,7 +7,9 @@ from dataclasses import dataclass
 
 from backend.ai.workflows.email_workflow import EmailWorkflow
 from backend.core.config.settings import Settings
+from backend.features.mail.ingest_window import filter_messages_for_initial_sync
 from backend.infrastructure.adapters.mail.connector import build_mail_connector
+from backend.infrastructure.repositories.account_repository import AccountRepository
 from backend.infrastructure.repositories.email_repository import EmailRepository
 from backend.infrastructure.repositories.mail_connection_repository import (
     MailConnectionRepository,
@@ -43,6 +45,7 @@ class MailIngestionRunner:
         workflow: EmailWorkflow,
         email_repo: EmailRepository,
         settings: Settings,
+        account_repo: AccountRepository,
         *,
         fetch_max: int = 100,
         fetch_unread_only: bool = False,
@@ -52,6 +55,7 @@ class MailIngestionRunner:
         self._workflow = workflow
         self._email_repo = email_repo
         self._settings = settings
+        self._account_repo = account_repo
         self._fetch_max = fetch_max
         self._fetch_unread_only = fetch_unread_only
 
@@ -61,11 +65,37 @@ class MailIngestionRunner:
         if record is None:
             logger.warning("No mail connection for account %s", account_id)
             return MailPollRunResult(processed=0, items=[])
+        account = self._account_repo.get_by_id(account_id)
+        initial_sync = (
+            account is not None and account.mail_initial_sync_completed_at is None
+        )
+        fetch_limit = self._fetch_max
+        if initial_sync and account is not None:
+            lookback = account.mail_ingest_lookback_count or (
+                self._settings.mail_ingest_initial_lookback
+            )
+            fetch_limit = min(
+                self._settings.mail_ingest_initial_fetch_cap,
+                lookback + self._fetch_max,
+            )
         connector = build_mail_connector(record, self._settings)
         messages = connector.fetch_messages(
-            limit=self._fetch_max,
+            limit=fetch_limit,
             unread_only=self._fetch_unread_only,
         )
+        if initial_sync and account is not None:
+            anchor = account.mail_ingest_anchor_at or account.created_at
+            lookback = account.mail_ingest_lookback_count or (
+                self._settings.mail_ingest_initial_lookback
+            )
+            messages = filter_messages_for_initial_sync(messages, anchor, lookback)
+            logger.info(
+                "Initial sync account=%s fetched=%s selected=%s anchor=%s",
+                account_id,
+                fetch_limit,
+                len(messages),
+                anchor.isoformat(),
+            )
         items: list[MailPollItemResult] = []
         for payload in messages:
             existing = self._email_repo.get_by_message_id(

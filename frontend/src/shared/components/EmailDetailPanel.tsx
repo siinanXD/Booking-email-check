@@ -15,6 +15,11 @@ export function EmailDetailPanel({ detail, isLoading }: Props) {
   }
   return (
     <div className="space-y-3 text-sm">
+      {detail.booking_number && (
+        <p className="text-sm font-semibold text-slate-800">
+          Buchungsnummer: {detail.booking_number}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         <IntentBadge intent={detail.intent} />
         {detail.mail_sentiment && (

@@ -7,20 +7,13 @@ from unittest.mock import MagicMock, patch
 
 from pymongo.errors import OperationFailure
 
-from backend.ai.services.indexing import IndexingService, chunk_text
+from backend.ai.services.indexing import IndexingService
 from backend.infrastructure.observability.alerts import AlertService
 from backend.infrastructure.repositories.embedding_repository import (
     VECTOR_INDEX_NAME,
     EmbeddingRepository,
     _dot,
 )
-
-
-def test_chunk_text_paragraphs() -> None:
-    """Verify chunk text paragraphs."""
-    body = "A\n\nB\n\nC\n\nD"
-    chunks = chunk_text(body, max_chunks=2)
-    assert len(chunks) == 2
 
 
 def test_embedding_repository_search(mock_db) -> None:

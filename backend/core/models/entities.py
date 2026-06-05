@@ -39,6 +39,11 @@ class Property(BaseModel):
     name: str
     platform: str | None = None
     account_id: str | None = None
+    location: str | None = None
+    contact_name: str | None = None
+    contact_phone: str | None = None
+    contact_email: str | None = None
+    notes: str | None = None
 
     def to_mongo(self) -> dict[str, Any]:
         """Execute the operation."""

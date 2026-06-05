@@ -100,6 +100,8 @@ def register() -> tuple[Any, int]:
         phone=body.phone,
         status="pending",
     )
+    # mail_ingest_anchor_at = created_at — begrenzt Erst-Import (Roadmap Phase 7)
+    assert account.mail_ingest_anchor_at is not None
     g.ctx.user_repo.create(
         email,
         generate_password_hash(body.password),

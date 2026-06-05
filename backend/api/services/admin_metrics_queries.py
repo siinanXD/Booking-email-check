@@ -58,10 +58,13 @@ def admin_costs_metrics(
             )
         )
 
+    unassigned = ctx.metrics_repo.sum_unassigned_cost_between(start, end)
+
     return AdminCostsMetricsResponse(
         days=days,
         series=series,
         total_usd=round(float(platform.get("cost_usd", 0.0)), 4),
+        unassigned_cost_usd=round(unassigned, 4),
         by_account=by_account,
         top_mails=top_mails,
     )

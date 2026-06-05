@@ -123,6 +123,7 @@ export interface AdminCostsMetricsResponse {
   days: number;
   series: CostSeriesPoint[];
   total_usd: number;
+  unassigned_cost_usd: number;
   by_account: AdminAccountCostRow[];
   top_mails: AdminExpensiveMailRow[];
 }

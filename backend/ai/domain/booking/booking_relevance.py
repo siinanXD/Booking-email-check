@@ -282,35 +282,35 @@ def classify_booking_mail(
         return BookingMailVerdict(False, "non_booking_heuristic")
     if is_marketing_noise(email):
         return BookingMailVerdict(False, "marketing_noise")
+    if extraction is not None and extraction.intent is not None:
+        if extraction.intent not in _BOOKING_INTENTS:
+            return BookingMailVerdict(False, f"intent_{extraction.intent.value}")
+        if extraction.intent == BookingIntent.NEW_BOOKING:
+            return BookingMailVerdict(True, "llm_new_booking")
+        if extraction.intent == BookingIntent.CHANGE:
+            if is_plausible_booking_number(
+                extraction.booking_number, email
+            ) or has_booking_signals(email, extraction):
+                return BookingMailVerdict(True, "llm_change")
+            return BookingMailVerdict(False, "change_no_proof")
+        if extraction.intent == BookingIntent.GUEST_INQUIRY:
+            if has_booking_signals(email, extraction):
+                return BookingMailVerdict(True, "guest_inquiry_with_signals")
+            return BookingMailVerdict(False, "guest_inquiry_no_signals")
+        if extraction.intent == BookingIntent.CANCELLATION:
+            if is_plausible_booking_number(extraction.booking_number, email):
+                return BookingMailVerdict(True, "cancellation_with_booking_no")
+            if is_probable_booking_mail(email):
+                return BookingMailVerdict(True, "cancellation_pms_subject")
+            return BookingMailVerdict(False, "cancellation_no_proof")
+        if has_booking_signals(email, extraction):
+            return BookingMailVerdict(True, f"intent_{extraction.intent.value}")
+        return BookingMailVerdict(False, "intent_without_signals")
     if is_probable_booking_mail(email):
         return BookingMailVerdict(True, "beds24_or_pms_heuristic")
-    if extraction is None or extraction.intent is None:
-        if has_reservation_request_signals(email):
-            return BookingMailVerdict(True, "reservation_request_heuristic")
-        return BookingMailVerdict(False, "no_extraction")
-    if extraction.intent not in _BOOKING_INTENTS:
-        return BookingMailVerdict(False, f"intent_{extraction.intent.value}")
-    if extraction.intent == BookingIntent.NEW_BOOKING:
-        return BookingMailVerdict(True, "llm_new_booking")
-    if extraction.intent == BookingIntent.CHANGE:
-        if is_plausible_booking_number(
-            extraction.booking_number, email
-        ) or has_booking_signals(email, extraction):
-            return BookingMailVerdict(True, "llm_change")
-        return BookingMailVerdict(False, "change_no_proof")
-    if extraction.intent == BookingIntent.GUEST_INQUIRY:
-        if has_booking_signals(email, extraction):
-            return BookingMailVerdict(True, "guest_inquiry_with_signals")
-        return BookingMailVerdict(False, "guest_inquiry_no_signals")
-    if extraction.intent == BookingIntent.CANCELLATION:
-        if is_plausible_booking_number(extraction.booking_number, email):
-            return BookingMailVerdict(True, "cancellation_with_booking_no")
-        if is_probable_booking_mail(email):
-            return BookingMailVerdict(True, "cancellation_pms_subject")
-        return BookingMailVerdict(False, "cancellation_no_proof")
-    if has_booking_signals(email, extraction):
-        return BookingMailVerdict(True, f"intent_{extraction.intent.value}")
-    return BookingMailVerdict(False, "intent_without_signals")
+    if has_reservation_request_signals(email):
+        return BookingMailVerdict(True, "reservation_request_heuristic")
+    return BookingMailVerdict(False, "no_extraction")
 
 
 def is_booking_relevant(

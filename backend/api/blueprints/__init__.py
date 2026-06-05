@@ -13,12 +13,15 @@ from backend.api.blueprints.mail import mail_bp
 from backend.api.blueprints.properties import properties_bp
 from backend.api.blueprints.review import review_bp
 from backend.api.blueprints.settings import settings_bp
+from backend.api.blueprints.support_tickets import admin_support_bp, support_bp
 from backend.api.blueprints.workflows import workflows_bp
 
 
 def register_api_blueprints(app: Flask) -> None:
     """Registriert alle geschützten API-Blueprints."""
     app.register_blueprint(admin_bp)
+    app.register_blueprint(support_bp)
+    app.register_blueprint(admin_support_bp)
     app.register_blueprint(mail_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(emails_bp)

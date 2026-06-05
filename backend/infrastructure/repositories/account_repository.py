@@ -26,6 +26,9 @@ class AccountRecord(BaseModel):
     contact_email: str
     status: AccountStatus = "pending"
     rejection_reason: str | None = None
+    mail_ingest_anchor_at: datetime | None = None
+    mail_ingest_lookback_count: int = 50
+    mail_initial_sync_completed_at: datetime | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -71,6 +74,9 @@ class AccountRepository:
             "contact_email": contact_email.lower().strip(),
             "status": status,
             "rejection_reason": None,
+            "mail_ingest_anchor_at": now.isoformat(),
+            "mail_ingest_lookback_count": 50,
+            "mail_initial_sync_completed_at": None,
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
         }
@@ -111,3 +117,16 @@ class AccountRepository:
             update["rejection_reason"] = None
         self._col.update_one({"_id": account_id}, {"$set": update})
         return self.get_by_id(account_id)
+
+    def mark_initial_sync_completed(self, account_id: str) -> None:
+        """Setzt Flag nach erstem Initial-Poll."""
+        now = datetime.now(UTC)
+        self._col.update_one(
+            {"_id": account_id, "mail_initial_sync_completed_at": None},
+            {
+                "$set": {
+                    "mail_initial_sync_completed_at": now.isoformat(),
+                    "updated_at": now.isoformat(),
+                }
+            },
+        )

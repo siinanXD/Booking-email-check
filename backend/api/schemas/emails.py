@@ -32,6 +32,22 @@ class EmailListResponse(BaseModel):
     pages: int = 0
 
 
+class EmailActivityEvent(BaseModel):
+    """Ein Schritt im Arbeitsverlauf."""
+
+    at: str
+    kind: str
+    label: str
+    actor: str | None = None
+
+
+class EmailActivityResponse(BaseModel):
+    """Chronologischer Verlauf zu einer Correlation-ID."""
+
+    correlation_id: str
+    events: list[EmailActivityEvent] = Field(default_factory=list)
+
+
 class EmailDetail(BaseModel):
     """Vollständiges Mail-Detail."""
 

@@ -101,6 +101,7 @@ class AdminCostsMetricsResponse(BaseModel):
     days: int = 30
     series: list[CostSeriesPoint] = Field(default_factory=list)
     total_usd: float = 0.0
+    unassigned_cost_usd: float = 0.0
     by_account: list[AdminAccountCostRow] = Field(default_factory=list)
     top_mails: list[AdminExpensiveMailRow] = Field(default_factory=list)
 

@@ -1,5 +1,9 @@
 import { apiClient } from "@/lib/api/client";
-import type { EmailDetail, EmailListResponse } from "@/lib/types/api";
+import type {
+  EmailActivityResponse,
+  EmailDetail,
+  EmailListResponse,
+} from "@/lib/types/api";
 
 export interface EmailListParams {
   status?: string;
@@ -30,6 +34,15 @@ export async function fetchEmailDetail(
 ): Promise<EmailDetail> {
   const { data } = await apiClient.get<EmailDetail>(
     `/api/emails/${correlationId}`
+  );
+  return data;
+}
+
+export async function fetchEmailActivity(
+  correlationId: string
+): Promise<EmailActivityResponse> {
+  const { data } = await apiClient.get<EmailActivityResponse>(
+    `/api/emails/${correlationId}/activity`
   );
   return data;
 }

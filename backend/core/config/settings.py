@@ -157,6 +157,22 @@ class Settings(BaseSettings):
         default=False,
         alias="WHATSAPP_AUTO_ON_DETECT",
     )
+    whatsapp_template_support_ticket: str = Field(
+        default="platform_support_ticket_de",
+        alias="WHATSAPP_TEMPLATE_SUPPORT_TICKET",
+    )
+    platform_admin_whatsapp_e164: str = Field(
+        default="",
+        alias="PLATFORM_ADMIN_WHATSAPP_E164",
+    )
+    mail_ingest_initial_lookback: int = Field(
+        default=50,
+        alias="MAIL_INGEST_INITIAL_LOOKBACK",
+    )
+    mail_ingest_initial_fetch_cap: int = Field(
+        default=120,
+        alias="MAIL_INGEST_INITIAL_FETCH_CAP",
+    )
     ingest_account_id: str | None = Field(default=None, alias="INGEST_ACCOUNT_ID")
     mail_poll_interval_seconds: int = Field(
         default=300, alias="MAIL_POLL_INTERVAL_SECONDS"

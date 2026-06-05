@@ -225,7 +225,7 @@ export function DashboardPage() {
             !loading &&
             ((stats!.pending_grounding_review ?? 0) > 0 ||
               stats!.grounding_failures_today > 0)
-              ? "/review?grounding=1"
+              ? "/ground-zero"
               : undefined
           }
         />

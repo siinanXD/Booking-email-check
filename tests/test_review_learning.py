@@ -14,7 +14,13 @@ from backend.infrastructure.repositories.email_repository import EmailRepository
 from backend.infrastructure.repositories.extraction_repository import (
     ExtractionRepository,
 )
+from backend.infrastructure.repositories.platform_admin_config_repository import (
+    PlatformAdminConfigRepository,
+)
 from backend.infrastructure.repositories.review_repository import ReviewRepository
+from backend.infrastructure.repositories.support_ticket_repository import (
+    SupportTicketRepository,
+)
 from backend.infrastructure.repositories.tenant_learned_examples_repository import (
     TenantLearnedExamplesRepository,
 )
@@ -45,6 +51,8 @@ def _ctx(mock_db: object) -> AppContext:
         admin_audit_log_repo=None,  # type: ignore[arg-type]
         mail_summary_repo=None,  # type: ignore[arg-type]
         tenant_learned_examples_repo=TenantLearnedExamplesRepository(mock_db),  # type: ignore[arg-type]
+        support_ticket_repo=SupportTicketRepository(mock_db),  # type: ignore[arg-type]
+        platform_admin_config_repo=PlatformAdminConfigRepository(mock_db),  # type: ignore[arg-type]
         indexing_service=None,
     )
 

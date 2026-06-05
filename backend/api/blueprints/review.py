@@ -86,6 +86,30 @@ def list_completed() -> tuple[Any, int]:
     return _queue_response("completed")
 
 
+@review_bp.get("/ground-zero")
+@require_auth
+@require_account
+def list_ground_zero() -> tuple[Any, int]:
+    """Offene Grounding-Fälle (pending oder freigegeben)."""
+    limit = min(max(int(request.args.get("limit", 50)), 1), 100)
+    intent = request.args.get("intent") or None
+    account_id = get_request_account_id()
+    if not account_id:
+        return jsonify({"error": "Account context required", "code": 403}), 403
+    items = list_review_queue(
+        g.ctx,
+        account_id,
+        queue="pending",
+        limit=limit,
+        intent=intent,
+        grounding_only=True,
+    )
+    return (
+        jsonify(ReviewQueueResponse(items=items, total=len(items)).model_dump()),
+        200,
+    )
+
+
 @review_bp.get("/whatsapp-preview/<correlation_id>")
 @require_auth
 @require_account

@@ -94,6 +94,16 @@ export function AdminObservabilityPage() {
         )}
       </div>
 
+      {costs && (
+        <p className="text-sm text-slate-600">
+          Summe Mandanten: {formatUsd(
+            costs.by_account.reduce((s, r) => s + r.cost_usd, 0)
+          )}{" "}
+          · Nicht zugeordnet: {formatUsd(costs.unassigned_cost_usd ?? 0)} · Gesamt:{" "}
+          {formatUsd(costs.total_usd)}
+        </p>
+      )}
+
       <Card className="overflow-x-auto">
         <h2 className="mb-1 text-lg font-medium text-slate-900">Kosten pro Mandant</h2>
         <p className="mb-4 text-xs text-slate-500">Tabellarische Detailansicht zum Abgleich mit dem Diagramm</p>

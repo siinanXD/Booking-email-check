@@ -93,6 +93,7 @@ def main() -> int:
             ctx.workflow,
             ctx.email_repo,
             settings,
+            ctx.account_repo,
             fetch_max=settings.outlook_fetch_max,
             fetch_unread_only=settings.outlook_fetch_unread_only,
         )

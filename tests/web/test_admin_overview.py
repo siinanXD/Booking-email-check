@@ -149,3 +149,67 @@ def test_admin_account_detail_not_found(
         headers=auth_headers,
     )
     assert resp.status_code == 404
+
+
+def test_admin_costs_total_matches_sum_by_account(
+    client: Any,
+    auth_headers: dict[str, str],
+    app: Any,
+) -> None:
+    tenant_a = _approve_tenant(client, auth_headers, "costs-sum-a@test.local")
+    tenant_b = _approve_tenant(client, auth_headers, "costs-sum-b@test.local")
+    now = datetime.now(UTC)
+    _seed_metric(
+        app,
+        account_id=tenant_a,
+        correlation_id="sum-a",
+        cost_usd=0.10,
+        processed_at=now,
+    )
+    _seed_metric(
+        app,
+        account_id=tenant_b,
+        correlation_id="sum-b",
+        cost_usd=0.20,
+        processed_at=now,
+    )
+
+    resp = client.get("/api/admin/metrics/costs?days=30", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.get_json()
+    by_account_sum = sum(row["cost_usd"] for row in data["by_account"])
+    assert data["total_usd"] == round(by_account_sum + data["unassigned_cost_usd"], 4)
+    assert data["total_usd"] >= 0.30
+
+
+def test_admin_costs_unassigned_bucket(
+    client: Any,
+    auth_headers: dict[str, str],
+    app: Any,
+) -> None:
+    now = datetime.now(UTC)
+    _seed_metric(
+        app,
+        account_id="orphan-acc",
+        correlation_id="assigned-1",
+        cost_usd=0.10,
+        processed_at=now,
+    )
+    ctx = app.extensions["ctx"]
+    ctx.metrics_repo.record(
+        "unassigned-1",
+        cost_usd=0.05,
+        prompt_tokens=10,
+        completion_tokens=5,
+        account_id=None,
+    )
+    ctx.metrics_repo._col.update_one(
+        {"_id": "unassigned-1"},
+        {"$set": {"processed_at": now.isoformat(), "account_id": None}},
+    )
+
+    resp = client.get("/api/admin/metrics/costs?days=30", headers=auth_headers)
+    data = resp.get_json()
+    assert data["unassigned_cost_usd"] >= 0.05
+    by_account_sum = sum(row["cost_usd"] for row in data["by_account"])
+    assert data["total_usd"] == round(by_account_sum + data["unassigned_cost_usd"], 4)

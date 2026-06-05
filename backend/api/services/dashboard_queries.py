@@ -107,6 +107,7 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
             booking_stats.intents_all.get(BookingIntent.GUEST_INQUIRY.value, 0)
             + booking_stats.intents_all.get(BookingIntent.COMPLAINT.value, 0)
         ),
+        nav_ground_zero=nav_ground_zero(ctx, account_id),
         nav_completed=nav_completed,
     )
 
@@ -176,3 +177,8 @@ def count_pending_booking_reviews(ctx: AppContext, account_id: str) -> int:
     from backend.api.services.review_queue_service import count_eligible_pending_reviews
 
     return count_eligible_pending_reviews(ctx, account_id)
+
+
+def nav_ground_zero(ctx: AppContext, account_id: str) -> int:
+    """Offene Grounding-Fälle für Sidebar-Badge."""
+    return ctx.review_repo.count_open_grounding(account_id=account_id)

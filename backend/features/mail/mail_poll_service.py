@@ -82,6 +82,8 @@ class MailPollService:
             summaries.append(summary)
             total_processed += summary.processed
             self._update_connection_status(record.account_id, summary)
+            if summary.fetch_error is None:
+                self._account_repo.mark_initial_sync_completed(record.account_id)
 
             logger.info(
                 (
@@ -175,6 +177,7 @@ def build_mail_poll_service_from_context(
         ctx.workflow,
         ctx.email_repo,
         settings,
+        ctx.account_repo,
         fetch_max=settings.outlook_fetch_max,
         fetch_unread_only=settings.outlook_fetch_unread_only,
     )

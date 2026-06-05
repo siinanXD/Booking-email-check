@@ -6,6 +6,7 @@ import {
   RefreshCw,
   MessageSquare,
   ClipboardCheck,
+  AlertTriangle,
   CheckCircle2,
   Building2,
   Shield,
@@ -15,6 +16,8 @@ import {
   SlidersHorizontal,
   GitBranch,
   Tag,
+  LifeBuoy,
+  Ticket,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardStats } from "@/lib/api/dashboard";
@@ -27,6 +30,7 @@ type NavCountKey =
   | "nav_cancellations"
   | "nav_changes"
   | "nav_messages"
+  | "nav_ground_zero"
   | "nav_completed";
 
 type SidebarLink = {
@@ -64,7 +68,14 @@ const tenantLinks: SidebarLink[] = [
     navCountKey: "nav_messages",
   },
   { to: "/properties", label: "Unterkünfte", icon: Building2 },
+  { to: "/support", label: "Support", icon: LifeBuoy },
   { to: "/review", label: "Review", icon: ClipboardCheck, badge: true },
+  {
+    to: "/ground-zero",
+    label: "Ground Zero",
+    icon: AlertTriangle,
+    navCountKey: "nav_ground_zero",
+  },
   {
     to: "/completed",
     label: "Abgeschlossen",
@@ -78,6 +89,7 @@ const adminLinks: SidebarLink[] = [
   { to: "/admin/accounts", label: "Mandanten", icon: Users, badge: true },
   { to: "/admin/diagnostics", label: "Diagnose", icon: Stethoscope },
   { to: "/admin/observability", label: "Observability", icon: LineChart },
+  { to: "/admin/tickets", label: "Tickets", icon: Ticket },
   { to: "/admin/llm-config", label: "LLM-Konfiguration", icon: SlidersHorizontal },
   { to: "/admin/workflows", label: "Workflows", icon: GitBranch },
 ];

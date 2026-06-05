@@ -192,6 +192,32 @@ class MailMetricsRepository:
             "mail_count": int(row.get("mail_count", 0)),
         }
 
+    def sum_unassigned_cost_between(
+        self,
+        start: datetime,
+        end: datetime,
+    ) -> float:
+        """Summiert Kosten ohne account_id im Zeitraum."""
+        match = {
+            "processed_at": {
+                "$gte": start.isoformat(),
+                "$lte": end.isoformat(),
+            },
+            "$or": [
+                {"account_id": {"$exists": False}},
+                {"account_id": None},
+                {"account_id": ""},
+            ],
+        }
+        pipeline: Sequence[Mapping[str, Any]] = [
+            {"$match": match},
+            {"$group": {"_id": None, "total": {"$sum": "$cost_usd"}}},
+        ]
+        rows = list(self._col.aggregate(pipeline))
+        if not rows:
+            return 0.0
+        return float(rows[0].get("total", 0.0))
+
     def sum_cost_by_account(
         self,
         start: datetime,

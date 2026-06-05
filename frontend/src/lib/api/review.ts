@@ -34,6 +34,22 @@ export async function fetchReviewPending(
   return fetchReviewQueue("pending", limit);
 }
 
+export async function fetchGroundZeroQueue(
+  limit = 50,
+  intent?: string
+): Promise<ReviewQueueResponse> {
+  const { data } = await apiClient.get<ReviewQueueResponse>(
+    "/api/review/ground-zero",
+    {
+      params: {
+        limit,
+        ...(intent ? { intent } : {}),
+      },
+    }
+  );
+  return data;
+}
+
 export async function fetchWhatsAppPreview(
   correlationId: string
 ): Promise<WhatsAppPreviewResponse> {

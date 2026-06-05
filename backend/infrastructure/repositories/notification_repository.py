@@ -28,6 +28,16 @@ class NotificationRepository:
         self._col.create_index("idempotency_key", unique=True)
         self._col.create_index("correlation_id")
 
+    def list_by_correlation_id(
+        self,
+        correlation_id: str,
+    ) -> list[NotificationOutboxRecord]:
+        """Alle Benachrichtigungen zu einer Correlation-ID."""
+        cursor = self._col.find({"correlation_id": correlation_id}).sort(
+            "created_at", 1
+        )
+        return [NotificationOutboxRecord.model_validate(doc) for doc in cursor]
+
     def get_by_idempotency_key(
         self,
         idempotency_key: str,

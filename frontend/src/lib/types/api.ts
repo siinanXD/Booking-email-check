@@ -105,6 +105,7 @@ export interface DashboardStats {
   nav_cancellations?: number;
   nav_changes?: number;
   nav_messages?: number;
+  nav_ground_zero?: number;
   nav_completed?: number;
 }
 
@@ -137,6 +138,18 @@ export interface EmailDetail extends EmailListItem {
   approved_body: string | null;
   mail_summary?: string | null;
   mail_sentiment?: string | null;
+}
+
+export interface EmailActivityEvent {
+  at: string;
+  kind: string;
+  label: string;
+  actor?: string | null;
+}
+
+export interface EmailActivityResponse {
+  correlation_id: string;
+  events: EmailActivityEvent[];
 }
 
 export interface WhatsAppPreviewMessage {

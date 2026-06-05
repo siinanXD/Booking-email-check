@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from backend.ai.domain.booking.extraction import BookingExtraction
+from backend.ai.domain.booking.extraction import (
+    BookingExtraction,
+)
 from backend.api.schemas.review_whatsapp import WhatsAppPreviewResponse
 from backend.core.config.factory import AppContext
 from backend.core.models.email import ProcessingState

@@ -4,9 +4,17 @@ from __future__ import annotations
 
 from backend.api.schemas.costs import CostsResponse
 from backend.api.schemas.dashboard import DashboardStats
-from backend.api.schemas.emails import EmailDetail, EmailListResponse
+from backend.api.schemas.emails import (
+    EmailActivityResponse,
+    EmailDetail,
+    EmailListResponse,
+)
 from backend.api.schemas.review import ReviewQueueItem
-from backend.api.services import dashboard_queries, email_queries
+from backend.api.services import (
+    dashboard_queries,
+    email_activity_queries,
+    email_queries,
+)
 from backend.core.config.factory import AppContext
 
 
@@ -56,6 +64,13 @@ class QueryService:
 
     def get_email_detail(self, correlation_id: str) -> EmailDetail | None:
         return email_queries.get_email_detail(
+            self._ctx,
+            self._account_id,
+            correlation_id,
+        )
+
+    def get_email_activity(self, correlation_id: str) -> EmailActivityResponse | None:
+        return email_activity_queries.get_email_activity(
             self._ctx,
             self._account_id,
             correlation_id,

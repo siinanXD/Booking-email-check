@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { fetchEmailDetail } from "@/lib/api/emails";
 import {
   approveReview,
@@ -21,34 +21,22 @@ import type { ReviewQueueItem } from "@/lib/types/api";
 const TABS: { id: ReviewQueueTab; label: string }[] = [
   { id: "pending", label: "Ausstehend" },
   { id: "released", label: "Freigegeben" },
-  { id: "completed", label: "Abgeschlossen" },
 ];
 
 export function ReviewQueuePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const groundingFilter = searchParams.get("grounding") === "1";
+  const [searchParams] = useSearchParams();
+  const redirectGrounding = searchParams.get("grounding") === "1";
   const [tab, setTab] = useState<ReviewQueueTab>("pending");
   const [intentFilter, setIntentFilter] = useState("");
-
-  useEffect(() => {
-    if (groundingFilter) {
-      setTab("pending");
-    }
-  }, [groundingFilter]);
   const [selected, setSelected] = useState<ReviewQueueItem | null>(null);
   const [draftEdit, setDraftEdit] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const queryClient = useQueryClient();
 
   const { data: queue, isLoading } = useQuery({
-    queryKey: ["review-queue", tab, intentFilter, groundingFilter],
+    queryKey: ["review-queue", tab, intentFilter],
     queryFn: () =>
-      fetchReviewQueue(
-        tab,
-        50,
-        intentFilter || undefined,
-        groundingFilter
-      ),
+      fetchReviewQueue(tab, 50, intentFilter || undefined),
     refetchInterval: 30_000,
   });
 
@@ -96,6 +84,10 @@ export function ReviewQueuePage() {
     setRejectReason("");
   }
 
+  if (redirectGrounding) {
+    return <Navigate to="/ground-zero" replace />;
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -105,21 +97,6 @@ export function ReviewQueuePage() {
           E-Mail.
         </p>
       </div>
-      {groundingFilter && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span>
-            Filter: Mails mit Grounding-Hinweis (ausstehend und ggf. bereits
-            freigegeben). Nach Freigabe lernt die KI aus dem Fall.
-          </span>
-          <button
-            type="button"
-            className="text-indigo-700 underline"
-            onClick={() => setSearchParams({})}
-          >
-            Filter entfernen
-          </button>
-        </div>
-      )}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex rounded-lg border border-slate-200 p-1">
           {TABS.map((t) => (
@@ -147,11 +124,7 @@ export function ReviewQueuePage() {
           {isLoading ? (
             <p className="p-4 text-slate-500">Lade…</p>
           ) : (queue?.items.length ?? 0) === 0 ? (
-            <p className="p-4 text-slate-500">
-              {groundingFilter
-                ? "Keine ausstehenden Mails mit Grounding-Hinweis. Entweder bereits freigegeben oder noch nicht durch die Pipeline (Postfach synchronisieren)."
-                : "Keine Einträge in diesem Tab."}
-            </p>
+            <p className="p-4 text-slate-500">Keine Einträge in diesem Tab.</p>
           ) : (
             <ul>
               {queue!.items.map((item) => (
