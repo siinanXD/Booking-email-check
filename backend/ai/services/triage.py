@@ -65,7 +65,6 @@ class TriageService:
         alerts: AlertService | None = None,
         mail_cost: MailCostTracker | None = None,
     ) -> None:
-        self._triage_llm_enabled = triage_llm_enabled
         self._triage_llm: TriageLlmService | None = None
         if llm is not None and triage_llm_enabled:
             self._triage_llm = TriageLlmService(

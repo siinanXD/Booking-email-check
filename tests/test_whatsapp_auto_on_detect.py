@@ -6,7 +6,7 @@ from datetime import date
 
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
-from backend.features.notifications.whatsapp_client import MockWhatsAppClient
+from tests.mocks import MockWhatsAppClient
 from tests.test_whatsapp_notification import _notification_svc
 
 

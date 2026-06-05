@@ -34,22 +34,6 @@ class DisabledWhatsAppClient:
         )
 
 
-class MockWhatsAppClient:
-    """Test-Stub: zeichnet Versuche auf, ohne HTTP."""
-
-    def __init__(self) -> None:
-        """Initialize the instance with its dependencies."""
-        self.sent: list[WhatsAppTemplateMessage] = []
-
-    def send_template(self, message: WhatsAppTemplateMessage) -> WhatsAppSendResult:
-        """Execute the operation."""
-        self.sent.append(message)
-        return WhatsAppSendResult(
-            success=True,
-            provider_message_id=f"mock-{len(self.sent)}",
-        )
-
-
 def _validate_phone_number_id(phone_id: str) -> str | None:
     """Phone Number ID muss numerisch sein (Meta API), keine Rufnummer."""
     cleaned = phone_id.strip()

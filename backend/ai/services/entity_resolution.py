@@ -65,8 +65,3 @@ class EntityResolutionService:
                 return guests[0], CONFIDENCE_NAME_PLATFORM
 
         return None, 0.0
-
-    @staticmethod
-    def is_match(confidence: float) -> bool:
-        """True wenn Konfidenz die Schwelle erreicht."""
-        return confidence >= CONFIDENCE_THRESHOLD

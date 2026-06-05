@@ -1,1 +1,0 @@
-"""Geschäftslogik (Klassifikation, Extraktion, Retrieval, …)."""

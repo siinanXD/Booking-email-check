@@ -147,7 +147,9 @@ class EmailWorkflow:
         """Startet Workflow; stoppt vor human_review wenn nicht discarded."""
         return cast(dict[str, Any], self._run_observed(email_input, thread_id))
 
-    @observe(name="mail_processed", capture_input=False, capture_output=False)  # type: ignore[misc]
+    @observe(  # type: ignore[misc]
+        name="mail_processed", capture_input=False, capture_output=False
+    )
     def _run_observed(self, email_input: Any, thread_id: str) -> dict[str, Any]:
         if self._tracing:
             langfuse_context.update_current_trace(session_id=thread_id)

@@ -178,7 +178,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
     llm: LLMClient
     embed_client: EmbeddingFn
     if llm_mode == "mock":
-        from backend.ai.services.mock_llm import MockEmbeddingClient, MockLLM
+        from backend.ai.testing.mock_llm import MockEmbeddingClient, MockLLM
 
         llm = MockLLM()
         embed_client = MockEmbeddingClient()

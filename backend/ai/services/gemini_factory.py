@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from backend.ai.services.gemini_client import GeminiClient, GeminiClientProtocol
 from backend.ai.services.gemini_setup import gemini_configured
-from backend.ai.services.mock_gemini import MockGemini
+from backend.ai.testing.mock_gemini import MockGemini
 from backend.core.config.settings import Settings
 
 

@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 
 from backend.core.config.settings import Settings
 from backend.core.models.support_ticket import SupportTicketRecord
-from backend.features.notifications.whatsapp_client import MockWhatsAppClient
 from backend.features.support.support_ticket_notify_service import (
     SupportTicketNotifyService,
 )
@@ -14,6 +13,7 @@ from backend.infrastructure.repositories.platform_admin_config_repository import
     PlatformAdminConfigRecord,
     PlatformAdminConfigRepository,
 )
+from tests.mocks import MockWhatsAppClient
 
 
 def _settings(**overrides: object) -> Settings:
