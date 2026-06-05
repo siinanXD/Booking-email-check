@@ -12,7 +12,15 @@ import {
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
+import {
+  normalizePropertyRecipientItem,
+} from "@/lib/api/properties";
 import type { PropertyRecipientItem } from "@/lib/types/api";
+import {
+  DEFAULT_EMPLOYEE_WHATSAPP_LOCALE,
+  type EmployeeWhatsAppLocale,
+} from "@/lib/whatsappLocales";
+import { EmployeeWhatsAppField } from "@/shared/ui/EmployeeWhatsAppField";
 
 export function PropertiesPage() {
   const navigate = useNavigate();
@@ -44,8 +52,15 @@ export function PropertiesPage() {
     if (!recipients) return;
     setPropertyRows(
       recipients.items.length > 0
-        ? recipients.items
-        : [{ property_name: "", phones: [""] }]
+        ? recipients.items.map(normalizePropertyRecipientItem)
+        : [
+            {
+              property_name: "",
+              employees: [
+                { phone_e164: "", locale: DEFAULT_EMPLOYEE_WHATSAPP_LOCALE },
+              ],
+            },
+          ]
     );
   }, [recipients]);
 
@@ -56,7 +71,12 @@ export function PropertiesPage() {
           .filter((row) => row.property_name.trim())
           .map((row) => ({
             property_name: row.property_name.trim(),
-            phones: row.phones.map((p) => p.trim()).filter(Boolean),
+            employees: row.employees
+              .map((employee) => ({
+                phone_e164: employee.phone_e164.trim(),
+                locale: employee.locale || DEFAULT_EMPLOYEE_WHATSAPP_LOCALE,
+              }))
+              .filter((employee) => employee.phone_e164),
           }))
       ),
     onSuccess: () => {
@@ -80,14 +100,25 @@ export function PropertiesPage() {
 
   function updatePropertyRow(
     index: number,
-    field: "property_name" | "phones",
+    field: "property_name" | "phone" | "locale",
     value: string
   ) {
     setPropertyRows((rows) =>
       rows.map((row, i) => {
         if (i !== index) return row;
         if (field === "property_name") return { ...row, property_name: value };
-        return { ...row, phones: [value] };
+        const employees = row.employees.length
+          ? [...row.employees]
+          : [{ phone_e164: "", locale: DEFAULT_EMPLOYEE_WHATSAPP_LOCALE }];
+        if (field === "phone") {
+          employees[0] = { ...employees[0], phone_e164: value };
+        } else {
+          employees[0] = {
+            ...employees[0],
+            locale: value as EmployeeWhatsAppLocale,
+          };
+        }
+        return { ...row, employees };
       })
     );
   }
@@ -155,7 +186,11 @@ export function PropertiesPage() {
       </Card>
 
       <Card className="space-y-4">
-        <h3 className="font-medium">Empfänger</h3>
+        <h3 className="font-medium">Mitarbeiter-Empfänger</h3>
+        <p className="text-sm text-slate-500">
+          Sprache gilt nur für Reinigungs-Nachrichten an Putzfrau/Mitarbeiter. Storno,
+          Änderungen und Gastnachrichten bleiben auf Deutsch.
+        </p>
         {isLoading ? (
           <p className="text-slate-500">Lade…</p>
         ) : (
@@ -168,10 +203,11 @@ export function PropertiesPage() {
                   updatePropertyRow(index, "property_name", e.target.value)
                 }
               />
-              <Input
-                placeholder="WhatsApp +49…"
-                value={row.phones[0] ?? ""}
-                onChange={(e) => updatePropertyRow(index, "phones", e.target.value)}
+              <EmployeeWhatsAppField
+                phone={row.employees[0]?.phone_e164 ?? ""}
+                locale={row.employees[0]?.locale ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE}
+                onPhoneChange={(phone) => updatePropertyRow(index, "phone", phone)}
+                onLocaleChange={(locale) => updatePropertyRow(index, "locale", locale)}
               />
             </div>
           ))

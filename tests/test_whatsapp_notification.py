@@ -11,7 +11,6 @@ from backend.core.models.notification import NotificationKind, NotificationStatu
 from backend.features.notifications.notification_service import NotificationService
 from backend.features.notifications.whatsapp_client import (
     DisabledWhatsAppClient,
-    MockWhatsAppClient,
     WhatsAppClient,
 )
 from backend.infrastructure.repositories.notification_repository import (
@@ -24,6 +23,7 @@ from backend.infrastructure.repositories.property_recipient_repository import (
     PropertyRecipientRepository,
 )
 from backend.infrastructure.repositories.user_repository import UserRepository
+from tests.mocks import MockWhatsAppClient
 
 
 def _settings(**overrides: object) -> Settings:
@@ -162,7 +162,15 @@ def test_property_recipients_are_included(mock_db) -> None:
     client = MockWhatsAppClient()
     property_repo = PropertyRecipientRepository(mock_db)
     account_id = "test-account"
-    property_repo.upsert(account_id, "Apartment Mitte", ["+491709999999"])
+    from backend.infrastructure.repositories.property_recipient_repository import (
+        PropertyWhatsAppEmployee,
+    )
+
+    property_repo.upsert(
+        account_id,
+        "Apartment Mitte",
+        [PropertyWhatsAppEmployee(phone_e164="+491709999999", locale="de")],
+    )
     svc = NotificationService(
         _settings(WHATSAPP_DEFAULT_RECIPIENTS=""),
         NotificationRepository(mock_db),
@@ -186,7 +194,15 @@ def test_cancellation_skips_property_cleaners(mock_db) -> None:
     client = MockWhatsAppClient()
     property_repo = PropertyRecipientRepository(mock_db)
     account_id = "test-account"
-    property_repo.upsert(account_id, "Apartment Mitte", ["+491709999999"])
+    from backend.infrastructure.repositories.property_recipient_repository import (
+        PropertyWhatsAppEmployee,
+    )
+
+    property_repo.upsert(
+        account_id,
+        "Apartment Mitte",
+        [PropertyWhatsAppEmployee(phone_e164="+491709999999", locale="de")],
+    )
     svc = NotificationService(
         _settings(WHATSAPP_DEFAULT_RECIPIENTS="+491701234567"),
         NotificationRepository(mock_db),

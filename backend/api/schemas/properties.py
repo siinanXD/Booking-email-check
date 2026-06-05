@@ -7,6 +7,7 @@ import re
 from pydantic import BaseModel, Field, field_validator
 
 from backend.infrastructure.repositories.property_recipient_repository import (
+    PropertyWhatsAppEmployee,
     PropertyWhatsAppRecipients,
 )
 
@@ -67,6 +68,7 @@ class PropertyProfileResponse(BaseModel):
     contact_email: str | None = None
     notes: str | None = None
     whatsapp_phones: list[str] = Field(default_factory=list)
+    whatsapp_employees: list[PropertyWhatsAppEmployee] = Field(default_factory=list)
 
 
 class PropertyListItem(BaseModel):
@@ -90,6 +92,7 @@ class PropertyUpdateRequest(BaseModel):
     contact_email: str | None = None
     notes: str | None = None
     whatsapp_phones: list[str] | None = None
+    whatsapp_employees: list[PropertyWhatsAppEmployee] | None = None
 
     @field_validator("contact_phone")
     @classmethod

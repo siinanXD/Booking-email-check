@@ -158,6 +158,9 @@ export interface WhatsAppPreviewMessage {
   template_language: string;
   template_params: string[];
   kind: string;
+  recipient_role: "host" | "employee" | string;
+  generated_body: string;
+  generated_body_de: string;
 }
 
 export interface WhatsAppPreviewResponse {
@@ -184,9 +187,16 @@ export interface ReviewQueueResponse {
   total: number;
 }
 
+export interface PropertyWhatsAppEmployee {
+  phone_e164: string;
+  locale: string;
+}
+
 export interface PropertyRecipientItem {
   property_name: string;
-  phones: string[];
+  employees: PropertyWhatsAppEmployee[];
+  /** Legacy-Fallback aus älteren API-Antworten */
+  phones?: string[];
 }
 
 export interface UserProfileSettings {

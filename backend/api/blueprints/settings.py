@@ -82,7 +82,10 @@ def _to_response() -> PlatformSettingsResponse:
         whatsapp_test_recipient=platform.whatsapp_test_recipient,
         outlook_mailbox=platform.outlook_mailbox,
         property_recipients=[
-            PropertyRecipientItem(property_name=p.property_name, phones=p.phones)
+            PropertyRecipientItem(
+                property_name=p.property_name,
+                employees=list(p.employees),
+            )
             for p in props
         ],
         user_profile=profile,
@@ -149,7 +152,10 @@ def update_settings() -> tuple[Any, int]:
     if body.property_recipients is not None:
         ctx.property_recipient_repo.replace_all(
             account_id,
-            [(item.property_name, item.phones) for item in body.property_recipients],
+            [
+                (item.property_name, item.normalized_employees)
+                for item in body.property_recipients
+            ],
         )
 
     if body.user_profile is not None:

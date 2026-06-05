@@ -1,5 +1,9 @@
 import { apiClient } from "@/lib/api/client";
-import type { PropertyRecipientItem } from "@/lib/types/api";
+import type {
+  PropertyRecipientItem,
+  PropertyWhatsAppEmployee,
+} from "@/lib/types/api";
+import { DEFAULT_EMPLOYEE_WHATSAPP_LOCALE } from "@/lib/whatsappLocales";
 
 export type PropertyHistoryItem = {
   correlation_id: string;
@@ -72,7 +76,24 @@ export type PropertyProfile = {
   contact_email: string | null;
   notes: string | null;
   whatsapp_phones: string[];
+  whatsapp_employees: PropertyWhatsAppEmployee[];
 };
+
+export function normalizePropertyRecipientItem(
+  item: PropertyRecipientItem
+): PropertyRecipientItem {
+  if (item.employees?.length) {
+    return item;
+  }
+  const phones = item.phones ?? [];
+  return {
+    property_name: item.property_name,
+    employees: phones.map((phone) => ({
+      phone_e164: phone,
+      locale: DEFAULT_EMPLOYEE_WHATSAPP_LOCALE,
+    })),
+  };
+}
 
 export async function fetchProperties(year?: number): Promise<{
   items: PropertyListItem[];
@@ -111,8 +132,11 @@ export async function updatePropertyProfile(
       | "contact_email"
       | "notes"
       | "whatsapp_phones"
+      | "whatsapp_employees"
     >
-  >
+  > & {
+    whatsapp_employees?: PropertyWhatsAppEmployee[];
+  }
 ): Promise<PropertyProfile> {
   const { data } = await apiClient.put(`/api/properties/${propertyId}`, payload);
   return data;

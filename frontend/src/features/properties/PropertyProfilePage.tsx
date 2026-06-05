@@ -6,8 +6,13 @@ import {
   fetchPropertyStats,
   updatePropertyProfile,
 } from "@/lib/api/properties";
+import {
+  DEFAULT_EMPLOYEE_WHATSAPP_LOCALE,
+  type EmployeeWhatsAppLocale,
+} from "@/lib/whatsappLocales";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
+import { EmployeeWhatsAppField } from "@/shared/ui/EmployeeWhatsAppField";
 import { Input } from "@/shared/ui/Input";
 
 export function PropertyProfilePage() {
@@ -34,6 +39,9 @@ export function PropertyProfilePage() {
   const [contactEmail, setContactEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [whatsappLocale, setWhatsappLocale] = useState<EmployeeWhatsAppLocale>(
+    DEFAULT_EMPLOYEE_WHATSAPP_LOCALE
+  );
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,7 +52,11 @@ export function PropertyProfilePage() {
     setContactPhone(profile.contact_phone ?? "");
     setContactEmail(profile.contact_email ?? "");
     setNotes(profile.notes ?? "");
-    setWhatsappPhone(profile.whatsapp_phones[0] ?? "");
+    const employee = profile.whatsapp_employees[0];
+    setWhatsappPhone(employee?.phone_e164 ?? profile.whatsapp_phones[0] ?? "");
+    setWhatsappLocale(
+      (employee?.locale as EmployeeWhatsAppLocale) ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE
+    );
   }, [profile]);
 
   const saveMut = useMutation({
@@ -56,7 +68,9 @@ export function PropertyProfilePage() {
         contact_phone: contactPhone.trim() || null,
         contact_email: contactEmail.trim() || null,
         notes: notes.trim() || null,
-        whatsapp_phones: whatsappPhone.trim() ? [whatsappPhone.trim()] : [],
+        whatsapp_employees: whatsappPhone.trim()
+          ? [{ phone_e164: whatsappPhone.trim(), locale: whatsappLocale }]
+          : [],
       }),
     onSuccess: () => {
       setSaveMessage("Profil gespeichert.");
@@ -140,11 +154,17 @@ export function PropertyProfilePage() {
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
             />
-            <Input
-              placeholder="WhatsApp +49…"
-              value={whatsappPhone}
-              onChange={(e) => setWhatsappPhone(e.target.value)}
+            <EmployeeWhatsAppField
+              phone={whatsappPhone}
+              locale={whatsappLocale}
+              onPhoneChange={setWhatsappPhone}
+              onLocaleChange={setWhatsappLocale}
+              phonePlaceholder="WhatsApp Mitarbeiter +49…"
             />
+            <p className="text-xs text-slate-500">
+              Sprache nur für Reinigungs-Aufträge an diese Mitarbeiterin — Storno &amp; Co.
+              bleiben Deutsch.
+            </p>
             <textarea
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               placeholder="Notizen"

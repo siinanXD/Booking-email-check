@@ -13,6 +13,9 @@ from backend.api.schemas.properties import (
 from backend.core.config.factory import AppContext
 from backend.core.models.entities import Property
 from backend.features.booking.entity_sync import _property_id
+from backend.infrastructure.repositories.property_recipient_repository import (
+    PropertyWhatsAppEmployee,
+)
 from backend.infrastructure.repositories.property_repository import PropertyRepository
 
 
@@ -25,7 +28,10 @@ def _to_profile(
     account_id: str,
     prop: Property,
 ) -> PropertyProfileResponse:
-    phones = ctx.property_recipient_repo.get_phones(prop.name, account_id=account_id)
+    employees = ctx.property_recipient_repo.get_employees(
+        prop.name,
+        account_id=account_id,
+    )
     return PropertyProfileResponse(
         property_id=prop.property_id,
         name=prop.name,
@@ -35,7 +41,8 @@ def _to_profile(
         contact_phone=prop.contact_phone,
         contact_email=prop.contact_email,
         notes=prop.notes,
-        whatsapp_phones=phones,
+        whatsapp_phones=[employee.phone_e164 for employee in employees],
+        whatsapp_employees=employees,
     )
 
 
@@ -116,7 +123,10 @@ def update_property_profile(
     if prop is None:
         return None
     old_name = prop.name
-    updates = body.model_dump(exclude_unset=True, exclude={"whatsapp_phones"})
+    updates = body.model_dump(
+        exclude_unset=True,
+        exclude={"whatsapp_phones", "whatsapp_employees"},
+    )
     if "name" in updates and updates["name"] is not None:
         new_name = str(updates["name"]).strip()
         if not new_name:
@@ -132,15 +142,20 @@ def update_property_profile(
         updates["name"] = new_name
     prop = prop.model_copy(update=updates)
     repo.upsert(prop, account_id=account_id)
-    if body.whatsapp_phones is not None:
+    if body.whatsapp_employees is not None:
         ctx.property_recipient_repo.upsert(
             account_id,
             prop.name,
-            list(body.whatsapp_phones),
+            list(body.whatsapp_employees),
         )
+    elif body.whatsapp_phones is not None:
+        employees = [
+            PropertyWhatsAppEmployee(phone_e164=phone) for phone in body.whatsapp_phones
+        ]
+        ctx.property_recipient_repo.upsert(account_id, prop.name, employees)
     elif "name" in updates and updates["name"] != old_name:
-        old_phones = ctx.property_recipient_repo.get_phones(
+        old_employees = ctx.property_recipient_repo.get_employees(
             old_name, account_id=account_id
         )
-        ctx.property_recipient_repo.upsert(account_id, prop.name, old_phones)
+        ctx.property_recipient_repo.upsert(account_id, prop.name, old_employees)
     return _to_profile(ctx, account_id, prop)

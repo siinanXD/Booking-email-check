@@ -22,6 +22,7 @@ from backend.features.notifications.whatsapp_client import (
     WhatsAppClient,
     build_whatsapp_client,
 )
+from backend.features.notifications.whatsapp_locale import DEFAULT_EMPLOYEE_LOCALE
 from backend.features.platform.effective_settings import merge_platform_settings
 from backend.infrastructure.repositories.notification_repository import (
     NotificationRepository,
@@ -33,6 +34,9 @@ from backend.infrastructure.repositories.property_recipient_repository import (
     PropertyRecipientRepository,
 )
 from backend.infrastructure.repositories.user_repository import UserRepository
+
+_HOST_RECIPIENT_ROLE = "host"
+_EMPLOYEE_RECIPIENT_ROLE = "employee"
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +111,6 @@ class NotificationService:
             )
             return []
 
-        template_name, params = build_template_payload(kind, extraction, settings)
         recipients = self._resolve_recipients(
             extraction, settings, account_id=account_id
         )
@@ -120,13 +123,29 @@ class NotificationService:
 
         client = self._client(settings)
         results: list[NotificationOutboxRecord] = []
-        for recipient in recipients:
+        host_locale = (
+            settings.whatsapp_template_language.strip() or DEFAULT_EMPLOYEE_LOCALE
+        )
+        for recipient, recipient_locale, role in recipients:
+            locale = recipient_locale
+            if (
+                kind != NotificationKind.BOOKING_CLEANING_TASK
+                or role != _EMPLOYEE_RECIPIENT_ROLE
+            ):
+                locale = host_locale
+            template_name, params, template_language = build_template_payload(
+                kind,
+                extraction,
+                settings,
+                locale=locale,
+            )
             record = self._dispatch_one(
                 correlation_id=correlation_id,
                 kind=kind,
                 recipient=recipient,
                 template_name=template_name,
                 template_params=params,
+                template_language=template_language,
                 settings=settings,
                 client=client,
             )
@@ -142,6 +161,7 @@ class NotificationService:
         recipient: str,
         template_name: str,
         template_params: list[str],
+        template_language: str,
         settings: Settings,
         client: WhatsAppClient,
     ) -> NotificationOutboxRecord | None:
@@ -153,7 +173,7 @@ class NotificationService:
             recipient_e164=recipient,
             template_name=template_name,
             template_params=template_params,
-            template_language=settings.whatsapp_template_language,
+            template_language=template_language,
         )
         claimed = self._notification_repo.try_claim(pending)
         if claimed is None:
@@ -162,7 +182,7 @@ class NotificationService:
         message = WhatsAppTemplateMessage(
             recipient_e164=recipient,
             template_name=template_name,
-            template_language=settings.whatsapp_template_language,
+            template_language=template_language,
             template_params=template_params,
         )
         result = client.send_template(message)
@@ -197,20 +217,28 @@ class NotificationService:
         settings: Settings,
         *,
         account_id: str | None = None,
-    ) -> list[str]:
-        """Host immer; bei neuer Buchung zusaetzlich Putzfrau/Mitarbeiter."""
-        phones: set[str] = set()
+    ) -> list[tuple[str, str, str]]:
+        """Host in Account-Sprache; Mitarbeiter-Sprache nur für Reinigungsaufträge."""
+        host_locale = (
+            settings.whatsapp_template_language.strip() or DEFAULT_EMPLOYEE_LOCALE
+        )
+        targets: dict[str, tuple[str, str]] = {}
         for phone in self._user_repo.list_whatsapp_recipient_phones(account_id):
-            phones.add(phone)
+            targets[phone] = (host_locale, _HOST_RECIPIENT_ROLE)
         for phone in parse_recipient_list(settings.whatsapp_default_recipients):
-            phones.add(phone)
+            targets[phone] = (host_locale, _HOST_RECIPIENT_ROLE)
 
         intent = extraction.intent
         if intent in (BookingIntent.NEW_BOOKING, None):
-            property_phones = self._property_recipient_repo.get_phones(
+            for employee in self._property_recipient_repo.get_employees(
                 extraction.property_name,
                 account_id=account_id,
-            )
-            phones.update(property_phones)
+            ):
+                targets[employee.phone_e164] = (
+                    employee.locale,
+                    _EMPLOYEE_RECIPIENT_ROLE,
+                )
 
-        return sorted(phones)
+        return sorted(
+            (phone, locale, role) for phone, (locale, role) in targets.items()
+        )

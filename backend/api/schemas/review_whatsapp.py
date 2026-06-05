@@ -13,6 +13,9 @@ class WhatsAppPreviewMessage(BaseModel):
     template_language: str = "de"
     template_params: list[str] = []
     kind: str = ""
+    recipient_role: str = "host"
+    generated_body: str = ""
+    generated_body_de: str = ""
 
 
 class WhatsAppPreviewResponse(BaseModel):

@@ -2,14 +2,49 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+from backend.infrastructure.repositories.property_recipient_repository import (
+    PropertyWhatsAppEmployee,
+    PropertyWhatsAppRecipients,
+)
 
 
 class PropertyRecipientItem(BaseModel):
     """WhatsApp-Empfänger für eine Unterkunft."""
 
     property_name: str = Field(min_length=1)
+    employees: list[PropertyWhatsAppEmployee] = Field(default_factory=list)
     phones: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_phones(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        if data.get("employees"):
+            return data
+        phones = data.get("phones") or []
+        if not phones:
+            return data
+        payload = dict(data)
+        payload["employees"] = [
+            {"phone_e164": phone, "locale": "de"}
+            for phone in phones
+            if isinstance(phone, str) and phone.strip()
+        ]
+        return payload
+
+    @property
+    def normalized_employees(self) -> list[PropertyWhatsAppEmployee]:
+        if self.employees:
+            return list(self.employees)
+        return PropertyWhatsAppRecipients.model_validate(
+            {
+                "property_name": self.property_name,
+                "phones": self.phones,
+            }
+        ).employees
 
 
 class UserProfileSettings(BaseModel):
