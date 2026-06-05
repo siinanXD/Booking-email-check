@@ -6,16 +6,18 @@ import logging
 import os
 import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, g, jsonify
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from pydantic import ValidationError
 
 from backend.api.auth.routes import auth_bp
 from backend.api.auth.token_blocklist import MongoBlocklistBackend, configure
 from backend.api.blueprints import register_api_blueprints
+from backend.api.rate_limit import limiter
 from backend.core.config.factory import AppContext, build_app_context
 from backend.core.config.settings import Settings, get_settings
 
@@ -29,6 +31,10 @@ def create_app(settings: Settings | None = None) -> Flask:
     bindet den bestehenden AppContext (build_app_context) ein.
     """
     cfg = settings or get_settings()
+    logging.basicConfig(
+        level=getattr(logging, cfg.log_level.upper(), logging.INFO),
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
     app = Flask(__name__)
     app.config["SECRET_KEY"] = cfg.flask_secret_key or "dev-only-change-me"
 
@@ -39,10 +45,14 @@ def create_app(settings: Settings | None = None) -> Flask:
     origins = [o.strip() for o in cfg.cors_origins.split(",") if o.strip()]
     CORS(app, origins=origins, supports_credentials=True)
 
+    limiter.init_app(app)
+    app.config.setdefault("RATELIMIT_DEFAULT", "200 per minute;2000 per hour")
+
     @app.before_request
     def _bind_request_context() -> None:
         g.ctx = app.extensions["ctx"]
         g.settings = cfg
+        g.request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
 
     @app.get("/health")
     def health() -> tuple[Any, int]:
@@ -82,6 +92,20 @@ def create_app(settings: Settings | None = None) -> Flask:
                 return app.send_static_file("index.html")
 
             app.static_folder = str(static_dir)
+
+    @app.after_request
+    def _security_headers(response: Any) -> Any:
+        response.headers["X-Correlation-ID"] = g.get("request_id", "")
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault(
+            "Referrer-Policy", "strict-origin-when-cross-origin"
+        )
+        if cfg.flask_env == "production":
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+            )
+        return response
 
     @app.errorhandler(404)
     def not_found(err: Any) -> tuple[Any, int]:
@@ -138,7 +162,7 @@ def _start_dev_mail_poll(app: Flask, settings: Settings) -> None:
                 with app.app_context():
                     ctx = app.extensions["ctx"]
                     service = build_mail_poll_service_from_context(ctx, settings)
-                    result = service.run_all()
+                    result = service.run_all(max_workers=settings.mail_poll_max_workers)
                     from backend.features.mail.mail_reprocess_service import (
                         build_mail_reprocess_service,
                     )

@@ -5,9 +5,11 @@ import type { EmailListItem } from "@/lib/types/api";
 export function EmailRow({
   item,
   onClick,
+  selected = false,
 }: {
   item: EmailListItem;
   onClick?: () => void;
+  selected?: boolean;
 }) {
   const tone =
     item.review_status === "pending" || item.processing_state === "pending_review"
@@ -16,7 +18,9 @@ export function EmailRow({
 
   return (
     <tr
-      className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
+      className={`border-b border-slate-100 ${
+        onClick ? "cursor-pointer hover:bg-slate-50" : ""
+      } ${selected ? "bg-indigo-50" : ""}`}
       onClick={onClick}
     >
       <td className="px-4 py-3 text-sm text-slate-600">

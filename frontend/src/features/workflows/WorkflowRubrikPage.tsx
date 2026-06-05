@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchWorkflowNav } from "@/lib/api/workflows";
 import { fetchEmails } from "@/lib/api/emails";
+import type { EmailListItem } from "@/lib/types/api";
+import { EmailDetailSideCard } from "@/shared/components/EmailDetailSideCard";
 import { EmailTable } from "@/shared/components/EmailTable";
 import { Input } from "@/shared/ui/Input";
 
@@ -10,6 +12,7 @@ export function WorkflowRubrikPage() {
   const { slug = "" } = useParams<{ slug: string }>();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<EmailListItem | null>(null);
 
   const { data: nav } = useQuery({
     queryKey: ["workflows", "nav"],
@@ -64,8 +67,14 @@ export function WorkflowRubrikPage() {
         <p className="text-slate-500">Lade…</p>
       ) : (
         <>
-          <EmailTable items={data?.items ?? []} />
-          {data && data.pages > 1 && (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            <div className="space-y-4">
+              <EmailTable
+                items={data?.items ?? []}
+                selectedCorrelationId={selected?.correlation_id}
+                onRowClick={(item) => setSelected(item)}
+              />
+              {data && data.pages > 1 && (
             <div className="flex items-center justify-between text-sm text-slate-600">
               <span>
                 Seite {data.page} von {data.pages} ({data.total} gesamt)
@@ -89,7 +98,10 @@ export function WorkflowRubrikPage() {
                 </button>
               </div>
             </div>
-          )}
+              )}
+            </div>
+            <EmailDetailSideCard selected={selected} />
+          </div>
           {!isLoading && (data?.total ?? 0) === 0 && (
             <p className="text-sm text-slate-500">
               Noch keine Mails in dieser Rubrik — Routing greift nach Live-Aktivierung.

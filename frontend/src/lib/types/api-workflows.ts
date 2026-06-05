@@ -155,6 +155,7 @@ export interface GeminiStatusResponse {
   configured: boolean;
   available: boolean;
   model: string;
+  ocr_available: boolean;
 }
 
 export interface TenantWorkflowTestCaseResult {

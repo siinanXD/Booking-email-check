@@ -23,6 +23,7 @@ from backend.api.auth.tokens import (
     decode_token,
 )
 from backend.api.middleware.auth_guard import require_auth
+from backend.api.rate_limit import limiter
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -76,6 +77,7 @@ def _login_blocked(user: object) -> tuple[Any, int] | None:
 
 
 @auth_bp.post("/register")
+@limiter.limit("5 per minute;20 per hour")
 def register() -> tuple[Any, int]:
     """Registrierung – Account startet im Status pending (Freischaltung nötig)."""
     try:
@@ -127,6 +129,7 @@ def register() -> tuple[Any, int]:
 
 
 @auth_bp.post("/login")
+@limiter.limit("10 per minute;50 per hour")
 def login() -> tuple[Any, int]:
     """Login mit E-Mail und Passwort."""
     body = LoginRequest.model_validate(request.get_json(silent=True) or {})

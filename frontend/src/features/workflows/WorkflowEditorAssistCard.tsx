@@ -45,16 +45,28 @@ export function WorkflowEditorAssistCard({
         placeholder="Optional: z.B. Tracking-Mails von DHL — Sendungsnummer ist Pflicht."
       />
       {assistFiles?.length && geminiStatus && !geminiStatus.available && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-          GEMINI_API_KEY fehlt — Screenshot-Vorschläge sind nur mit Gemini möglich.
-        </p>
+        geminiStatus.ocr_available ? (
+          <p className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+            Kein GEMINI_API_KEY — Text wird via PaddleOCR aus dem Bild extrahiert und an OpenAI übergeben.
+          </p>
+        ) : (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            GEMINI_API_KEY fehlt und PaddleOCR ist nicht installiert — Bild-Vorschläge nicht möglich.
+            Installieren mit: <code className="font-mono">pip install "email-platform[ocr]"</code>
+          </p>
+        )
       )}
       <Button
         variant="secondary"
         disabled={
           (assistDescription.trim().length < 10 && !assistFiles?.length) ||
           suggestMut.isPending ||
-          Boolean(assistFiles?.length && geminiStatus && !geminiStatus.available)
+          Boolean(
+            assistFiles?.length &&
+            geminiStatus &&
+            !geminiStatus.available &&
+            !geminiStatus.ocr_available
+          )
         }
         onClick={() => suggestMut.mutate()}
       >

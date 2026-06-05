@@ -224,7 +224,7 @@ def test_resume_after_rejection_persists_rejected_state(
         review_repo=review_repo,
     )
     wf.run(payload, thread_id=payload.correlation_id)
-    result = wf.reject_after_review(
+    result = wf.resume_after_rejection(
         payload.correlation_id,
         reason="Inaccurate draft",
     )

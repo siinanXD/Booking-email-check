@@ -86,11 +86,11 @@ export function CompletedPage() {
             <p className="text-slate-500">Eintrag aus der Liste wählen</p>
           ) : (
             <div className="space-y-4">
-              <div>
-                <h3 className="font-medium">{selected.subject}</h3>
-                <p className="text-sm text-slate-500">{selected.from_address}</p>
-              </div>
-              <EmailDetailPanel detail={detail} isLoading={detailLoading} />
+              <EmailDetailPanel
+                detail={detail}
+                isLoading={detailLoading}
+                showFullBody
+              />
               <div>
                 <p className="mb-2 text-xs font-medium uppercase text-slate-500">
                   Arbeitsverlauf

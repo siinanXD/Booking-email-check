@@ -1,0 +1,90 @@
+# Nginx-Reverse-Proxy für die Email-Platform (Produktion)
+#
+# Verwendung:
+#   1. Datei nach /etc/nginx/sites-available/email-platform kopieren
+#   2. Zertifikatspfade anpassen (Let's Encrypt oder eigenes Zertifikat)
+#   3. server_name auf die echte Domain setzen
+#   4. ln -s /etc/nginx/sites-available/email-platform /etc/nginx/sites-enabled/
+#   5. nginx -t && systemctl reload nginx
+#
+# Voraussetzungen:
+#   - Gunicorn läuft auf localhost:8000 (docker-compose web-Service)
+#   - SSL-Zertifikat vorhanden (z.B. via: certbot --nginx -d yourdomain.com)
+
+# HTTP → HTTPS Redirect
+server {
+    listen 80;
+    listen [::]:80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name yourdomain.com www.yourdomain.com;
+
+    # SSL-Zertifikat (Let's Encrypt)
+    ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+    # Moderne TLS-Einstellungen
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+
+    # HSTS (wird auch vom Flask-Backend gesetzt, hier zur Sicherheit doppelt)
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+
+    # Proxy zu Gunicorn
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+
+        # Korrekte IP für Rate Limiter (flask-limiter liest REMOTE_ADDR)
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # Korrekte Protokoll-Erkennung für HSTS-Header im Flask-Backend
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_set_header Host $host;
+        proxy_redirect off;
+
+        # Timeouts für lange LLM-Requests (Classify + Extract + Draft ~30-60s)
+        proxy_connect_timeout 10s;
+        proxy_read_timeout    90s;
+        proxy_send_timeout    90s;
+    }
+
+    # WebSocket-Upgrade (für zukünftige Realtime-Features)
+    location /ws/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+
+    # Statische Dateien direkt ausliefern (optional, Gunicorn kann das auch)
+    # location /static/ {
+    #     alias /app/frontend/dist/;
+    #     expires 1y;
+    #     add_header Cache-Control "public, immutable";
+    # }
+
+    # Logging
+    access_log /var/log/nginx/email-platform.access.log;
+    error_log  /var/log/nginx/email-platform.error.log;
+}

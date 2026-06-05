@@ -178,6 +178,7 @@ class Settings(BaseSettings):
         default=300, alias="MAIL_POLL_INTERVAL_SECONDS"
     )
     mail_poll_run_once: bool = Field(default=False, alias="MAIL_POLL_RUN_ONCE")
+    mail_poll_max_workers: int = Field(default=1, alias="MAIL_POLL_MAX_WORKERS")
 
     @model_validator(mode="after")
     def apply_dev_defaults(self) -> Self:
