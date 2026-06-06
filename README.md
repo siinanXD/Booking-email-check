@@ -115,9 +115,9 @@ python scripts/seed_admin.py
 flask --app backend.api.app:create_app run --debug --port 5000
 ```
 
-Optional: `pip install langgraph-checkpoint-mongodb==0.1.4` für durable
-LangGraph-Checkpoints in Mongo. Sonst `WEB_USE_MEMORY_CHECKPOINTER=true` nur
-für Tests.
+Optional: `WEB_USE_MEMORY_CHECKPOINTER=true` nur für lokale Tests ohne
+MongoDB-Checkpoints. In Produktion nutzt die App automatisch `MongoDBSaver`
+(`langgraph-checkpoint-mongodb`, siehe `pyproject.toml`).
 
 API: `GET /health`, `POST /api/auth/login`, geschützte Routes unter
 `/api/dashboard`, `/api/emails`, `/api/review`, `/api/costs`, `/api/mail`, …

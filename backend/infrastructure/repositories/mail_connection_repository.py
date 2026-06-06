@@ -44,6 +44,10 @@ class MailConnectionRepository:
     def __init__(self, db: Db) -> None:
         """Initialize the instance with its dependencies."""
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
+        self._col.create_index(
+            [("onboarding_completed", 1)],
+            name="idx_mail_conn_onboarding",
+        )
 
     def get(self, account_id: str) -> MailConnectionRecord | None:
         """Lädt die Verbindung eines Accounts."""

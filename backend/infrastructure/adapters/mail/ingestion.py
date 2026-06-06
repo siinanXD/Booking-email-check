@@ -97,12 +97,12 @@ class MailIngestionRunner:
                 anchor.isoformat(),
             )
         items: list[MailPollItemResult] = []
+        existing_ids = self._email_repo.find_existing_message_ids(
+            [payload.message_id for payload in messages],
+            account_id=account_id,
+        )
         for payload in messages:
-            existing = self._email_repo.get_by_message_id(
-                payload.message_id,
-                account_id=account_id,
-            )
-            if existing is not None:
+            if payload.message_id in existing_ids:
                 items.append(
                     MailPollItemResult(
                         message_id=payload.message_id,

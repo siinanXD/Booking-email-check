@@ -41,6 +41,10 @@ class AccountRepository:
     def __init__(self, db: Db) -> None:
         """Initialize the instance with its dependencies."""
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
+        self._col.create_index(
+            [("status", 1), ("created_at", -1)],
+            name="idx_account_status_created",
+        )
 
     def get_by_id(self, account_id: str) -> AccountRecord | None:
         """Lädt Account per ID."""

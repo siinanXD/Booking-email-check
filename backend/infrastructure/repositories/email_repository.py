@@ -36,6 +36,29 @@ class EmailRepository:
             [("account_id", 1), ("correlation_id", 1)],
             name="idx_email_account_correlation",
         )
+        self._col.create_index(
+            [("account_id", 1), ("message_id", 1)],
+            name="idx_email_account_message",
+        )
+
+    def find_existing_message_ids(
+        self,
+        message_ids: list[str],
+        *,
+        account_id: str | None = None,
+    ) -> set[str]:
+        """Welche Message-IDs bereits gespeichert sind (Batch-Dedup für Poll)."""
+        if not message_ids:
+            return set()
+        query = with_account_filter({"_id": {"$in": message_ids}}, account_id)
+        found = {str(doc["_id"]) for doc in self._col.find(query, {"_id": 1})}
+        missing = [mid for mid in message_ids if mid not in found]
+        if not missing:
+            return found
+        alt_query = with_account_filter({"message_id": {"$in": missing}}, account_id)
+        for doc in self._col.find(alt_query, {"_id": 1, "message_id": 1}):
+            found.add(str(doc.get("message_id") or doc["_id"]))
+        return found
 
     def upsert_by_message_id(self, email: StoredEmail) -> StoredEmail:
         """Idempotentes Speichern nach Message-ID."""
