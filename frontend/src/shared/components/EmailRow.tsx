@@ -69,9 +69,11 @@ export function EmailListCard({
 export function EmailRow({
   item,
   onClick,
+  isSelected = false,
 }: {
   item: EmailListItem;
   onClick?: () => void;
+  isSelected?: boolean;
 }) {
   const tone = toneForItem(item);
 
@@ -79,7 +81,7 @@ export function EmailRow({
     <tr
       className={`transition-colors duration-100 ${
         onClick ? "cursor-pointer hover:bg-indigo-50/40" : ""
-      }`}
+      } ${isSelected ? "bg-indigo-50" : ""}`}
       onClick={onClick}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={

@@ -5,6 +5,7 @@ import { Hash, MessageSquare, FileText } from "lucide-react";
 type Props = {
   detail: EmailDetail | undefined;
   isLoading?: boolean;
+  showFullBody?: boolean;
 };
 
 function DetailSkeleton() {
@@ -20,7 +21,7 @@ function DetailSkeleton() {
   );
 }
 
-export function EmailDetailPanel({ detail, isLoading }: Props) {
+export function EmailDetailPanel({ detail, isLoading, showFullBody }: Props) {
   if (isLoading) return <DetailSkeleton />;
 
   if (!detail) {
@@ -63,7 +64,7 @@ export function EmailDetailPanel({ detail, isLoading }: Props) {
         <p className="border-b border-slate-100 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           E-Mail-Text
         </p>
-        <pre className="max-h-44 overflow-auto px-3 py-2.5 whitespace-pre-wrap text-xs leading-relaxed text-slate-700">
+        <pre className={`overflow-auto px-3 py-2.5 whitespace-pre-wrap text-xs leading-relaxed text-slate-700${showFullBody ? "" : " max-h-44"}`}>
           {detail.body_text}
         </pre>
       </div>

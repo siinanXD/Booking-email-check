@@ -25,7 +25,7 @@ export function EmailDetailSideCard({
         </p>
       ) : (
         <EmailDetailPanel
-          detail={detail ?? selected}
+          detail={detail}
           isLoading={isLoading}
           showFullBody
         />

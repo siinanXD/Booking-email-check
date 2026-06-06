@@ -6,10 +6,12 @@ export function EmailTable({
   items,
   onRowClick,
   emptyMessage = "Keine Einträge",
+  selectedCorrelationId,
 }: {
   items: EmailListItem[];
   onRowClick?: (item: EmailListItem) => void;
   emptyMessage?: string;
+  selectedCorrelationId?: string;
 }) {
   if (items.length === 0) {
     return (
@@ -41,6 +43,7 @@ export function EmailTable({
               <EmailRow
                 key={item.correlation_id}
                 item={item}
+                isSelected={item.correlation_id === selectedCorrelationId}
                 onClick={onRowClick ? () => onRowClick(item) : undefined}
               />
             ))}
