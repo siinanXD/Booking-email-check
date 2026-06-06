@@ -138,15 +138,13 @@ def create_app(settings: Settings | None = None) -> Flask:
         logger.exception("API error")
         return jsonify({"error": str(err), "code": 500}), 500
 
-    _start_dev_mail_poll(app, cfg)
+    _start_mail_poll(app, cfg)
 
     return app
 
 
-def _start_dev_mail_poll(app: Flask, settings: Settings) -> None:
-    """Startet Mail-Polling im Dev-Modus (Hintergrund-Thread)."""
-    if settings.flask_env != "development":
-        return
+def _start_mail_poll(app: Flask, settings: Settings) -> None:
+    """Startet Mail-Polling als Hintergrund-Thread (dev + production)."""
     if app.debug and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
         return
 
@@ -156,7 +154,7 @@ def _start_dev_mail_poll(app: Flask, settings: Settings) -> None:
         )
 
         interval = max(30, settings.mail_poll_interval_seconds)
-        logger.info("Dev mail poll thread started (interval=%ss)", interval)
+        logger.info("Mail poll thread started (interval=%ss)", interval)
         while True:
             try:
                 with app.app_context():
@@ -185,7 +183,7 @@ def _start_dev_mail_poll(app: Flask, settings: Settings) -> None:
                 logger.exception("Dev mail poll failed")
             time.sleep(interval)
 
-    thread = threading.Thread(target=_loop, daemon=True, name="dev-mail-poll")
+    thread = threading.Thread(target=_loop, daemon=True, name="mail-poll")
     thread.start()
 
 
