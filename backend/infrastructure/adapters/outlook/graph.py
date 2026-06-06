@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 from urllib.error import HTTPError
@@ -17,6 +18,7 @@ from backend.infrastructure.adapters.outlook.auth import (
     DelegatedAuth,
 )
 from backend.infrastructure.adapters.outlook.message_mapper import map_graph_message
+from backend.infrastructure.adapters.outlook.poll_window import format_graph_datetime
 from backend.infrastructure.repositories.mail_connection_repository import (
     MailConnectionRecord,
 )
@@ -187,6 +189,7 @@ class OutlookGraphClient:
         top: int = 100,
         *,
         unread_only: bool = False,
+        since: datetime | None = None,
     ) -> list[dict[str, Any]]:
         prefix = self._resource_prefix()
         params: dict[str, str] = {
@@ -194,8 +197,13 @@ class OutlookGraphClient:
             "$select": _MESSAGE_SELECT,
             "$orderby": "receivedDateTime desc",
         }
+        filters: list[str] = []
         if unread_only:
-            params["$filter"] = "isRead eq false"
+            filters.append("isRead eq false")
+        if since is not None:
+            filters.append(f"receivedDateTime ge {format_graph_datetime(since)}")
+        if filters:
+            params["$filter"] = " and ".join(filters)
         path = f"{prefix}/mailFolders/inbox/messages"
         payload = self._request("GET", path, params=params)
         return list(payload.get("value") or [])

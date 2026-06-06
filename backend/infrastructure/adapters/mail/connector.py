@@ -45,6 +45,7 @@ class MailConnector(Protocol):
         *,
         limit: int = 10,
         unread_only: bool = False,
+        since: datetime | None = None,
     ) -> list[IncomingEmail]:
         """Holt Nachrichten aus dem Posteingang."""
         ...
@@ -89,9 +90,14 @@ class OutlookMailConnector:
         *,
         limit: int = 10,
         unread_only: bool = False,
+        since: datetime | None = None,
     ) -> list[IncomingEmail]:
         client = self._client()
-        raw_messages = client.list_inbox_messages(limit, unread_only=unread_only)
+        raw_messages = client.list_inbox_messages(
+            limit,
+            unread_only=unread_only,
+            since=since,
+        )
         result: list[IncomingEmail] = []
         for graph_msg in raw_messages:
             mapped = map_graph_message(graph_msg)
@@ -192,7 +198,9 @@ class ImapMailConnector:
         *,
         limit: int = 10,
         unread_only: bool = False,
+        since: datetime | None = None,
     ) -> list[IncomingEmail]:
+        _ = since  # IMAP: kein serverseitiges Datumsfilter in MVP
         client = self._connect()
         try:
             client.select("INBOX", readonly=True)

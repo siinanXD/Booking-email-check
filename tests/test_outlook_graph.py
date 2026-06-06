@@ -88,8 +88,10 @@ class _FakeGraph(OutlookGraphClient):
         top: int = 100,
         *,
         unread_only: bool = False,
+        since: datetime | None = None,
     ) -> list[dict[str, Any]]:
         """List matching records."""
+        _ = unread_only, since
         return self._messages[:top]
 
     def list_unread_inbox_messages(self, top: int = 50) -> list[dict[str, Any]]:
@@ -198,6 +200,29 @@ def test_graph_client_list_unread(mock_urlopen: MagicMock) -> None:
     req = mock_urlopen.call_args[0][0]
     assert "mailFolders/inbox/messages" in req.full_url
     assert "isRead" in req.full_url
+
+
+@patch("backend.infrastructure.adapters.outlook.graph.urlopen")
+def test_graph_client_list_inbox_since_filter(mock_urlopen: MagicMock) -> None:
+    """Graph-Poll nutzt receivedDateTime-Filter für zuverlässiges $orderby."""
+    body = json.dumps({"value": [_sample_graph_message()]}).encode()
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = body
+    mock_resp.__enter__.return_value = mock_resp
+    mock_urlopen.return_value = mock_resp
+
+    client = OutlookGraphClient(
+        auth_mode="delegated",
+        mailbox=None,
+        token_provider=_FakeTokenProvider(),  # type: ignore[arg-type]
+    )
+    client._token = "t"  # noqa: SLF001
+    since = datetime(2026, 6, 5, 0, 0, tzinfo=UTC)
+    messages = client.list_inbox_messages(top=10, since=since)
+    assert len(messages) == 1
+    req = mock_urlopen.call_args[0][0]
+    assert "receivedDateTime+ge+2026-06-05T00%3A00%3A00Z" in req.full_url
+    assert "receivedDateTime+desc" in req.full_url
 
 
 def test_outlook_graph_client_from_settings_delegated() -> None:
