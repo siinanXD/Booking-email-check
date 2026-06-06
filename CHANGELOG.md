@@ -1,6 +1,16 @@
 # CHANGELOG
 
 
+## v0.13.2 (2026-06-06)
+
+### Bug Fixes
+
+- Correct langgraph-checkpoint-mongodb version constraint
+  ([`f1f86e6`](https://github.com/siinanXD/Booking-email-checl/commit/f1f86e64dfbce90dd92802fc41b57e8db9e508d0))
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+
 ## v0.13.1 (2026-06-06)
 
 ### Bug Fixes
