@@ -1,6 +1,16 @@
 # CHANGELOG
 
 
+## v0.13.4 (2026-06-06)
+
+### Bug Fixes
+
+- Correct frontend static dir path resolution (3 parent levels)
+  ([`df55e3f`](https://github.com/siinanXD/Booking-email-checl/commit/df55e3feb4cb348857b745aa5f0fe9d99a231f8f))
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+
 ## v0.13.3 (2026-06-06)
 
 ### Bug Fixes
