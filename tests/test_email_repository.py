@@ -37,3 +37,20 @@ def test_update_processing_state(email_repo) -> None:
     )
     assert updated is not None
     assert updated.processing_state == ProcessingState.TRIAGED
+
+
+def test_find_existing_message_ids_batch(email_repo) -> None:
+    """Batch-Dedup liefert nur bereits gespeicherte IDs."""
+    for mid in ("batch-a", "batch-b"):
+        email_repo.upsert_by_message_id(
+            StoredEmail(
+                message_id=mid,
+                from_address="a@b.com",
+                body_text="x",
+                received_at=datetime.now(UTC),
+            )
+        )
+    found = email_repo.find_existing_message_ids(
+        ["batch-a", "batch-b", "batch-c"],
+    )
+    assert found == {"batch-a", "batch-b"}

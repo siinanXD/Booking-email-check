@@ -28,9 +28,14 @@ class _SlowQueryLogger(monitoring.CommandListener):
     def succeeded(self, event: Any) -> None:
         ms = event.duration_micros / 1000
         if ms > _SLOW_QUERY_THRESHOLD_MS:
+            collection = ""
+            command = getattr(event, "command", None)
+            if isinstance(command, dict):
+                collection = str(command.get(event.command_name, ""))
             logger.warning(
-                "Slow MongoDB %s: %.0fms (request_id=%s)",
+                "Slow MongoDB %s on %s: %.0fms (request_id=%s)",
                 event.command_name,
+                collection or "?",
                 ms,
                 event.request_id,
             )

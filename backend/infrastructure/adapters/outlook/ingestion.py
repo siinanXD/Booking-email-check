@@ -115,6 +115,7 @@ class OutlookIngestionRunner:
             only_unread,
         )
         items: list[PollItemResult] = []
+        mapped: list[tuple[str, IncomingEmail]] = []
         for graph_msg in messages:
             graph_id = str(graph_msg.get("id") or "")
             try:
@@ -136,12 +137,15 @@ class OutlookIngestionRunner:
                     )
                 )
                 continue
+            mapped.append((graph_id, payload))
 
-            existing = self._email_repo.get_by_message_id(
-                payload.message_id,
-                account_id=payload.account_id,
-            )
-            if existing is not None:
+        account_id = mapped[0][1].account_id if mapped else self._ingest_account_id
+        existing_ids = self._email_repo.find_existing_message_ids(
+            [payload.message_id for _, payload in mapped],
+            account_id=account_id,
+        )
+        for graph_id, payload in mapped:
+            if payload.message_id in existing_ids:
                 items.append(
                     PollItemResult(
                         message_id=payload.message_id,
