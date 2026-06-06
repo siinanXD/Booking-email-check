@@ -33,6 +33,14 @@ _CLEANING_DEFAULT: dict[str, str] = {
     "es": "Limpieza",
 }
 
+_STATUS_NEW_BOOKING: dict[str, str] = {
+    "de": "Neue Buchung",
+    "en": "New booking",
+    "pl": "Nowa rezerwacja",
+    "it": "Nuova prenotazione",
+    "es": "Nueva reserva",
+}
+
 _STATUS_CANCELLATION: dict[str, str] = {
     "de": "Storno",
     "en": "Cancellation",
@@ -130,6 +138,7 @@ def cleaning_label(*, is_new_booking: bool, status: str | None, locale: str) -> 
 
 def status_label(
     *,
+    is_new_booking: bool = False,
     is_cancellation: bool,
     is_change: bool,
     is_payment_issue: bool,
@@ -137,6 +146,8 @@ def status_label(
     locale: str,
 ) -> str:
     loc = normalize_employee_locale(locale)
+    if is_new_booking:
+        return _STATUS_NEW_BOOKING[loc]
     if is_cancellation:
         return _STATUS_CANCELLATION[loc]
     if is_change:

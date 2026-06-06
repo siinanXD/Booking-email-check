@@ -13,7 +13,18 @@ WhatsAppTestTemplate = Literal[
     "cleaning_task",
     "status_notice",
     "guest_inquiry",
+    "support_ticket",
 ]
+
+
+class AdminWhatsAppTemplatesUpdate(BaseModel):
+    """Meta-Template-Namen für Mandant (Plattform-Admin)."""
+
+    template_language: str | None = None
+    template_cleaning_task: str | None = None
+    template_status_notice: str | None = None
+    template_guest_inquiry: str | None = None
+    template_support_ticket: str | None = None
 
 
 class AdminWhatsAppInfoResponse(BaseModel):

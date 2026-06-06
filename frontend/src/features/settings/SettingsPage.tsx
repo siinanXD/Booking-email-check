@@ -167,7 +167,7 @@ export function SettingsPage() {
             checked={userWhatsappEnabled}
             onChange={(e) => setUserWhatsappEnabled(e.target.checked)}
           />
-          WhatsApp-Benachrichtigungen für mich aktiv
+          WhatsApp-Benachrichtigungen für mich aktiv (z. B. „Neue Buchung“)
         </label>
       </Card>
 

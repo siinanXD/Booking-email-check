@@ -150,7 +150,8 @@ def test_host_keeps_account_language_when_employee_also_present(mock_db) -> None
     host_msg = next(m for m in client.sent if m.recipient_e164 == "+491701234567")
     employee_msg = next(m for m in client.sent if m.recipient_e164 == "+491709999999")
     assert host_msg.template_language == "de"
-    assert host_msg.template_name == "booking_cleaning_task_de"
+    assert host_msg.template_name == "booking_status_notice_de"
+    assert host_msg.template_params[0] == "Neue Buchung"
     assert employee_msg.template_language == "es"
     assert employee_msg.template_name == "booking_cleaning_task_es"
 

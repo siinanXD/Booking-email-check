@@ -66,6 +66,46 @@ def test_admin_mail_test_uses_tenant_config(
     mock_test.assert_called_once_with(account_id)
 
 
+def test_admin_whatsapp_info_lists_all_templates(
+    client: Any,
+    auth_headers: dict[str, str],
+) -> None:
+    """GET whatsapp liefert alle vier Template-Slots."""
+    account_id = _approve_tenant(client, auth_headers, "diag-wa-info@test.local")
+    resp = client.get(
+        f"/api/admin/accounts/{account_id}/whatsapp",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    templates = resp.get_json()["templates"]
+    assert set(templates.keys()) == {
+        "cleaning_task",
+        "status_notice",
+        "guest_inquiry",
+        "support_ticket",
+    }
+
+
+def test_admin_update_whatsapp_templates(
+    client: Any,
+    auth_headers: dict[str, str],
+) -> None:
+    """PUT whatsapp/templates speichert Mandanten-Template-Namen."""
+    account_id = _approve_tenant(client, auth_headers, "diag-wa-tpl@test.local")
+    resp = client.put(
+        f"/api/admin/accounts/{account_id}/whatsapp/templates",
+        headers=auth_headers,
+        json={
+            "template_cleaning_task": "custom_cleaning_de",
+            "template_status_notice": "custom_status_de",
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["templates"]["cleaning_task"] == "custom_cleaning_de"
+    assert data["templates"]["status_notice"] == "custom_status_de"
+
+
 def test_admin_whatsapp_test_hello_world(
     client: Any,
     auth_headers: dict[str, str],

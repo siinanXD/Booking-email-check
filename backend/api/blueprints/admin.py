@@ -15,12 +15,6 @@ from backend.api.schemas.accounts import (
     AccountRejectRequest,
     AdminMeResponse,
 )
-from backend.api.schemas.admin_diagnostics import AdminWhatsAppTestRequest
-from backend.api.services.admin_diagnostics_service import (
-    AccountNotFoundError,
-    AdminDiagnosticsService,
-    RateLimitExceededError,
-)
 from backend.api.services.admin_overview_queries import (
     admin_account_detail,
     admin_costs_metrics,
@@ -30,10 +24,6 @@ from backend.api.services.admin_overview_queries import (
 )
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
-
-
-def _diagnostics() -> AdminDiagnosticsService:
-    return AdminDiagnosticsService(g.ctx, g.settings)
 
 
 @admin_bp.get("/me")
@@ -161,75 +151,6 @@ def reject_account(account_id: str) -> tuple[Any, int]:
     )
 
 
-@admin_bp.get("/accounts/<account_id>/mail/connection")
-@require_auth
-@require_platform_admin
-def admin_get_mail_connection(account_id: str) -> tuple[Any, int]:
-    """Postfach-Status eines Mandanten (read-only)."""
-    try:
-        connection = _diagnostics().get_mail_connection(account_id)
-    except AccountNotFoundError:
-        return jsonify({"error": "Account not found", "code": 404}), 404
-    return jsonify(connection.model_dump()), 200
-
-
-@admin_bp.post("/accounts/<account_id>/mail/test")
-@require_auth
-@require_platform_admin
-def admin_test_mail_connection(account_id: str) -> tuple[Any, int]:
-    """Testet die Postfach-Verbindung eines Mandanten."""
-    try:
-        result = _diagnostics().test_mail_connection(account_id)
-    except AccountNotFoundError:
-        return jsonify({"error": "Account not found", "code": 404}), 404
-    except RateLimitExceededError:
-        return (
-            jsonify(
-                {
-                    "error": "Zu viele Tests — bitte eine Minute warten.",
-                    "code": 429,
-                }
-            ),
-            429,
-        )
-    return jsonify(result.model_dump()), 200
-
-
-@admin_bp.get("/accounts/<account_id>/whatsapp")
-@require_auth
-@require_platform_admin
-def admin_get_whatsapp_info(account_id: str) -> tuple[Any, int]:
-    """WhatsApp-Konfiguration eines Mandanten (ohne Secrets)."""
-    try:
-        info = _diagnostics().get_whatsapp_info(account_id)
-    except AccountNotFoundError:
-        return jsonify({"error": "Account not found", "code": 404}), 404
-    return jsonify(info.model_dump()), 200
-
-
-@admin_bp.post("/accounts/<account_id>/whatsapp/test")
-@require_auth
-@require_platform_admin
-def admin_test_whatsapp(account_id: str) -> tuple[Any, int]:
-    """WhatsApp-Testversand für einen Mandanten."""
-    body = AdminWhatsAppTestRequest.model_validate(request.get_json(silent=True) or {})
-    try:
-        result = _diagnostics().test_whatsapp(account_id, body)
-    except AccountNotFoundError:
-        return jsonify({"error": "Account not found", "code": 404}), 404
-    except RateLimitExceededError:
-        return (
-            jsonify(
-                {
-                    "error": "Zu viele Tests — bitte eine Minute warten.",
-                    "code": 429,
-                }
-            ),
-            429,
-        )
-    return jsonify(result.model_dump()), 200
-
-
 def _parse_days(default: int = 30) -> int:
     raw = request.args.get("days", str(default))
     try:
@@ -287,4 +208,5 @@ def admin_config_public() -> tuple[Any, int]:
 
 
 import backend.api.blueprints.admin_account_workflows  # noqa: E402, F401
+import backend.api.blueprints.admin_diagnostics_routes  # noqa: E402, F401
 import backend.api.blueprints.admin_llm_routes  # noqa: E402, F401

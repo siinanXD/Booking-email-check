@@ -13,6 +13,7 @@ from backend.core.models.notification import NotificationKind
 from backend.features.notifications.notification_template_payload import (
     build_template_payload,
     kind_for_extraction,
+    kind_for_recipient,
     parse_recipient_list,
 )
 from backend.features.notifications.whatsapp_locale import DEFAULT_EMPLOYEE_LOCALE
@@ -71,7 +72,6 @@ def build_whatsapp_preview(
             phone=phone,
             locale=locale,
             role=role,
-            kind=kind,
             extraction=extraction,
             settings=settings,
             body_de=body_de,
@@ -90,12 +90,15 @@ def _preview_message(
     phone: str,
     locale: str,
     role: str,
-    kind: NotificationKind,
     extraction: BookingExtraction,
     settings: Settings,
     body_de: str,
 ) -> WhatsAppPreviewMessage:
     host_locale = settings.whatsapp_template_language.strip() or DEFAULT_EMPLOYEE_LOCALE
+    kind = kind_for_recipient(extraction, role)
+    if kind is None:
+        kind = kind_for_extraction(extraction)
+    assert kind is not None
     effective_locale = locale
     if kind != NotificationKind.BOOKING_CLEANING_TASK or role != "employee":
         effective_locale = host_locale

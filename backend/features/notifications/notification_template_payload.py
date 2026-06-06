@@ -37,6 +37,20 @@ def kind_for_extraction(extraction: BookingExtraction) -> NotificationKind | Non
     return None
 
 
+def kind_for_recipient(
+    extraction: BookingExtraction,
+    role: str,
+) -> NotificationKind | None:
+    """Template-Typ pro Empfänger: Host vs. Mitarbeiter bei neuer Buchung."""
+    intent = extraction.intent
+    if intent in (BookingIntent.NEW_BOOKING, None):
+        if role == "employee":
+            return NotificationKind.BOOKING_CLEANING_TASK
+        if role == "host":
+            return NotificationKind.BOOKING_STATUS_NOTICE
+    return kind_for_extraction(extraction)
+
+
 def build_template_payload(
     kind: NotificationKind,
     extraction: BookingExtraction,
@@ -125,6 +139,7 @@ def _cleaning_label(extraction: BookingExtraction, locale: str) -> str:
 
 def _status_label(extraction: BookingExtraction, locale: str) -> str:
     return status_label(
+        is_new_booking=extraction.intent == BookingIntent.NEW_BOOKING,
         is_cancellation=extraction.intent == BookingIntent.CANCELLATION,
         is_change=extraction.intent == BookingIntent.CHANGE,
         is_payment_issue=extraction.intent == BookingIntent.PAYMENT_ISSUE,

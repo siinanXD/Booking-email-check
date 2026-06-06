@@ -22,14 +22,17 @@ export function AdminLayout() {
           Mandanten überwachen und konfigurieren — ohne eigenes Postfach.
         </p>
       </div>
-      <nav className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <nav
+        className="-mx-1 flex gap-2 overflow-x-auto border-b border-slate-200 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Admin-Bereiche"
+      >
         {adminTabs.map(({ to, label, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) =>
-              `rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              `shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
                 isActive
                   ? "bg-indigo-600 text-white"
                   : "text-slate-600 hover:bg-slate-100"

@@ -81,7 +81,7 @@ export function EmailListPage({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="rounded border px-3 py-1 disabled:opacity-40"
+                  className="min-h-11 rounded border px-4 py-2 disabled:opacity-40"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
@@ -89,7 +89,7 @@ export function EmailListPage({
                 </button>
                 <button
                   type="button"
-                  className="rounded border px-3 py-1 disabled:opacity-40"
+                  className="min-h-11 rounded border px-4 py-2 disabled:opacity-40"
                   disabled={page >= data.pages}
                   onClick={() => setPage((p) => p + 1)}
                 >

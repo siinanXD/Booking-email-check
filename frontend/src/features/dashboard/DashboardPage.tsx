@@ -68,18 +68,26 @@ export function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-slate-800">Übersicht</h2>
-          <p className="mt-1 text-xs text-slate-500">
-            Letzte Dashboard-Aktualisierung:{" "}
-            {loading
-              ? dash
-              : formatTimestamp(new Date(dataUpdatedAt).toISOString())}
-            {" · "}
-            Postfach-Sync: {formatTimestamp(stats?.last_sync_at)}
-            {" · "}
-            Letzte Mail: {formatTimestamp(stats?.last_email_received_at)}
-            {" · "}
-            Letzte Buchungs-Mail:{" "}
-            {formatTimestamp(stats?.last_booking_detected_at)}
+          <p className="mt-1 space-y-1 text-xs text-slate-500 sm:space-y-0">
+            <span className="block sm:inline">
+              Letzte Dashboard-Aktualisierung:{" "}
+              {loading
+                ? dash
+                : formatTimestamp(new Date(dataUpdatedAt).toISOString())}
+            </span>
+            <span className="hidden sm:inline"> · </span>
+            <span className="block sm:inline">
+              Postfach-Sync: {formatTimestamp(stats?.last_sync_at)}
+            </span>
+            <span className="hidden sm:inline"> · </span>
+            <span className="block sm:inline">
+              Letzte Mail: {formatTimestamp(stats?.last_email_received_at)}
+            </span>
+            <span className="hidden sm:inline"> · </span>
+            <span className="block sm:inline">
+              Letzte Buchungs-Mail:{" "}
+              {formatTimestamp(stats?.last_booking_detected_at)}
+            </span>
           </p>
           {mailConnection?.last_error && (
             <p className="mt-1 text-xs text-amber-700">
@@ -96,7 +104,7 @@ export function DashboardPage() {
         <div className="flex flex-col items-end gap-1">
           <Button
             variant="secondary"
-            className="inline-flex items-center gap-2"
+            className="inline-flex w-full items-center justify-center gap-2 sm:w-auto"
             onClick={() => {
               setShowSyncErrors(false);
               syncMut.mutate();

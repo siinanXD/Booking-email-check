@@ -5,27 +5,15 @@ import {
   fetchAccountWhatsAppInfo,
   fetchAllAccounts,
   testAccountMailConnection,
-  testAccountWhatsApp,
 } from "@/lib/api/admin";
-import type { AdminWhatsAppTestTemplate } from "@/lib/types/api";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
+import { AdminWhatsAppDiagnosticsCard } from "@/features/admin/AdminWhatsAppDiagnosticsCard";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
-import { Input } from "@/shared/ui/Input";
-
-const TEMPLATE_OPTIONS: { value: AdminWhatsAppTestTemplate; label: string }[] = [
-  { value: "hello_world", label: "hello_world (Meta-Standard)" },
-  { value: "cleaning_task", label: "Reinigungsauftrag" },
-  { value: "status_notice", label: "Status-Hinweis" },
-  { value: "guest_inquiry", label: "Gastanfrage" },
-];
 
 export function AdminDiagnosticsPage() {
   const [accountId, setAccountId] = useState("");
-  const [recipient, setRecipient] = useState("");
-  const [template, setTemplate] = useState<AdminWhatsAppTestTemplate>("hello_world");
   const [mailResult, setMailResult] = useState<string | null>(null);
-  const [waResult, setWaResult] = useState<string | null>(null);
 
   const { data: accounts } = useQuery({
     queryKey: ["admin-accounts", "all"],
@@ -61,27 +49,9 @@ export function AdminDiagnosticsPage() {
     onError: () => setMailResult("Postfach-Test fehlgeschlagen."),
   });
 
-  const waTestMut = useMutation({
-    mutationFn: () =>
-      testAccountWhatsApp(accountId, {
-        recipient_e164: recipient.trim() || undefined,
-        template,
-      }),
-    onSuccess: (res) => {
-      setWaResult(
-        res.success
-          ? `OK — Template ${res.template_name ?? res.template} (ID: ${res.provider_message_id ?? "—"})`
-          : `Fehler: ${res.error ?? "Unbekannt"}`
-      );
-    },
-    onError: () => setWaResult("WhatsApp-Test fehlgeschlagen."),
-  });
-
   function handleAccountChange(id: string) {
     setAccountId(id);
     setMailResult(null);
-    setWaResult(null);
-    setRecipient("");
   }
 
   return (
@@ -169,68 +139,11 @@ export function AdminDiagnosticsPage() {
             )}
           </Card>
 
-          <Card className="space-y-4">
-            <h2 className="text-lg font-medium text-slate-900">WhatsApp</h2>
-            {waLoading && (
-              <p className="text-sm text-slate-500">Lade WhatsApp-Konfiguration…</p>
-            )}
-            {whatsappInfo && (
-              <>
-                <p className="text-sm text-slate-600">
-                  Aktiv: {whatsappInfo.whatsapp_enabled ? "ja" : "nein"} · Token:{" "}
-                  {whatsappInfo.access_token_configured ? "hinterlegt" : "fehlt"} ·
-                  Phone ID: {whatsappInfo.phone_number_id || "—"}
-                </p>
-                <p className="text-xs text-slate-500">
-                  Templates:{" "}
-                  {Object.entries(whatsappInfo.templates)
-                    .map(([k, v]) => `${k}=${v}`)
-                    .join(", ")}
-                </p>
-                <label className="block text-sm text-slate-600">
-                  Test-Template
-                  <select
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={template}
-                    onChange={(e) =>
-                      setTemplate(e.target.value as AdminWhatsAppTestTemplate)
-                    }
-                  >
-                    {TEMPLATE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-sm text-slate-600">
-                  Test-Empfänger (E.164)
-                  <Input
-                    className="mt-1"
-                    value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
-                    placeholder={
-                      whatsappInfo.test_recipient || "+491701234567"
-                    }
-                  />
-                </label>
-                <Button
-                  variant="secondary"
-                  disabled={waTestMut.isPending}
-                  onClick={() => waTestMut.mutate()}
-                >
-                  WhatsApp testen
-                </Button>
-                {waResult && (
-                  <p
-                    className={`text-sm ${waResult.startsWith("OK") ? "text-green-700" : "text-red-600"}`}
-                  >
-                    {waResult}
-                  </p>
-                )}
-              </>
-            )}
-          </Card>
+          <AdminWhatsAppDiagnosticsCard
+            accountId={accountId}
+            whatsappInfo={whatsappInfo}
+            loading={waLoading}
+          />
         </>
       )}
     </div>

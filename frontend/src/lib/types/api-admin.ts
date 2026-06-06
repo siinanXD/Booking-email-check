@@ -29,7 +29,16 @@ export type AdminWhatsAppTestTemplate =
   | "hello_world"
   | "cleaning_task"
   | "status_notice"
-  | "guest_inquiry";
+  | "guest_inquiry"
+  | "support_ticket";
+
+export interface AdminWhatsAppTemplatesUpdate {
+  template_language?: string;
+  template_cleaning_task?: string;
+  template_status_notice?: string;
+  template_guest_inquiry?: string;
+  template_support_ticket?: string;
+}
 
 export interface AdminWhatsAppInfoResponse {
   whatsapp_enabled: boolean;

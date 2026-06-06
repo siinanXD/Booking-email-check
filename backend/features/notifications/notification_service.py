@@ -16,6 +16,7 @@ from backend.core.models.notification import (
 from backend.features.notifications.notification_template_payload import (
     build_template_payload,
     kind_for_extraction,
+    kind_for_recipient,
     parse_recipient_list,
 )
 from backend.features.notifications.whatsapp_client import (
@@ -102,8 +103,7 @@ class NotificationService:
             logger.debug("WhatsApp disabled – skip notification for %s", correlation_id)
             return []
 
-        kind = kind_for_extraction(extraction)
-        if kind is None:
+        if kind_for_extraction(extraction) is None:
             logger.info(
                 "No WhatsApp template mapping for intent %s (%s)",
                 extraction.intent,
@@ -127,6 +127,9 @@ class NotificationService:
             settings.whatsapp_template_language.strip() or DEFAULT_EMPLOYEE_LOCALE
         )
         for recipient, recipient_locale, role in recipients:
+            kind = kind_for_recipient(extraction, role)
+            if kind is None:
+                continue
             locale = recipient_locale
             if (
                 kind != NotificationKind.BOOKING_CLEANING_TASK

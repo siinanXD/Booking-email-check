@@ -14,6 +14,7 @@ import type {
   AdminLlmPromptHistoryResponse,
   AdminLlmPromptType,
   AdminWhatsAppInfoResponse,
+  AdminWhatsAppTemplatesUpdate,
   AdminWhatsAppTestResponse,
   AdminWhatsAppTestTemplate,
   MailConnectionResponse,
@@ -88,6 +89,17 @@ export async function testAccountWhatsApp(
 ): Promise<AdminWhatsAppTestResponse> {
   const { data } = await apiClient.post<AdminWhatsAppTestResponse>(
     `/api/admin/accounts/${accountId}/whatsapp/test`,
+    payload
+  );
+  return data;
+}
+
+export async function saveAccountWhatsAppTemplates(
+  accountId: string,
+  payload: AdminWhatsAppTemplatesUpdate
+): Promise<AdminWhatsAppInfoResponse> {
+  const { data } = await apiClient.put<AdminWhatsAppInfoResponse>(
+    `/api/admin/accounts/${accountId}/whatsapp/templates`,
     payload
   );
   return data;

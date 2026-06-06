@@ -68,24 +68,25 @@ def test_dispatch_disabled_returns_empty(mock_db) -> None:
     assert svc.dispatch_after_approval("corr-1", extraction) == []
 
 
-def test_dispatch_new_booking_uses_cleaning_template(mock_db) -> None:
-    """Neue Buchung → Reinigungs-Template."""
+def test_dispatch_new_booking_host_gets_status_notice(mock_db) -> None:
+    """Neue Buchung → Host erhält Status-Template „Neue Buchung“."""
     client = MockWhatsAppClient()
     svc = _notification_svc(mock_db, client)
     extraction = BookingExtraction(
         intent=BookingIntent.NEW_BOOKING,
         property_name="Apartment Mitte",
         booking_number="AB100",
+        guest_name="Max Mustermann",
         check_in=date(2026, 6, 10),
         check_out=date(2026, 6, 15),
     )
     records = svc.dispatch_after_approval("corr-2", extraction)
     assert len(records) == 1
     assert records[0].status == NotificationStatus.SENT
-    assert records[0].kind == NotificationKind.BOOKING_CLEANING_TASK
-    assert client.sent[0].template_name == "booking_cleaning_task_de"
-    assert client.sent[0].template_params[0] == "Apartment Mitte"
-    assert client.sent[0].template_params[4] == "AB100"
+    assert records[0].kind == NotificationKind.BOOKING_STATUS_NOTICE
+    assert client.sent[0].template_name == "booking_status_notice_de"
+    assert client.sent[0].template_params[0] == "Neue Buchung"
+    assert client.sent[0].template_params[1] == "Apartment Mitte"
 
 
 def test_dispatch_cancellation_uses_status_template(mock_db) -> None:

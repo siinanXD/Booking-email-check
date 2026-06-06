@@ -191,6 +191,12 @@ _ADMIN_TEST_PARAMS: dict[str, list[str]] = {
         "05.06.2026",
         "Max Mustermann",
     ],
+    "support_ticket": [
+        "Test-Mandant",
+        "Hoch",
+        "admin@test.local",
+        "Kurze Testnachricht für Support-Ticket.",
+    ],
 }
 
 
@@ -206,6 +212,7 @@ def send_whatsapp_admin_test(
         "cleaning_task": settings.whatsapp_template_cleaning_task,
         "status_notice": settings.whatsapp_template_status_notice,
         "guest_inquiry": settings.whatsapp_template_guest_inquiry,
+        "support_ticket": settings.whatsapp_template_support_ticket,
     }
     template_name = name_map.get(template)
     if not template_name:
