@@ -1,6 +1,29 @@
 # CHANGELOG
 
 
+## v0.16.1 (2026-06-06)
+
+### Bug Fixes
+
+- Resolve TypeScript build errors causing Railway deploy failure
+  ([`45a5bdf`](https://github.com/siinanXD/Booking-email-check/commit/45a5bdf413fe3be2183812d59441429420c6f4ee))
+
+- Add showFullBody prop to EmailDetailPanel (controls body max-height) - Add selectedCorrelationId
+  prop to EmailTable + isSelected to EmailRow - Fix EmailDetailSideCard: remove EmailListItem
+  fallback for EmailDetail prop
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- Split 300-line violations to make CI pass
+  ([`bf58b60`](https://github.com/siinanXD/Booking-email-check/commit/bf58b60f9588d5600fd7c333e24bb98769b5d4cd))
+
+- Extract ImapConfigFields + OutlookConfigFields from ConfigStep.tsx (383→130 lines) - Extract
+  SettingsMailCard from SettingsPage.tsx (309→237 lines) - Remove dev-only oauth-config endpoint to
+  bring mail.py to ≤300 lines - Fix autodiscover.py mypy: dict | None → dict[str, object] | None
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+
 ## v0.16.0 (2026-06-06)
 
 ### Chores
