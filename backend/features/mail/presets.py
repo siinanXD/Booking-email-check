@@ -118,6 +118,20 @@ IMAP_PRESETS: dict[str, ImapPreset] = {
             "rocketmail.com",
         ],
     },
+    "aol": {
+        "label": "AOL Mail",
+        "host": "imap.aol.com",
+        "port": 993,
+        "use_ssl": True,
+        "domains": [
+            "aol.com",
+            "aol.de",
+            "aol.co.uk",
+            "aol.at",
+            "aol.com.au",
+            "aim.com",
+        ],
+    },
     "icloud": {
         "label": "iCloud Mail",
         "host": "imap.mail.me.com",

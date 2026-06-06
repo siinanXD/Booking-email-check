@@ -26,6 +26,15 @@ interface Props {
 
 const cls = "border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20";
 
+const APP_PASSWORD_HINTS: Record<string, { text: string; url: string }> = {
+  gmail:   { text: "Gmail erfordert ein App-Passwort (2-Faktor aktiv).", url: "https://myaccount.google.com/apppasswords" },
+  yahoo:   { text: "Yahoo erfordert ein App-Passwort — kein normales Passwort.", url: "https://login.yahoo.com/account/security" },
+  aol:     { text: "AOL erfordert ein App-Passwort — kein normales Passwort.", url: "https://login.aol.com/account/security" },
+  icloud:  { text: "iCloud erfordert ein App-spezifisches Passwort.", url: "https://appleid.apple.com/" },
+  gmx:     { text: "GMX: Einstellungen → E-Mail → POP3/IMAP → App-Passwort erstellen.", url: "https://www.gmx.net/service/sicherheit" },
+  webde:   { text: "Web.de: Einstellungen → POP3/IMAP → App-Passwort erstellen.", url: "https://hilfe.web.de/pop-imap/" },
+};
+
 export function ImapConfigFields({
   email, preset, imapUsername, imapPassword, imapHost, imapPort,
   discoverState, discoverLabel, data,
@@ -97,9 +106,22 @@ export function ImapConfigFields({
         <Input type="password" value={imapPassword} onChange={(e) => onImapPasswordChange(e.target.value)}
           placeholder={data?.imap_password_set ? "Leer lassen = gespeichertes Passwort" : "App-Passwort des Anbieters"}
           className={cls} />
-        <p className="text-xs text-slate-500">
-          Bei GMX / Web.de unter Einstellungen → POP3/IMAP ein App-Passwort erstellen.
-        </p>
+        {APP_PASSWORD_HINTS[preset] ? (
+          <p className="flex items-start gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            <span className="mt-px shrink-0">⚠️</span>
+            <span>
+              {APP_PASSWORD_HINTS[preset].text}{" "}
+              <a href={APP_PASSWORD_HINTS[preset].url} target="_blank" rel="noreferrer"
+                className="underline underline-offset-2 hover:text-amber-200">
+                App-Passwort erstellen →
+              </a>
+            </span>
+          </p>
+        ) : (
+          <p className="text-xs text-slate-500">
+            Viele Anbieter erfordern ein separates App-Passwort (nicht das normale Konto-Passwort).
+          </p>
+        )}
       </div>
     </>
   );
