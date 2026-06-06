@@ -198,7 +198,6 @@ def test_whatsapp() -> tuple[Any, int]:
             400,
         )
     result = send_whatsapp_hello_world_test(effective, recipient)
-    status = 200 if result.success else 502
     return (
         jsonify(
             WhatsAppTestResponse(
@@ -207,7 +206,7 @@ def test_whatsapp() -> tuple[Any, int]:
                 error=result.error,
             ).model_dump()
         ),
-        status,
+        200,
     )
 
 

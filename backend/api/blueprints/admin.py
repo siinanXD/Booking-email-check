@@ -192,8 +192,7 @@ def admin_test_mail_connection(account_id: str) -> tuple[Any, int]:
             ),
             429,
         )
-    status = 200 if result.success else 502
-    return jsonify(result.model_dump()), status
+    return jsonify(result.model_dump()), 200
 
 
 @admin_bp.get("/accounts/<account_id>/whatsapp")
@@ -228,8 +227,7 @@ def admin_test_whatsapp(account_id: str) -> tuple[Any, int]:
             ),
             429,
         )
-    status = 200 if result.success else 502
-    return jsonify(result.model_dump()), status
+    return jsonify(result.model_dump()), 200
 
 
 def _parse_days(default: int = 30) -> int:

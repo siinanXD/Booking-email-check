@@ -59,12 +59,17 @@ def merge_platform_settings(
 
 
 def platform_from_env(env: Settings, account_id: str) -> PlatformSettingsRecord:
-    """Initialisiert DB-Dokument aus aktuellen .env-Werten."""
+    """Initialisiert DB-Dokument aus aktuellen .env-Werten.
+
+    Credentials (access_token, phone_number_id) werden bewusst NICHT kopiert,
+    damit merge_platform_settings immer den aktuellen Env-Wert nutzt — außer
+    der Tenant hat seine eigenen Credentials explizit eingetragen.
+    """
     return PlatformSettingsRecord(
         id=account_id,
         whatsapp_enabled=env.whatsapp_enabled,
-        whatsapp_access_token=env.whatsapp_access_token,
-        whatsapp_phone_number_id=env.whatsapp_phone_number_id,
+        whatsapp_access_token="",
+        whatsapp_phone_number_id="",
         whatsapp_api_version=env.whatsapp_api_version,
         whatsapp_template_language=env.whatsapp_template_language,
         whatsapp_template_cleaning_task=env.whatsapp_template_cleaning_task,
@@ -90,16 +95,29 @@ def display_platform_settings(
     """Anzeige-Werte: gespeicherte DB-Felder, sonst Fallback aus .env."""
     defaults = platform_from_env(env, stored.id if stored else "unknown")
     if stored is None:
-        return defaults
+        return PlatformSettingsRecord(
+            id="unknown",
+            whatsapp_enabled=defaults.whatsapp_enabled,
+            whatsapp_access_token=env.whatsapp_access_token,
+            whatsapp_phone_number_id=env.whatsapp_phone_number_id,
+            whatsapp_api_version=defaults.whatsapp_api_version,
+            whatsapp_template_language=defaults.whatsapp_template_language,
+            whatsapp_template_cleaning_task=defaults.whatsapp_template_cleaning_task,
+            whatsapp_template_status_notice=defaults.whatsapp_template_status_notice,
+            whatsapp_template_guest_inquiry=defaults.whatsapp_template_guest_inquiry,
+            whatsapp_default_recipients=defaults.whatsapp_default_recipients,
+            whatsapp_test_recipient=defaults.whatsapp_test_recipient,
+            outlook_mailbox=defaults.outlook_mailbox,
+        )
     return PlatformSettingsRecord(
         id=stored.id,
         whatsapp_enabled=stored.whatsapp_enabled,
         whatsapp_access_token=_pick_str(
-            stored.whatsapp_access_token, defaults.whatsapp_access_token
+            stored.whatsapp_access_token, env.whatsapp_access_token
         ),
         whatsapp_phone_number_id=_pick_str(
             stored.whatsapp_phone_number_id,
-            defaults.whatsapp_phone_number_id,
+            env.whatsapp_phone_number_id,
         ),
         whatsapp_api_version=_pick_str(
             stored.whatsapp_api_version, defaults.whatsapp_api_version

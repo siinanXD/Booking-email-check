@@ -7,10 +7,6 @@ export interface SettingsWhatsAppCardProps {
   data: PlatformSettingsResponse | undefined;
   whatsappEnabled: boolean;
   onWhatsappEnabledChange: (value: boolean) => void;
-  accessToken: string;
-  onAccessTokenChange: (value: string) => void;
-  phoneNumberId: string;
-  onPhoneNumberIdChange: (value: string) => void;
   defaultRecipients: string;
   onDefaultRecipientsChange: (value: string) => void;
   testRecipient: string;
@@ -24,10 +20,6 @@ export function SettingsWhatsAppCard({
   data,
   whatsappEnabled,
   onWhatsappEnabledChange,
-  accessToken,
-  onAccessTokenChange,
-  phoneNumberId,
-  onPhoneNumberIdChange,
   defaultRecipients,
   onDefaultRecipientsChange,
   testRecipient,
@@ -39,6 +31,11 @@ export function SettingsWhatsAppCard({
   return (
     <Card className="space-y-4">
       <h3 className="font-medium text-slate-800">WhatsApp (Meta Cloud API)</h3>
+      {data?.whatsapp_access_token_set && (
+        <p className="text-xs text-green-700">
+          Verbindung konfiguriert (Zugangsdaten werden zentral verwaltet).
+        </p>
+      )}
       <label className="flex items-center gap-2 text-sm text-slate-700">
         <input
           type="checkbox"
@@ -46,32 +43,6 @@ export function SettingsWhatsAppCard({
           onChange={(e) => onWhatsappEnabledChange(e.target.checked)}
         />
         WhatsApp-Versand aktiv
-      </label>
-      <label className="block text-sm text-slate-600">
-        Access Token
-        {data?.whatsapp_access_token_set && (
-          <span className="ml-2 text-xs text-green-700">(hinterlegt)</span>
-        )}
-        <Input
-          className="mt-1"
-          type="password"
-          value={accessToken}
-          onChange={(e) => onAccessTokenChange(e.target.value)}
-          placeholder={
-            data?.whatsapp_access_token_set
-              ? "Leer lassen = unverändert"
-              : "Meta Access Token"
-          }
-        />
-      </label>
-      <label className="block text-sm text-slate-600">
-        Phone Number ID (nur Ziffern, aus Meta API Setup)
-        <Input
-          className="mt-1"
-          value={phoneNumberId}
-          onChange={(e) => onPhoneNumberIdChange(e.target.value)}
-          placeholder="123456789012345"
-        />
       </label>
       <label className="block text-sm text-slate-600">
         Standard-Empfänger (kommagetrennt, E.164)

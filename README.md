@@ -80,7 +80,7 @@ booking-email-checl/
 | Daten | MongoDB Atlas (Dokument + Vektor/Hybrid) |
 | Observability | Langfuse |
 | Frontend | React, TypeScript, Vite, Zustand, Tailwind |
-| Betrieb | Docker Compose, Gunicorn, GitHub Actions CI |
+| Betrieb | Railway, Docker Compose, Gunicorn, GitHub Actions CI |
 
 ## Schnellstart
 
@@ -187,6 +187,45 @@ Einmaliger Lauf: `.\scripts\run_mail_poll.ps1`
 - `python scripts/check_booking_mails.py` — letzte Buchungs-Mails in MongoDB
 
 Langfuse: [`docs/LANGFUSE.md`](docs/LANGFUSE.md).
+
+### Railway (Cloud-Deployment)
+
+Die App läuft produktiv auf [Railway](https://railway.app). `railway.toml` und
+`Procfile` liegen bereits im Repo — ein Push auf `main` löst den Deploy aus.
+
+**Voraussetzungen:**
+- Railway-Account + neues Projekt → "Deploy from GitHub Repo"
+- MongoDB Atlas Cluster (Railway hat kein eigenes Mongo)
+
+**Environment Variables im Railway-Dashboard setzen:**
+
+| Variable | Wert |
+|----------|------|
+| `OPENAI_API_KEY` | OpenAI API Key |
+| `MONGODB_URI` | Atlas-Connection-String |
+| `FLASK_SECRET_KEY` | `openssl rand -hex 32` |
+| `ADMIN_EMAIL` | Admin-Login-Mail |
+| `ADMIN_PASSWORD` | Starkes Passwort |
+| `LANGFUSE_PUBLIC_KEY` | Langfuse Key |
+| `LANGFUSE_SECRET_KEY` | Langfuse Secret |
+| `APP_ENV` | `production` |
+| `FLASK_ENV` | `production` |
+| `CORS_ORIGINS` | Railway-URL, z. B. `https://myapp.up.railway.app` |
+| `OUTLOOK_OAUTH_REDIRECT_URI` | `https://myapp.up.railway.app/api/mail/outlook/callback` |
+| `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` | Azure App-Registrierung |
+| `WEB_USE_MEMORY_CHECKPOINTER` | leer lassen (auto: `false` in production) |
+
+**Admin-Account anlegen (einmalig nach erstem Deploy):**
+
+```bash
+# Railway CLI installieren: npm install -g @railway/cli
+railway login
+railway run python scripts/seed_admin.py
+```
+
+**Deployed URL** → Railway Dashboard → Settings → Domains.
+
+---
 
 ### Production (Docker + Gunicorn)
 

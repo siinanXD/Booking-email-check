@@ -9,6 +9,7 @@ import {
   fetchPropertySuggestions,
   savePropertyRecipients,
 } from "@/lib/api/properties";
+import { PropertySuggestionsCard } from "@/features/properties/PropertySuggestionsCard";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
@@ -47,6 +48,7 @@ export function PropertiesPage() {
   const [propertyRows, setPropertyRows] = useState<PropertyRecipientItem[]>([]);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [adoptMessage, setAdoptMessage] = useState<string | null>(null);
+  const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!recipients) return;
@@ -97,6 +99,27 @@ export function PropertiesPage() {
     },
     onError: () => setAdoptMessage("Anlegen fehlgeschlagen."),
   });
+
+  function addRowFromSuggestion(name: string) {
+    const alreadyInList = propertyRows.some(
+      (r) => r.property_name.toLowerCase() === name.toLowerCase()
+    );
+    if (!alreadyInList) {
+      setPropertyRows((rows) => [
+        ...rows,
+        { property_name: name, employees: [{ phone_e164: "", locale: DEFAULT_EMPLOYEE_WHATSAPP_LOCALE }] },
+      ]);
+    }
+    setAddedNames((prev) => new Set(prev).add(name));
+    document.getElementById("empfaenger-liste")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function addEmptyRow() {
+    setPropertyRows((rows) => [
+      ...rows,
+      { property_name: "", employees: [{ phone_e164: "", locale: DEFAULT_EMPLOYEE_WHATSAPP_LOCALE }] },
+    ]);
+  }
 
   function updatePropertyRow(
     index: number,
@@ -185,6 +208,7 @@ export function PropertiesPage() {
         )}
       </Card>
 
+      <div id="empfaenger-liste">
       <Card className="space-y-4">
         <h3 className="font-medium">Mitarbeiter-Empfänger</h3>
         <p className="text-sm text-slate-500">
@@ -212,41 +236,26 @@ export function PropertiesPage() {
             </div>
           ))
         )}
-        <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-          Speichern
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+            Speichern
+          </Button>
+          <Button variant="secondary" onClick={addEmptyRow}>
+            + Zeile hinzufügen
+          </Button>
+        </div>
         {saveMessage && <p className="text-sm text-slate-600">{saveMessage}</p>}
       </Card>
+      </div>
 
-      <Card>
-        <h3 className="mb-2 font-medium">KI-Vorschläge (neue Namen)</h3>
-        {(suggestions?.items.length ?? 0) === 0 ? (
-          <p className="text-sm text-slate-500">Keine Vorschläge.</p>
-        ) : (
-          <ul className="text-sm space-y-2">
-            {suggestions!.items.map((s) => (
-              <li
-                key={s.property_name}
-                className="flex flex-wrap items-center justify-between gap-2"
-              >
-                <span>
-                  {s.property_name}{" "}
-                  <span className="text-slate-400">({s.mail_count} Mails)</span>
-                </span>
-                <Button
-                  variant="secondary"
-                  className="py-1 px-3"
-                  disabled={adoptMut.isPending}
-                  onClick={() => adoptMut.mutate(s.property_name)}
-                >
-                  Übernehmen
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {adoptMessage && <p className="mt-2 text-sm text-slate-600">{adoptMessage}</p>}
-      </Card>
+      <PropertySuggestionsCard
+        suggestions={suggestions?.items ?? []}
+        addedNames={addedNames}
+        adoptPending={adoptMut.isPending}
+        adoptMessage={adoptMessage}
+        onAddToList={addRowFromSuggestion}
+        onCreateProfile={(name) => adoptMut.mutate(name)}
+      />
 
       <Card>
         <h3 className="mb-2 font-medium">Historie (letzte Buchungs-Mails)</h3>

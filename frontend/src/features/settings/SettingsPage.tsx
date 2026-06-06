@@ -29,8 +29,6 @@ export function SettingsPage() {
   });
 
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
-  const [accessToken, setAccessToken] = useState("");
-  const [phoneNumberId, setPhoneNumberId] = useState("");
   const [defaultRecipients, setDefaultRecipients] = useState("");
   const [testRecipient, setTestRecipient] = useState("");
   const [userPhone, setUserPhone] = useState("");
@@ -60,8 +58,6 @@ export function SettingsPage() {
   useEffect(() => {
     if (!data) return;
     setWhatsappEnabled(data.whatsapp_enabled);
-    setAccessToken("");
-    setPhoneNumberId(data.whatsapp_phone_number_id);
     setDefaultRecipients(data.whatsapp_default_recipients);
     setTestRecipient(data.whatsapp_test_recipient);
     setUserPhone(data.user_profile.whatsapp_phone_e164 ?? "");
@@ -72,8 +68,6 @@ export function SettingsPage() {
     mutationFn: () =>
       saveSettings({
         whatsapp_enabled: whatsappEnabled,
-        whatsapp_access_token: accessToken.trim() || undefined,
-        whatsapp_phone_number_id: phoneNumberId,
         whatsapp_default_recipients: defaultRecipients,
         whatsapp_test_recipient: testRecipient,
         user_profile: {
@@ -83,7 +77,6 @@ export function SettingsPage() {
       }),
     onSuccess: () => {
       setSaveMessage("Einstellungen gespeichert.");
-      setAccessToken("");
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
     onError: () => setSaveMessage("Speichern fehlgeschlagen."),
@@ -98,7 +91,14 @@ export function SettingsPage() {
           : `Test fehlgeschlagen: ${res.error ?? "Unbekannter Fehler"}`
       );
     },
-    onError: () => setTestMessage("Test-Anfrage fehlgeschlagen."),
+    onError: (err: unknown) => {
+      const detail =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error;
+      setTestMessage(
+        detail ? `Test fehlgeschlagen: ${detail}` : "Test-Anfrage fehlgeschlagen."
+      );
+    },
   });
 
   const wipeMut = useMutation({
@@ -177,10 +177,6 @@ export function SettingsPage() {
         data={data}
         whatsappEnabled={whatsappEnabled}
         onWhatsappEnabledChange={setWhatsappEnabled}
-        accessToken={accessToken}
-        onAccessTokenChange={setAccessToken}
-        phoneNumberId={phoneNumberId}
-        onPhoneNumberIdChange={setPhoneNumberId}
         defaultRecipients={defaultRecipients}
         onDefaultRecipientsChange={setDefaultRecipients}
         testRecipient={testRecipient}
