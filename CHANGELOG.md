@@ -1,6 +1,25 @@
 # CHANGELOG
 
 
+## v0.20.0 (2026-06-06)
+
+### Features
+
+- Admin tenant management — suspend, expiry, delete, lock, password-reset
+  ([`ac4dcf7`](https://github.com/siinanXD/Booking-email-check/commit/ac4dcf71410a45476b08aca4c697c198805271cd))
+
+Backend: - AccountRecord: add expires_at field; AccountRepository: set_expiry, delete - UserRecord:
+  add is_locked field; UserRepository: set_locked, reset_password_hash, delete -
+  admin_user_actions.py (new): suspend/unsuspend/expiry/delete account routes,
+  lock/reset-password/delete user routes - auth_guard: check is_locked and expires_at on every
+  request - mail_poll_service: skip expired accounts during polling
+
+Frontend: - admin.ts: add all new API functions - AdminAccountDetailPage: add Mandanten-Verwaltung
+  panel and per-user actions
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+
 ## v0.19.0 (2026-06-06)
 
 ### Features
