@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-from typing import Protocol
+from functools import lru_cache
+from typing import Any, Protocol
 
 from langfuse.decorators import langfuse_context, observe
 
@@ -15,6 +16,48 @@ from backend.infrastructure.repositories.chunk_repository import ChunkRepository
 from backend.infrastructure.repositories.embedding_repository import EmbeddingRepository
 
 logger = logging.getLogger(__name__)
+
+# text-embedding-3-* akzeptieren max. 8192 Tokens pro Input. Mit Sicherheitsmarge.
+_MAX_EMBED_TOKENS = 8000
+# Fallback ohne tiktoken: grobe Schätzung ~4 Zeichen je Token.
+_CHARS_PER_TOKEN = 4
+
+
+@lru_cache(maxsize=1)
+def _encoder() -> Any:  # noqa: ANN401 - tiktoken.Encoding, lazy importiert
+    """Gecachter tiktoken-Encoder (cl100k_base passt zu text-embedding-3-*)."""
+    import tiktoken
+
+    return tiktoken.get_encoding("cl100k_base")
+
+
+def truncate_for_embedding(text: str, max_tokens: int = _MAX_EMBED_TOKENS) -> str:
+    """Kürzt Text aufs Token-Limit des Embedding-Modells.
+
+    Nutzt tiktoken; fällt bei jedem Fehler auf eine zeichenbasierte Schätzung
+    zurück, damit das Embedding nie an OpenAIs 8192-Token-Grenze scheitert.
+    """
+    try:
+        encoder = _encoder()
+        tokens = encoder.encode(text)
+        if len(tokens) <= max_tokens:
+            return text
+        truncated = str(encoder.decode(tokens[:max_tokens]))
+        logger.warning(
+            "Embedding-Input gekürzt: %d → %d Tokens", len(tokens), max_tokens
+        )
+        return truncated
+    except Exception:  # noqa: BLE001 - tiktoken-Fehler dürfen Indexierung nicht stoppen
+        max_chars = max_tokens * _CHARS_PER_TOKEN
+        if len(text) <= max_chars:
+            return text
+        logger.warning(
+            "Embedding-Input zeichenbasiert gekürzt: %d → %d Zeichen "
+            "(tiktoken nicht verfügbar)",
+            len(text),
+            max_chars,
+        )
+        return text[:max_chars]
 
 
 class EmbeddingFn(Protocol):
@@ -67,7 +110,7 @@ class EmbeddingClient:
         if self._tracing:
             langfuse_context.update_current_observation(model=self._model)
         response = self._client.embeddings.create(
-            input=text,
+            input=truncate_for_embedding(text),
             model=self._model,
         )
         return list(response.data[0].embedding)
