@@ -1,6 +1,34 @@
 # CHANGELOG
 
 
+## v0.21.1 (2026-06-15)
+
+### Bug Fixes
+
+- Kürze überlange Embedding-Inputs auf Token-Limit
+  ([`af84553`](https://github.com/siinanXD/Booking-email-check/commit/af845534ec557b6ea4a68b6b7518b3024b8b1d75))
+
+text-embedding-3-small lehnt Inputs >8192 Tokens mit HTTP 400 ab, was beim Indexieren langer Mails
+  als "Postfach-Hinweis" auftauchte. embed() kürzt den Text jetzt via tiktoken (cl100k_base) auf
+  8000 Tokens, mit zeichenbasiertem Fallback falls tiktoken nicht verfügbar ist.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+### Chores
+
+- **scripts**: Atlas-speicher-cleanup-tool + Tenant-Skript härten
+  ([`06c1eab`](https://github.com/siinanXD/Booking-email-check/commit/06c1eab4ed575d426422b452d1f78ad36c93542e))
+
+mongo_storage_cleanup.py analysiert Collection-Größen und räumt auf Wunsch LangGraph-Checkpoints
+  bzw. alte Mails weg (Dry-Run by default), um die M0-512-MB-Quota freizuräumen, die sonst alle
+  Writes blockiert.
+
+clear_tenant_whatsapp_credentials.py: str()-Cast vor .strip(), damit Nicht-String-DB-Werte das
+  Skript nicht crashen.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+
 ## v0.21.0 (2026-06-07)
 
 ### Features

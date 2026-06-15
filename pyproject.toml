@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "email-platform"
-version = "0.21.0"                       # wird ab Release-1 automatisch von semantic-release gepflegt
+version = "0.21.1"                       # wird ab Release-1 automatisch von semantic-release gepflegt
 description = "AI Email Processing Platform (Booking-Domäne, branchenoffen)"
 requires-python = ">=3.11,<3.12"
 dependencies = [
@@ -51,6 +51,7 @@ dev = [
     "python-semantic-release==9.8.9",
     "mongomock==4.2.0.post1",           # Mongo für Tests ohne echtes Atlas
 ]
+
 
 
 
