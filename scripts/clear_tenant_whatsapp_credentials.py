@@ -31,8 +31,8 @@ cleared = 0
 
 for doc in docs:
     account_id = doc.get("_id", "?")
-    token = (doc.get("whatsapp_access_token") or "").strip()
-    phone_id = (doc.get("whatsapp_phone_number_id") or "").strip()
+    token = str(doc.get("whatsapp_access_token") or "").strip()
+    phone_id = str(doc.get("whatsapp_phone_number_id") or "").strip()
 
     updates: dict[str, str] = {}
     if token and token == env_token:
