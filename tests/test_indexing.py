@@ -7,12 +7,20 @@ from unittest.mock import MagicMock, patch
 
 from pymongo.errors import OperationFailure
 
+from backend.ai.domain.booking.extraction import BookingExtraction
+from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.ai.services.indexing import IndexingService
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.repositories.chunk_repository import ChunkRepository
 from backend.infrastructure.repositories.embedding_repository import (
     VECTOR_INDEX_NAME,
     EmbeddingRepository,
 )
+
+
+class _FixedEmbed:
+    def embed(self, text: str) -> list[float]:
+        return [0.1, 0.2, 0.3]
 
 
 def test_search_by_vector_atlas_uses_aggregate(mock_db) -> None:
@@ -54,6 +62,50 @@ def test_search_by_vector_atlas_returns_empty_when_offline(
         )
     assert results == []
     assert any("vektordatenbank_offline" in r.message for r in caplog.records)
+
+
+def test_index_async_stores_semantic_chunk_metadata(mock_db) -> None:
+    """Live-Index nutzt semantic_chunk: Kontext-Prefix + Metadaten landen im Doc."""
+    emb_repo = EmbeddingRepository(mock_db)
+    chunk_repo = ChunkRepository(mock_db)
+    svc = IndexingService(emb_repo, _FixedEmbed(), chunk_repo)
+    ext = BookingExtraction(
+        intent=BookingIntent.NEW_BOOKING,
+        property_name="Ferienhaus Nord",
+        booking_number="AB123",
+    )
+    asyncio.run(
+        svc._index_async(
+            "corr-1",
+            "Hallo, wir möchten gerne buchen.",
+            ext,
+            "acc-1",
+            subject="Neue Buchung",
+        )
+    )
+    docs = list(emb_repo._col.find({"correlation_id": "corr-1"}))
+    assert docs, "kein Embedding gespeichert"
+    doc = docs[0]
+    assert doc["_id"] == "corr-1:0"
+    assert doc["chunk_index"] == 0
+    assert doc["account_id"] == "acc-1"
+    assert doc["intent"] == "new_booking"
+    assert doc["embedding"] == [0.1, 0.2, 0.3]
+    # Kontext-Prefix enthält Unterkunft + Buchungsnummer (verbessert Embedding).
+    assert "Ferienhaus Nord" in doc["context_prefix"]
+    assert "AB123" in doc["context_prefix"]
+    assert doc["token_count"] > 0
+
+
+def test_index_async_is_idempotent_on_reindex(mock_db) -> None:
+    """Re-Index ersetzt alte Chunks vollständig — keine Waisen bei weniger Chunks."""
+    emb_repo = EmbeddingRepository(mock_db)
+    svc = IndexingService(emb_repo, _FixedEmbed(), max_chunk_tokens=40)
+    long_body = "\n\n".join(f"Absatz {i} mit etwas Text " * 20 for i in range(6))
+    asyncio.run(svc._index_async("corr-x", long_body, None, "acc-1"))
+    assert emb_repo._col.count_documents({"correlation_id": "corr-x"}) > 1
+    asyncio.run(svc._index_async("corr-x", "kurz", None, "acc-1"))
+    assert emb_repo._col.count_documents({"correlation_id": "corr-x"}) == 1
 
 
 def test_index_async_alerts_on_failure(mock_db) -> None:

@@ -19,9 +19,10 @@ def test_format_graph_datetime_utc() -> None:
 
 
 def test_compute_poll_since_uses_max_received_overlap() -> None:
-    # newest relativ zu "jetzt", damit newest - overlap im Standardfenster liegt
-    # (sonst gewinnt das 7-Tage-Default und der Test ist wanduhrabhängig).
-    newest = datetime.now(UTC) - timedelta(hours=2)
+    # Relativ zu jetzt, damit ``newest - overlap`` immer das Maximum gegenüber
+    # ``now - default_window`` bleibt (sonst gewinnt mit fortschreitender Zeit
+    # das Default-Fenster und der Test rottet).
+    newest = datetime.now(UTC) - timedelta(hours=1)
     since = compute_poll_since(
         max_received_at=newest.isoformat().replace("+00:00", "Z"),
         last_sync_at=None,

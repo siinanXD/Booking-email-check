@@ -10,6 +10,7 @@ from backend.ai.services.grounding import GroundingService
 from backend.ai.services.indexing import EmbeddingClient, EmbeddingFn, IndexingService
 from backend.ai.services.ingestion import IngestionService
 from backend.ai.services.openai_client import OpenAIClient
+from backend.ai.services.reranking import RerankService
 from backend.ai.services.response_generation import ResponseGenerationService
 from backend.ai.services.retrieval import RetrievalService
 from backend.ai.services.similarity_search import SimilaritySearchService
@@ -174,7 +175,15 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         mail_cost=mail_cost,
     )
     ingestion = IngestionService(email_repo, triage)
-    indexing = IndexingService(embedding_repo, embed_client, chunk_repo, alerts=alerts)
+    indexing = IndexingService(
+        embedding_repo,
+        embed_client,
+        chunk_repo,
+        alerts=alerts,
+        max_chunk_tokens=cfg.chunk_max_tokens,
+        overlap_tokens=cfg.chunk_overlap_tokens,
+        embedding_model=cfg.embedding_model,
+    )
     classification = ClassificationService(
         llm,
         cfg.openai_model_classify,
@@ -199,6 +208,14 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         use_atlas=cfg.similarity_use_atlas,
     )
     entity_resolution = EntityResolutionService(entity_repo)
+    # Nur Provider "llm" ist implementiert (siehe .env.example); andere Werte
+    # lassen das Reranking aus und fallen auf die Vektor-Reihenfolge zurück.
+    reranker = RerankService(
+        llm,
+        cfg.rerank_model,
+        enabled=cfg.rerank_enabled and cfg.rerank_provider.strip().lower() == "llm",
+        candidate_multiplier=cfg.rerank_candidate_multiplier,
+    )
     retrieval = RetrievalService(
         entity_repo,
         email_repo,
@@ -206,6 +223,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         entity_resolution=entity_resolution,
         alerts=alerts,
         llm_config_repo=platform_llm_config_repo,
+        reranker=reranker,
     )
     response_gen = ResponseGenerationService(
         llm,

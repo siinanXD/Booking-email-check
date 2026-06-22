@@ -54,4 +54,5 @@ def learn_from_approved_review(
             index_text,
             ext,
             account_id=account_id,
+            subject=email.subject,
         )

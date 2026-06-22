@@ -247,6 +247,8 @@ class WorkflowNodes(PipelineReviewMixin):
                     email.body_text,
                     extraction,
                     account_id=email.account_id,
+                    subject=email.subject,
+                    body_html=email.body_html,
                 )
             if self._notification_service is not None:
                 self._notification_service.dispatch_on_detect_if_enabled(
