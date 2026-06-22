@@ -52,11 +52,21 @@ def build_context_prefix(
 
 
 def preprocess_mail_body(body: str, body_html: str | None = None) -> str:
-    """Zitat-Strip, HTML-Fallback und Whitespace-Normalisierung."""
+    """Zitat-Strip, HTML-/CSS-Bereinigung, Entity-Dekodierung, Whitespace.
+
+    Marketing-Mails schleppen oft ``<style>``-Blöcke (``@font-face { … }``) und
+    HTML-Entities (``&nbsp;``, ``&zwnj;``) in den Plaintext — die verschlechtern
+    Embeddings. Sie werden hier entfernt/dekodiert.
+    """
+    import html
     import re
 
     text = normalize_body(body, body_html)
+    text = re.sub(r"(?is)<(style|script)\b.*?</\1>", " ", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
     text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
     return text.strip()
 
 

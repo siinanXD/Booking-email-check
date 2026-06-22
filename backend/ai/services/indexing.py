@@ -163,6 +163,21 @@ class IndexingService:
                 name=f"index-{correlation_id}",
             ).start()
 
+    def purge(self, correlation_id: str, *, account_id: str | None = None) -> int:
+        """Entfernt alle Chunks/Embeddings einer Mail (Nicht-Buchungs-Cleanup).
+
+        Hält den Vektor-Index frei von irrelevanten Mails (z. B. Marketing,
+        intent=other), die als Stilreferenz nur Rauschen wären.
+        """
+        deleted = self._repo.delete_by_correlation_id(
+            correlation_id, account_id=account_id
+        )
+        if self._chunk_repo is not None:
+            self._chunk_repo.delete_by_correlation_id(
+                correlation_id, account_id=account_id
+            )
+        return deleted
+
     async def _index_async(
         self,
         correlation_id: str,

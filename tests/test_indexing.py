@@ -108,6 +108,19 @@ def test_index_async_is_idempotent_on_reindex(mock_db) -> None:
     assert emb_repo._col.count_documents({"correlation_id": "corr-x"}) == 1
 
 
+def test_purge_removes_embeddings_and_chunks(mock_db) -> None:
+    """purge() entfernt Embeddings UND Chunks einer Mail (Nicht-Buchungs-Cleanup)."""
+    emb_repo = EmbeddingRepository(mock_db)
+    chunk_repo = ChunkRepository(mock_db)
+    svc = IndexingService(emb_repo, _FixedEmbed(), chunk_repo)
+    emb_repo.upsert_chunk("corr-p:0", "corr-p", "txt", [0.1], "other", account_id="a1")
+    chunk_repo.upsert_chunk("corr-p:0", "corr-p", "txt", "other", account_id="a1")
+    removed = svc.purge("corr-p", account_id="a1")
+    assert removed == 1
+    assert emb_repo._col.count_documents({"correlation_id": "corr-p"}) == 0
+    assert chunk_repo._col.count_documents({"correlation_id": "corr-p"}) == 0
+
+
 def test_index_async_alerts_on_failure(mock_db) -> None:
     """Verify async indexing emits alert with indexing: prefix on failure."""
 
@@ -123,3 +136,52 @@ def test_index_async_alerts_on_failure(mock_db) -> None:
     args = alerts.check_extraction_failure.call_args[0]
     assert args[0] == "corr-fail"
     assert args[1].startswith("indexing:")
+
+
+def test_validate_indexes_only_booking_relevant(monkeypatch) -> None:
+    """Validate-Node indexiert nur buchungsrelevante Mails (Korpus-Qualität)."""
+    from datetime import UTC, datetime
+
+    from backend.ai.domain.booking.extraction import BookingExtraction
+    from backend.ai.domain.booking.taxonomy import BookingIntent
+    from backend.ai.workflows.nodes import pipeline as pipeline_mod
+    from backend.ai.workflows.nodes.pipeline import WorkflowNodes
+    from backend.core.models.email import StoredEmail
+
+    indexing = MagicMock()
+    validation = MagicMock()
+    validation.validate.return_value = MagicMock(valid=True, errors=[])
+    nodes = WorkflowNodes(
+        ingestion=MagicMock(),
+        classification=MagicMock(),
+        extraction=MagicMock(),
+        validation=validation,
+        retrieval=MagicMock(),
+        response_gen=MagicMock(),
+        email_repo=MagicMock(),
+        extraction_repo=MagicMock(),
+        indexing=indexing,
+        alerts=None,
+        review_repo=None,
+        notification_service=None,
+    )
+    email = StoredEmail(
+        message_id="m-idx",
+        from_address="bookings@beds24.com",
+        subject="Buchung",
+        body_text="Details",
+        received_at=datetime.now(UTC),
+        correlation_id="corr-idx",
+        account_id="acc-1",
+    )
+    ext = BookingExtraction(intent=BookingIntent.OTHER)
+    state = {"email": email, "extraction": ext}
+
+    monkeypatch.setattr(pipeline_mod, "is_booking_relevant", lambda e, x: True)
+    nodes.validate(state)
+    assert indexing.schedule_index.called
+
+    indexing.reset_mock()
+    monkeypatch.setattr(pipeline_mod, "is_booking_relevant", lambda e, x: False)
+    nodes.validate(state)
+    assert not indexing.schedule_index.called
