@@ -60,10 +60,11 @@ async def _reindex_one(
 
 def main() -> int:
     """Re-Indexiert Bestands-Mails mit semantischem Chunking."""
+    from backend.ai.domain.booking.booking_relevance import is_booking_relevant
     from backend.ai.domain.booking.extraction import parse_stored_extraction
     from backend.core.config.factory import build_app_context
     from backend.core.config.settings import get_settings
-    from backend.core.models.email import ProcessingState
+    from backend.core.models.email import ProcessingState, StoredEmail
 
     args = _parse_args()
     ctx = build_app_context(get_settings())
@@ -84,6 +85,7 @@ def main() -> int:
     cursor = ctx.email_repo._col.find(query).sort("updated_at", -1)
     processed = 0
     skipped = 0
+    purged = 0
 
     for doc in cursor:
         if args.limit and processed >= args.limit:
@@ -99,29 +101,31 @@ def main() -> int:
         if not body:
             skipped += 1
             continue
-        if args.dry_run:
-            processed += 1
-            safe_print(f"[dry-run] {correlation_id}")
-            continue
         extraction = parse_stored_extraction(
             ctx.extraction_repo.get_by_correlation_id(
                 correlation_id,
                 account_id=account_id,
             )
         )
-        asyncio.run(
-            _reindex_one(
-                ctx,
-                correlation_id,
-                account_id,
-                body,
-                extraction,
-            )
-        )
+        # Nur buchungsrelevante Mails gehören in den Vektor-Index; Nicht-Buchung
+        # (intent=other, Marketing) wird stattdessen aus dem Index entfernt.
+        relevant = is_booking_relevant(StoredEmail.from_mongo(doc), extraction)
+        if args.dry_run:
+            processed += 1
+            safe_print(f"[dry-run] {'index' if relevant else 'purge'} {correlation_id}")
+            continue
+        if not relevant:
+            ctx.indexing_service.purge(correlation_id, account_id=account_id)
+            purged += 1
+            safe_print(f"Gepurged (Nicht-Buchung): {correlation_id}")
+            continue
+        asyncio.run(_reindex_one(ctx, correlation_id, account_id, body, extraction))
         processed += 1
         safe_print(f"Re-indexiert: {correlation_id}")
 
-    safe_print(f"Fertig: {processed} indexiert, {skipped} übersprungen.")
+    safe_print(
+        f"Fertig: {processed} indexiert, {purged} gepurged, {skipped} übersprungen."
+    )
     return 0
 
 

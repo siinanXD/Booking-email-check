@@ -117,6 +117,20 @@ def test_preprocess_normalizes_whitespace() -> None:
     assert preprocess_mail_body(body) == "Zeile eins\n\nZeile zwei"
 
 
+def test_preprocess_strips_style_blocks_and_decodes_entities() -> None:
+    """CSS-/Style-Blöcke raus, HTML-Entities dekodiert (Marketing-Rauschen)."""
+    raw = (
+        "Buchung&nbsp;AB123 <style>@font-face { font-family: 'Inspire'; }</style> "
+        "Gast &amp; Datum"
+    )
+    out = preprocess_mail_body(raw)
+    assert "@font-face" not in out
+    assert "<style>" not in out
+    assert "&nbsp;" not in out and "&amp;" not in out
+    assert "Buchung" in out and "AB123" in out
+    assert "Gast & Datum" in out
+
+
 def test_empty_body_returns_no_chunks() -> None:
     """Leerer Body liefert keine Chunks."""
     assert semantic_chunk("   \n\n  ") == []

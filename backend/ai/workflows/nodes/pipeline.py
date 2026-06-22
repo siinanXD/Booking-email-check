@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from backend.ai.domain.booking.booking_relevance import is_booking_relevant
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.extraction_enrichment import enrich_extraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
@@ -176,14 +177,12 @@ class WorkflowNodes(PipelineReviewMixin):
                 )
                 return {"extraction": extraction, "custom_extraction": custom}
         intent = state.get("intent")
+        db = self._email_repo._col.database
         known_props: list[str] = []
         if email.account_id:
             from backend.features.booking.property_catalog import known_property_names
 
-            known_props = known_property_names(
-                self._email_repo._col.database,
-                email.account_id,
-            )
+            known_props = known_property_names(db, email.account_id)
         extraction = enrich_extraction(
             email,
             self._extraction.extract(email, intent=intent),
@@ -194,9 +193,7 @@ class WorkflowNodes(PipelineReviewMixin):
                 ensure_property_from_extraction,
             )
 
-            ensure_property_from_extraction(
-                self._email_repo._col.database, email.account_id, email, extraction
-            )
+            ensure_property_from_extraction(db, email.account_id, email, extraction)
         self._extraction_repo.save(
             email.correlation_id,
             email.message_id,
@@ -239,7 +236,9 @@ class WorkflowNodes(PipelineReviewMixin):
                 ProcessingState.VALIDATED,
                 account_id=email.account_id,
             )
-            if self._indexing is not None:
+            # Nur buchungsrelevante Mails indexieren — intent=other (Marketing,
+            # Kalender etc.) wäre als Stilreferenz nur Rauschen im Vektor-Index.
+            if self._indexing is not None and is_booking_relevant(email, extraction):
                 self._indexing.schedule_index(
                     email.correlation_id,
                     email.body_text,
