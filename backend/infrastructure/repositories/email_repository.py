@@ -40,6 +40,15 @@ class EmailRepository:
             [("account_id", 1), ("message_id", 1)],
             name="idx_email_account_message",
         )
+        self._col.create_index(
+            [
+                ("account_id", 1),
+                ("is_booking", 1),
+                ("effective_intent", 1),
+                ("received_at", -1),
+            ],
+            name="idx_email_account_booking_intent",
+        )
 
     def find_existing_message_ids(
         self,
@@ -179,6 +188,24 @@ class EmailRepository:
         )
         skip = max(page - 1, 0) * limit
         intent_filter: list[str] = intents or ([intent] if intent else [])
+
+        if booking_related:
+            # Booking-Pfad filtert/paginiert rein über vorberechnete Felder
+            # auf der emails-Collection (kein $lookup, kein Python-Loop).
+            if intent_filter:
+                base_match["effective_intent"] = (
+                    intent_filter[0]
+                    if len(intent_filter) == 1
+                    else {"$in": intent_filter}
+                )
+            total = int(self._col.count_documents(base_match))
+            cursor = (
+                self._col.find(base_match)
+                .sort("received_at", -1)
+                .skip(skip)
+                .limit(limit)
+            )
+            return [StoredEmail.from_mongo(doc) for doc in cursor], total
 
         if intent_filter:
             pipeline = build_intent_pipeline(

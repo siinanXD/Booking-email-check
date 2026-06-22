@@ -58,6 +58,10 @@ class StoredEmail(IncomingEmail):
     processing_state: ProcessingState = ProcessingState.RECEIVED
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    # Vorberechnete Buchungs-Relevanz für schnelle Kategorie-Listen.
+    # None = noch nicht klassifiziert (z. B. nur ingestet, nicht extrahiert).
+    is_booking: bool | None = None
+    effective_intent: str | None = None
 
     def to_mongo(self) -> dict[str, Any]:
         """Serialisierung für MongoDB."""

@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from math import ceil
 from typing import Any
 
-from backend.ai.domain.booking.booking_relevance import (
-    classify_booking_mail,
-    effective_booking_intent,
-)
+from backend.ai.domain.booking.booking_relevance import effective_booking_intent
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.services.mail_summary import MailSummaryService
 from backend.api.schemas.emails import EmailDetail, EmailListItem, EmailListResponse
@@ -105,59 +103,27 @@ def list_emails(
             page=page,
             limit=limit,
         )
-    fetch_limit = 500 if booking_related else limit
-    fetch_page = 1 if booking_related else page
-    intent_filter: list[str] = []
-    if intents:
-        intent_filter = intents
-    elif intent:
-        intent_filter = [intent]
-
+    # Booking-Kategorien filtern/paginieren jetzt DB-seitig über die
+    # vorberechneten Felder is_booking/effective_intent (siehe list_filtered).
     emails, total = ctx.email_repo.list_filtered(
         account_id=account_id,
         status=status,
-        intent=None if booking_related else intent,
-        intents=None if booking_related else intents,
+        intent=intent,
+        intents=intents,
         platform=platform,
         search=search,
         booking_related=booking_related,
-        page=fetch_page,
-        limit=fetch_limit,
+        page=page,
+        limit=limit,
         received_since=since_iso,
         received_until=until_iso,
     )
-    if booking_related:
-        batch = _batch_email_list_context(
-            ctx,
-            account_id,
-            [email.correlation_id for email in emails],
-        )
-        strict: list[StoredEmail] = []
-        for email in emails:
-            ext = batch.extractions.get(email.correlation_id)
-            if not classify_booking_mail(email, ext).is_booking:
-                continue
-            if intent_filter:
-                eff = effective_booking_intent(email, ext)
-                if eff is None or eff.value not in intent_filter:
-                    continue
-            strict.append(email)
-        total = len(strict)
-        offset = max(page - 1, 0) * limit
-        emails = strict[offset : offset + limit]
-        page_batch = _batch_email_list_context(
-            ctx,
-            account_id,
-            [email.correlation_id for email in emails],
-        )
-        items = [_email_to_list_item(email, page_batch) for email in emails]
-    else:
-        page_batch = _batch_email_list_context(
-            ctx,
-            account_id,
-            [email.correlation_id for email in emails],
-        )
-        items = [_email_to_list_item(email, page_batch) for email in emails]
+    page_batch = _batch_email_list_context(
+        ctx,
+        account_id,
+        [email.correlation_id for email in emails],
+    )
+    items = [_email_to_list_item(email, page_batch) for email in emails]
     pages = ceil(total / limit) if limit else 0
     return EmailListResponse(items=items, total=total, page=page, pages=pages)
 
@@ -213,25 +179,44 @@ def get_email_detail(
     account_id: str,
     correlation_id: str,
 ) -> EmailDetail | None:
-    email = ctx.email_repo.get_by_correlation_id(
-        correlation_id,
-        account_id=account_id,
-    )
+    # Die vier Lookups hängen nicht voneinander ab – auf einem entfernten
+    # Atlas-Cluster dominiert sonst die Round-Trip-Latenz (4× sequenziell).
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        email_fut = pool.submit(
+            ctx.email_repo.get_by_correlation_id,
+            correlation_id,
+            account_id=account_id,
+        )
+        ext_fut = pool.submit(
+            ctx.extraction_repo.get_by_correlation_id,
+            correlation_id,
+            account_id=account_id,
+        )
+        review_fut = pool.submit(
+            ctx.review_repo.get,
+            correlation_id,
+            account_id=account_id,
+        )
+        cached_summary_fut = pool.submit(
+            ctx.mail_summary_repo.get,
+            correlation_id,
+            account_id=account_id,
+        )
+        email = email_fut.result()
+        ext = ext_fut.result()
+        review = review_fut.result()
+        cached_summary = cached_summary_fut.result()
+
     if email is None:
         return None
-    ext = ctx.extraction_repo.get_by_correlation_id(
-        correlation_id,
-        account_id=account_id,
-    )
-    review = ctx.review_repo.get(correlation_id, account_id=account_id)
     extraction_json: dict[str, Any] | None = None
     if ext is not None:
         extraction_json = ext.model_dump(mode="json")
     summary_svc = MailSummaryService(ctx.mail_summary_repo)
-    summary = summary_svc.get_or_create(
+    summary = summary_svc.from_cache_or_build(
         email,
         ext,
-        account_id=account_id,
+        cached=cached_summary,
     )
     return EmailDetail(
         correlation_id=email.correlation_id,

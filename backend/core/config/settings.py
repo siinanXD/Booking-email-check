@@ -185,6 +185,10 @@ class Settings(BaseSettings):
         default=120,
         alias="MAIL_INGEST_INITIAL_FETCH_CAP",
     )
+    mail_ingest_initial_lookback_days: int = Field(
+        default=1,
+        alias="MAIL_INGEST_INITIAL_LOOKBACK_DAYS",
+    )
     ingest_account_id: str | None = Field(default=None, alias="INGEST_ACCOUNT_ID")
     mail_poll_interval_seconds: int = Field(
         default=300, alias="MAIL_POLL_INTERVAL_SECONDS"
