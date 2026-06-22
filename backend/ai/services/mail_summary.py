@@ -35,6 +35,22 @@ class MailSummaryService:
         summary = self._build_heuristic(email, extraction)
         return self._repo.upsert(summary, account_id=account_id)
 
+    def from_cache_or_build(
+        self,
+        email: StoredEmail,
+        extraction: BookingExtraction | None,
+        *,
+        cached: MailSummary | None,
+    ) -> MailSummary:
+        """Liefert die Summary ohne Schreib-Round-Trip (für den Lese-Pfad).
+
+        Die Heuristik ist deterministisch und billig (Regex), daher lohnt das
+        Persistieren beim Anzeigen nicht – es kostet nur einen Mongo-Write.
+        """
+        if cached is not None:
+            return cached
+        return self._build_heuristic(email, extraction)
+
     def _build_heuristic(
         self,
         email: StoredEmail,

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.ai.domain.booking.booking_relevance import mongo_noise_exclusion
-
 
 def build_base_match(
     *,
@@ -29,9 +27,8 @@ def build_base_match(
             received_filter["$lte"] = received_until
         match["received_at"] = received_filter
     if booking_related:
-        noise = mongo_noise_exclusion()
-        if noise:
-            match = {"$and": [match, noise]} if match else noise
+        # Vorberechnetes Flag statt teurer Regex-/Python-Klassifikation.
+        match["is_booking"] = True
     if status:
         match["processing_state"] = status
     if platform:

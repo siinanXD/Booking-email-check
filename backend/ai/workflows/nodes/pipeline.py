@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from backend.ai.domain.booking.booking_relevance import relevance_fields
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.extraction_enrichment import enrich_extraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
@@ -173,6 +174,7 @@ class WorkflowNodes(PipelineReviewMixin):
                     email.message_id,
                     ProcessingState.EXTRACTED,
                     account_id=email.account_id,
+                    **relevance_fields(email, extraction),
                 )
                 return {"extraction": extraction, "custom_extraction": custom}
         intent = state.get("intent")
@@ -181,8 +183,7 @@ class WorkflowNodes(PipelineReviewMixin):
             from backend.features.booking.property_catalog import known_property_names
 
             known_props = known_property_names(
-                self._email_repo._col.database,
-                email.account_id,
+                self._email_repo._col.database, email.account_id
             )
         extraction = enrich_extraction(
             email,
@@ -195,10 +196,7 @@ class WorkflowNodes(PipelineReviewMixin):
             )
 
             ensure_property_from_extraction(
-                self._email_repo._col.database,
-                email.account_id,
-                email,
-                extraction,
+                self._email_repo._col.database, email.account_id, email, extraction
             )
         self._extraction_repo.save(
             email.correlation_id,
@@ -210,6 +208,7 @@ class WorkflowNodes(PipelineReviewMixin):
             email.message_id,
             ProcessingState.EXTRACTED,
             account_id=email.account_id,
+            **relevance_fields(email, extraction),
         )
         return {"extraction": extraction}
 
