@@ -45,10 +45,7 @@ def test_list_emails_by_intents(
             account_id=tenant_account_id,
         )
 
-    resp = client.get(
-        "/api/emails/?intents=other,guest_inquiry",
-        headers=auth_headers,
-    )
+    resp = client.get("/api/emails/?intents=other,guest_inquiry", headers=auth_headers)
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["total"] == 2
@@ -78,6 +75,102 @@ def test_list_emails_without_intent_filter(
     resp = client.get("/api/emails/", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.get_json()["total"] >= 1
+
+
+def _booking_email(
+    email_repo: Any,
+    tenant_account_id: str,
+    *,
+    idx: int,
+    is_booking: bool | None,
+    effective_intent: str | None,
+) -> None:
+    email_repo.upsert_by_message_id(
+        StoredEmail(
+            message_id=f"bk-{idx}@test",
+            from_address="bookings@beds24.com",
+            subject=f"Buchung {idx}",
+            body_text="Details",
+            received_at=datetime(2026, 6, idx % 27 + 1, tzinfo=UTC),
+            correlation_id=f"corr-bk-{idx}",
+            processing_state=ProcessingState.EXTRACTED,
+            account_id=tenant_account_id,
+            is_booking=is_booking,
+            effective_intent=effective_intent,
+        )
+    )
+
+
+def test_bookings_list_uses_stored_fields(
+    client: Any,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+    email_repo: Any,
+) -> None:
+    """/api/bookings/ liefert nur is_booking=True (None separat in eigenem Test)."""
+    _booking_email(
+        email_repo,
+        tenant_account_id,
+        idx=1,
+        is_booking=True,
+        effective_intent="new_booking",
+    )
+    _booking_email(
+        email_repo,
+        tenant_account_id,
+        idx=2,
+        is_booking=False,
+        effective_intent=None,
+    )
+    resp = client.get("/api/bookings/", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["total"] == 1
+    assert data["items"][0]["correlation_id"] == "corr-bk-1"
+
+
+def test_bookings_list_pagination(
+    client: Any,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+    email_repo: Any,
+) -> None:
+    """Pagination rechnet DB-seitig (kein 500-Fetch-Re-Slice mehr)."""
+    for i in range(1, 26):
+        _booking_email(
+            email_repo,
+            tenant_account_id,
+            idx=i,
+            is_booking=True,
+            effective_intent="new_booking",
+        )
+    resp = client.get("/api/bookings/?page=1&limit=20", headers=auth_headers)
+    data = resp.get_json()
+    assert data["total"] == 25
+    assert data["pages"] == 2
+    assert len(data["items"]) == 20
+    resp2 = client.get("/api/bookings/?page=2&limit=20", headers=auth_headers)
+    assert len(resp2.get_json()["items"]) == 5
+
+
+def test_not_yet_extracted_email_excluded_from_bookings(
+    client: Any,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+    email_repo: Any,
+) -> None:
+    """is_booking=None fehlt in Buchungen, erscheint aber in der Normalliste."""
+    _booking_email(
+        email_repo,
+        tenant_account_id,
+        idx=7,
+        is_booking=None,
+        effective_intent=None,
+    )
+    bookings = client.get("/api/bookings/", headers=auth_headers).get_json()
+    assert bookings["total"] == 0
+    emails = client.get("/api/emails/", headers=auth_headers).get_json()
+    assert emails["total"] >= 1
 
 
 def test_email_detail_includes_booking_number(

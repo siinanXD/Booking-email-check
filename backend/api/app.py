@@ -43,6 +43,14 @@ def create_app(settings: Settings | None = None) -> Flask:
     configure(MongoBlocklistBackend(ctx.revoked_token_repo))
 
     origins = [o.strip() for o in cfg.cors_origins.split(",") if o.strip()]
+    if cfg.app_env == "production":
+        unsafe = [o for o in origins if "localhost" in o or "127.0.0.1" in o]
+        if unsafe or not origins:
+            logger.warning(
+                "CORS_ORIGINS unsicher für Produktion (%s) — bitte auf die echte "
+                "Frontend-Domain setzen.",
+                unsafe or "leer",
+            )
     CORS(app, origins=origins, supports_credentials=True)
 
     limiter.init_app(app)

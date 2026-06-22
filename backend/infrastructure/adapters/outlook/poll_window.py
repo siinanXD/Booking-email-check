@@ -58,8 +58,13 @@ def resolve_poll_since_for_account(
     last_sync_at: datetime | None,
     initial_sync: bool = False,
     ingest_anchor_at: datetime | None = None,
+    lookback_days: int = 1,
 ) -> datetime:
-    """Poll-Untergrenze inkl. Erst-Sync-Fenster (Graph + IMAP)."""
+    """Poll-Untergrenze inkl. Erst-Sync-Fenster (Graph + IMAP).
+
+    Beim Erst-Sync wird die Rückschau auf ``lookback_days`` ab dem Anker
+    (Anmeldezeitpunkt) **begrenzt** — ältere Mails werden nicht importiert.
+    """
     since = compute_poll_since(
         max_received_at=max_received_at,
         last_sync_at=last_sync_at,
@@ -70,5 +75,5 @@ def resolve_poll_since_for_account(
             if ingest_anchor_at.tzinfo is not None
             else ingest_anchor_at.replace(tzinfo=UTC)
         )
-        since = min(since, anchor_utc - timedelta(days=60))
+        since = max(since, anchor_utc - timedelta(days=lookback_days))
     return since

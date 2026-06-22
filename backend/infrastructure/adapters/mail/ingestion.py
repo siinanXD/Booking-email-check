@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from backend.ai.workflows.email_workflow import EmailWorkflow
 from backend.core.config.settings import Settings
-from backend.features.mail.ingest_window import filter_messages_for_initial_sync
+from backend.features.mail.ingest_window import filter_messages_since_cutoff
 from backend.infrastructure.adapters.mail.connector import build_mail_connector
 from backend.infrastructure.adapters.outlook.poll_window import (
     resolve_poll_since_for_account,
@@ -85,11 +85,13 @@ class MailIngestionRunner:
         anchor = None
         if account is not None:
             anchor = account.mail_ingest_anchor_at or account.created_at
+        lookback_days = self._settings.mail_ingest_initial_lookback_days
         since = resolve_poll_since_for_account(
             max_received_at=max_received,
             last_sync_at=record.last_sync_at,
             initial_sync=initial_sync,
             ingest_anchor_at=anchor,
+            lookback_days=lookback_days,
         )
         connector = build_mail_connector(record, self._settings)
         messages = connector.fetch_messages(
@@ -120,16 +122,15 @@ class MailIngestionRunner:
                 )
         if initial_sync and account is not None:
             anchor = account.mail_ingest_anchor_at or account.created_at
-            lookback = account.mail_ingest_lookback_count or (
-                self._settings.mail_ingest_initial_lookback
-            )
-            messages = filter_messages_for_initial_sync(messages, anchor, lookback)
+            messages = filter_messages_since_cutoff(messages, anchor, lookback_days)
             logger.info(
-                "Initial sync account=%s fetched=%s selected=%s anchor=%s",
+                "Initial sync account=%s fetched=%s selected=%s anchor=%s "
+                "lookback_days=%s",
                 account_id,
                 fetch_limit,
                 len(messages),
                 anchor.isoformat(),
+                lookback_days,
             )
         items: list[MailPollItemResult] = []
         existing_ids = self._email_repo.find_existing_message_ids(

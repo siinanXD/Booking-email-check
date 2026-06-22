@@ -228,6 +228,23 @@ def is_booking_relevant(
     return classify_booking_mail(email, extraction).is_booking
 
 
+def relevance_fields(
+    email: EmailLike,
+    extraction: BookingExtraction | None,
+) -> dict[str, object]:
+    """Persistierbare Relevanz-Felder (`is_booking`, `effective_intent`).
+
+    Quelle der Wahrheit für die schnellen Kategorie-Listen. Wird beim
+    Extrahieren geschrieben und vom Backfill-Skript neu berechnet.
+    """
+    verdict = classify_booking_mail(email, extraction)
+    intent = effective_booking_intent(email, extraction)
+    return {
+        "is_booking": verdict.is_booking,
+        "effective_intent": intent.value if intent else None,
+    }
+
+
 def mongo_noise_exclusion() -> dict[str, object]:
     """Mongo-$match: Marketing-Mails ausschließen."""
     nor: list[dict[str, object]] = []

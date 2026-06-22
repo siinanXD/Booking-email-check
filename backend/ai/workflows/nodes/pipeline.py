@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from backend.ai.domain.booking.booking_relevance import is_booking_relevant
+from backend.ai.domain.booking.booking_relevance import (
+    is_booking_relevant,
+    relevance_fields,
+)
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.extraction_enrichment import enrich_extraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
@@ -174,6 +177,7 @@ class WorkflowNodes(PipelineReviewMixin):
                     email.message_id,
                     ProcessingState.EXTRACTED,
                     account_id=email.account_id,
+                    **relevance_fields(email, extraction),
                 )
                 return {"extraction": extraction, "custom_extraction": custom}
         intent = state.get("intent")
@@ -204,6 +208,7 @@ class WorkflowNodes(PipelineReviewMixin):
             email.message_id,
             ProcessingState.EXTRACTED,
             account_id=email.account_id,
+            **relevance_fields(email, extraction),
         )
         return {"extraction": extraction}
 
@@ -236,8 +241,7 @@ class WorkflowNodes(PipelineReviewMixin):
                 ProcessingState.VALIDATED,
                 account_id=email.account_id,
             )
-            # Nur buchungsrelevante Mails indexieren — intent=other (Marketing,
-            # Kalender etc.) wäre als Stilreferenz nur Rauschen im Vektor-Index.
+            # Nur buchungsrelevante Mails indexieren (intent=other wäre Rauschen).
             if self._indexing is not None and is_booking_relevant(email, extraction):
                 self._indexing.schedule_index(
                     email.correlation_id,
@@ -249,9 +253,7 @@ class WorkflowNodes(PipelineReviewMixin):
                 )
             if self._notification_service is not None:
                 self._notification_service.dispatch_on_detect_if_enabled(
-                    email.correlation_id,
-                    extraction,
-                    account_id=email.account_id,
+                    email.correlation_id, extraction, account_id=email.account_id
                 )
         return {"validation_errors": result.errors}
 
