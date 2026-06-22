@@ -9,12 +9,42 @@ from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.ai.services.grounding import GroundingService
 from backend.ai.services.response_generation import (
     ResponseGenerationService,
+    _compact_similar_cases,
     _platform_tone,
 )
 from backend.ai.services.retrieval import RetrievalHits, RetrievalService
 from backend.core.models.email import StoredEmail
 from backend.core.models.entities import Reservation
 from tests.mocks import MockLLM
+
+
+def test_compact_similar_cases_masks_pii_and_drops_metadata() -> None:
+    """similar_cases: PII maskiert, interne Metadaten raus, nur Stil-Auszug."""
+    cases: list[dict[str, object]] = [
+        {
+            "text": "Gast max@example.com, Tel +49 170 1234567, Buchung AB123",
+            "intent": "guest_inquiry",
+            "account_id": "geheim-acct",
+            "correlation_id": "corr-x",
+            "score": 0.91,
+        }
+    ]
+    out = _compact_similar_cases(cases)
+    assert len(out) == 1
+    snip = out[0]
+    assert snip["intent"] == "guest_inquiry"
+    assert "max@example.com" not in str(snip["auszug"])
+    assert "[EMAIL]" in str(snip["auszug"])
+    assert "[PHONE]" in str(snip["auszug"])
+    assert set(snip.keys()) == {"intent", "auszug"}
+
+
+def test_compact_similar_cases_skips_empty_and_caps_at_five() -> None:
+    cases: list[dict[str, object]] = [{"text": "   "}]
+    cases += [{"text": f"Fall {i}"} for i in range(8)]
+    out = _compact_similar_cases(cases)
+    assert 1 <= len(out) <= 5
+    assert all(str(s["auszug"]).strip() for s in out)
 
 
 def test_generate_draft_uses_mock(

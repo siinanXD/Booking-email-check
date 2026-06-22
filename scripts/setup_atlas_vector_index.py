@@ -27,6 +27,9 @@ if str(_ROOT) not in sys.path:
 
 try:
     from backend.core.config.settings import get_settings
+    from backend.infrastructure.repositories.embedding_repository import (
+        build_vector_index_definition,
+    )
     from backend.infrastructure.repositories.mongo import get_client
 except ModuleNotFoundError as exc:
     print(f"Import fehlgeschlagen – venv aktiviert? Details: {exc}", file=sys.stderr)
@@ -66,16 +69,9 @@ def create_index(collection: object) -> None:
         from pymongo.operations import SearchIndexModel
 
         model = SearchIndexModel(
-            definition={
-                "fields": [
-                    {
-                        "type": "vector",
-                        "path": "embedding",
-                        "numDimensions": DIMENSIONS,
-                        "similarity": SIMILARITY,
-                    }
-                ]
-            },
+            definition=build_vector_index_definition(
+                dimensions=DIMENSIONS, similarity=SIMILARITY
+            ),
             name=INDEX_NAME,
             type="vectorSearch",
         )
@@ -104,14 +100,13 @@ def _print_manual_instructions() -> None:
         "2. Typ: Vector Search\n"
         f"3. Index Name: {INDEX_NAME}\n"
         f"4. Collection: <db_name>.{COLLECTION_NAME}\n"
-        "5. JSON-Definition:\n"
+        "5. JSON-Definition (Vektor + account_id-Filter für Mandantentrennung):\n"
         "   {\n"
-        '     "fields": [{\n'
-        '       "type": "vector",\n'
-        '       "path": "embedding",\n'
-        f'       "numDimensions": {DIMENSIONS},\n'
-        f'       "similarity": "{SIMILARITY}"\n'
-        "     }]\n"
+        '     "fields": [\n'
+        '       { "type": "vector", "path": "embedding",\n'
+        f'         "numDimensions": {DIMENSIONS}, "similarity": "{SIMILARITY}" }},\n'
+        '       { "type": "filter", "path": "account_id" }\n'
+        "     ]\n"
         "   }\n"
         "────────────────────────────────────────────────────────────────────"
     )

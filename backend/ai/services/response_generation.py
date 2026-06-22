@@ -156,9 +156,38 @@ class ResponseGenerationService:
                 r.model_dump(mode="json") for r in (hits.reservations or [])
             ],
             "guest": hits.guest.model_dump(mode="json") if hits.guest else None,
-            "similar_cases": hits.similar_cases or [],
+            "aehnliche_faelle_nur_stil": _compact_similar_cases(
+                hits.similar_cases or []
+            ),
         }
         return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+_MAX_SNIPPET_CHARS = 280
+_MAX_SIMILAR = 5
+
+
+def _compact_similar_cases(
+    similar_cases: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """similar_cases auf PII-maskierte Stil-Auszüge reduzieren.
+
+    Entfernt interne Metadaten (account_id, correlation_id, score) und maskiert
+    E-Mail/Telefon. Die Auszüge dienen im Draft-Prompt ausschließlich als Ton-/
+    Stilreferenz — Fakten stammen nur aus extraction/reservations/guest.
+    """
+    snippets: list[dict[str, object]] = []
+    for case in similar_cases[:_MAX_SIMILAR]:
+        text = str(case.get("text") or "").strip()
+        if not text:
+            continue
+        snippets.append(
+            {
+                "intent": case.get("intent"),
+                "auszug": mask_pii(text)[:_MAX_SNIPPET_CHARS],
+            }
+        )
+    return snippets
 
 
 def _platform_tone(platform: str | None) -> str:

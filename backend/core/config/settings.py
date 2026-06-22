@@ -68,6 +68,14 @@ class Settings(BaseSettings):
         alias="EMBEDDING_MODEL",
     )
     similarity_use_atlas: bool = Field(default=False, alias="SIMILARITY_USE_ATLAS")
+    chunk_max_tokens: int = Field(default=512, alias="CHUNK_MAX_TOKENS")
+    chunk_overlap_tokens: int = Field(default=64, alias="CHUNK_OVERLAP_TOKENS")
+    rerank_enabled: bool = Field(default=False, alias="RERANK_ENABLED")
+    rerank_provider: str = Field(default="llm", alias="RERANK_PROVIDER")
+    rerank_candidate_multiplier: int = Field(
+        default=4, alias="RERANK_CANDIDATE_MULTIPLIER"
+    )
+    rerank_model: str = Field(default="gpt-4o-mini", alias="RERANK_MODEL")
     max_tokens_per_mail: int = Field(default=8000, alias="MAX_TOKENS_PER_MAIL")
     webhook_alert_url: str | None = Field(default=None, alias="WEBHOOK_ALERT_URL")
     langgraph_checkpoint_uri: str | None = Field(

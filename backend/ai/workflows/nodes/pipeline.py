@@ -195,10 +195,7 @@ class WorkflowNodes(PipelineReviewMixin):
             )
 
             ensure_property_from_extraction(
-                self._email_repo._col.database,
-                email.account_id,
-                email,
-                extraction,
+                self._email_repo._col.database, email.account_id, email, extraction
             )
         self._extraction_repo.save(
             email.correlation_id,
@@ -248,6 +245,8 @@ class WorkflowNodes(PipelineReviewMixin):
                     email.body_text,
                     extraction,
                     account_id=email.account_id,
+                    subject=email.subject,
+                    body_html=email.body_html,
                 )
             if self._notification_service is not None:
                 self._notification_service.dispatch_on_detect_if_enabled(
