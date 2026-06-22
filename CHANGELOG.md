@@ -1,7 +1,20 @@
 # CHANGELOG
 
 
+## v0.24.0 (2026-06-22)
+
+
 ## v0.23.0 (2026-06-22)
+
+### Bug Fixes
+
+- **api**: Vor unsicheren CORS-Origins in Produktion warnen
+  ([`5d0cbc6`](https://github.com/siinanXD/Booking-email-check/commit/5d0cbc61947c233dbe54a7c4e9607d8d4bac5f07))
+
+localhost/127.0.0.1 oder leere CORS_ORIGINS in app_env=production loggen jetzt eine Warnung, damit
+  Onboarding-Fehlkonfiguration auffällt.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 
 ### Code Style
 
@@ -14,6 +27,45 @@ Der Merge von main kombinierte die RAG- und perf-Änderungen, wodurch pipeline.p
   (known_property_names/ensure_property_from_extraction je einzeilig). test_emails_api kompaktiert
   einen client.get-Aufruf und entfernt den redundanten is_booking=None-Fall (separat in eigenem Test
   abgedeckt).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Features
+
+- **mail**: Erst-sync auf harte Tages-Rückschau begrenzen
+  ([`8451565`](https://github.com/siinanXD/Booking-email-check/commit/845156580964816b8ccd75bac184b34bbcb647af))
+
+Beim Onboarding wird das Postfach nur noch bis anchor - lookback_days zurück gelesen (Default 1 Tag)
+  statt bis zu 60 Tage. Neue Funktion filter_messages_since_cutoff() ersetzt die zählbasierte
+  Auswahl; resolve_poll_since_for_account() begrenzt die Untergrenze per max() statt min().
+  Steuerbar über MAIL_INGEST_INITIAL_LOOKBACK_DAYS.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+- **rag**: Vektor-index auf buchungsrelevante Mails begrenzen + Text säubern
+  ([`4ecff35`](https://github.com/siinanXD/Booking-email-check/commit/4ecff3500a49468654d3eefadc221ae49d4e2ed1))
+
+Beobachtung an Prod-Daten: der Index war zu ~80% intent=other (Marketing, Kalender, Tinder) mit
+  CSS-/HTML-Müll (@font-face, &nbsp;) in den Chunks — die "ähnlichen Fälle" für echte Buchungen
+  waren dadurch Rauschen.
+
+- Validate-Node indexiert nur noch buchungsrelevante Mails (is_booking_relevant); intent=other wird
+  nicht mehr indexiert. - IndexingService.purge() entfernt Chunks+Embeddings einer Mail; das
+  Reindex-Skript purgt Nicht-Buchungs-Mails und säubert so den Bestand. - preprocess_mail_body
+  entfernt <style>/<script>-Blöcke und dekodiert HTML-Entities (bessere Embeddings).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Performance Improvements
+
+- **emails**: Buchungs-kategorie-listen DB-seitig filtern
+  ([`c7b4cc8`](https://github.com/siinanXD/Booking-email-check/commit/c7b4cc8457cc48349e6a95c71337666d8dcb90bf))
+
+Vorberechnete Felder is_booking/effective_intent auf StoredEmail ersetzen den alten Pfad (500 Mails
+  laden + pro Request in Python klassifizieren). relevance_fields() ist die Single Source of Truth,
+  wird beim Extrahieren geschrieben und vom neuen Backfill-Skript resynct. Neuer Index
+  idx_email_account_booking_intent; Booking-Pfad nutzt plain find statt $lookup. Detail-Lookups
+  laufen 4x parallel, Summary aus Cache statt Write.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 
@@ -145,14 +197,6 @@ text-embedding-3-small lehnt Inputs >8192 Tokens mit HTTP 400 ab, was beim Index
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 
-- **api**: Vor unsicheren CORS-Origins in Produktion warnen
-  ([`5d0cbc6`](https://github.com/siinanXD/Booking-email-check/commit/5d0cbc61947c233dbe54a7c4e9607d8d4bac5f07))
-
-localhost/127.0.0.1 oder leere CORS_ORIGINS in app_env=production loggen jetzt eine Warnung, damit
-  Onboarding-Fehlkonfiguration auffällt.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
-
 ### Chores
 
 - **scripts**: Atlas-speicher-cleanup-tool + Tenant-Skript härten
@@ -166,31 +210,6 @@ clear_tenant_whatsapp_credentials.py: str()-Cast vor .strip(), damit Nicht-Strin
   Skript nicht crashen.
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
-
-### Features
-
-- **mail**: Erst-sync auf harte Tages-Rückschau begrenzen
-  ([`8451565`](https://github.com/siinanXD/Booking-email-check/commit/845156580964816b8ccd75bac184b34bbcb647af))
-
-Beim Onboarding wird das Postfach nur noch bis anchor - lookback_days zurück gelesen (Default 1 Tag)
-  statt bis zu 60 Tage. Neue Funktion filter_messages_since_cutoff() ersetzt die zählbasierte
-  Auswahl; resolve_poll_since_for_account() begrenzt die Untergrenze per max() statt min().
-  Steuerbar über MAIL_INGEST_INITIAL_LOOKBACK_DAYS.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
-
-### Performance Improvements
-
-- **emails**: Buchungs-kategorie-listen DB-seitig filtern
-  ([`c7b4cc8`](https://github.com/siinanXD/Booking-email-check/commit/c7b4cc8457cc48349e6a95c71337666d8dcb90bf))
-
-Vorberechnete Felder is_booking/effective_intent auf StoredEmail ersetzen den alten Pfad (500 Mails
-  laden + pro Request in Python klassifizieren). relevance_fields() ist die Single Source of Truth,
-  wird beim Extrahieren geschrieben und vom neuen Backfill-Skript resynct. Neuer Index
-  idx_email_account_booking_intent; Booking-Pfad nutzt plain find statt $lookup. Detail-Lookups
-  laufen 4x parallel, Summary aus Cache statt Write.
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 
 
 ## v0.21.0 (2026-06-07)
