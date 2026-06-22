@@ -32,30 +32,3 @@ def filter_messages_since_cutoff(
         if msg.received_at >= cutoff:
             selected.append(msg)
     return selected
-
-
-def filter_messages_for_initial_sync(
-    messages: list[IncomingEmail],
-    anchor: object,
-    lookback: int,
-) -> list[IncomingEmail]:
-    """Filtert Mails für den ersten Sync (neueste zuerst erwartet).
-
-    - Alle Mails mit received_at >= anchor
-    - Plus die neuesten `lookback` Mails vor dem Anker
-    - Mails ohne received_at werden verworfen
-    """
-    if not isinstance(anchor, datetime):
-        raise TypeError("anchor must be datetime")
-
-    valid: list[IncomingEmail] = []
-    for msg in messages:
-        if msg.received_at is None:
-            logger.warning("Skipping message without received_at: %s", msg.message_id)
-            continue
-        valid.append(msg)
-
-    sorted_msgs = sorted(valid, key=lambda m: m.received_at, reverse=True)
-    after = [m for m in sorted_msgs if m.received_at >= anchor]
-    before = [m for m in sorted_msgs if m.received_at < anchor]
-    return after + before[:lookback]
