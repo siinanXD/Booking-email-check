@@ -45,10 +45,7 @@ def test_list_emails_by_intents(
             account_id=tenant_account_id,
         )
 
-    resp = client.get(
-        "/api/emails/?intents=other,guest_inquiry",
-        headers=auth_headers,
-    )
+    resp = client.get("/api/emails/?intents=other,guest_inquiry", headers=auth_headers)
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["total"] == 2
@@ -110,7 +107,7 @@ def test_bookings_list_uses_stored_fields(
     tenant_account_id: str,
     email_repo: Any,
 ) -> None:
-    """/api/bookings/ liefert Mails mit is_booking=True + Intent new_booking."""
+    """/api/bookings/ liefert nur is_booking=True (None separat in eigenem Test)."""
     _booking_email(
         email_repo,
         tenant_account_id,
@@ -123,13 +120,6 @@ def test_bookings_list_uses_stored_fields(
         tenant_account_id,
         idx=2,
         is_booking=False,
-        effective_intent=None,
-    )
-    _booking_email(
-        email_repo,
-        tenant_account_id,
-        idx=3,
-        is_booking=None,
         effective_intent=None,
     )
     resp = client.get("/api/bookings/", headers=auth_headers)
