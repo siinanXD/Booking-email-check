@@ -1,6 +1,109 @@
 # CHANGELOG
 
 
+## v0.22.0 (2026-06-22)
+
+### Bug Fixes
+
+- **eval**: Veraltete Live-Baseline korrigieren + unbegründete Erwartung entfernen
+  ([`3f80f30`](https://github.com/siinanXD/Booking-email-check/commit/3f80f30b36ecbd37670f78f32a33909c51a67fad))
+
+Die dokumentierte Baseline (2026-06-04: classify 1/10, extraction 0.38) stammte aus einer frühen,
+  defekten Pipeline-Phase und stellte ein gesundes System als kaputt dar. Harness verifiziert
+  korrekt; tatsächlicher Live-Stand: classify 10/10, extraction 1.00/1.00. Fall eval-010 erwartete
+  zudem guest_count=2, obwohl der Mailtext keine Gästezahl nennt (extract.md: nur bei Erkennbarkeit)
+  - entfernt.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+- **notifications**: Falscher WhatsApp-Unterkunftsname durch zu lockeres Matching
+  ([`9a808d7`](https://github.com/siinanXD/Booking-email-check/commit/9a808d7d8982b779fdf7a1d587a82e2b2d25005a))
+
+match_known_property_name() mappte jeden generischen extrahierten Namen (z. B. "Zimmer") via
+  Teilstring auf den ersten Katalog-Eintrag ("Zimmer Nummer drei"), sodass jede Buchungsmail
+  dieselbe falsche Unterkunft in der WhatsApp-Variable bekam. Matching jetzt wortgrenzen-genau,
+  gefährliche Richtung (Kandidat als Teilstring des Katalog-Namens) entfernt, spezifischster
+  (längster) Treffer gewinnt statt des ersten. Legitime Normalisierung (verbose Extraktion ->
+  Katalog-Name) bleibt erhalten.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+- **rag**: Account_id-filterfeld im Atlas-Vector-Index ergänzen
+  ([`f9b9ba8`](https://github.com/siinanXD/Booking-email-check/commit/f9b9ba8fcbf63b2a643a6adb840753e1813f908c))
+
+find_similar_cases schränkt jede Suche per {account_id: ...} ein, aber das Setup-Skript legte den
+  Index nur mit dem embedding-Vektorfeld an. Atlas $vectorSearch verlangt deklarierte Filterfelder —
+  ohne account_id scheiterte die mandantengefilterte Suche und RAG lieferte selbst bei aktivem Flag
+  nichts. Index-Definition als build_vector_index_definition() neben VECTOR_INDEX_NAME im
+  embedding_repository zentralisiert (Skript + Test nutzen dieselbe Quelle) und in der manuellen
+  Anleitung ergänzt.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+- **tests**: Poll-window-test zeitunabhängig machen
+  ([`c996482`](https://github.com/siinanXD/Booking-email-check/commit/c9964826027adc17432ff4132eabfa7acef90627))
+
+test_compute_poll_since_uses_max_received_overlap hardcodete newest auf 2026-06-06 und erwartete
+  since == newest - 24h. compute_poll_since gibt aber max(candidates) inkl. now - default_window
+  (7d) zurück. Sobald die reale Zeit >7d hinter newest liegt, gewinnt now - 7d und die Assertion
+  bricht (main-CI rot seit 2026-06-13).
+
+newest jetzt relativ zu now (now - 1h), damit newest - overlap stabil das Maximum bleibt.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Features
+
+- **rag**: Semantisches Chunking im Live-Index statt naivem chunk_text
+  ([`8c913a4`](https://github.com/siinanXD/Booking-email-check/commit/8c913a4f588be15013847dd31abb03350ce1f1c6))
+
+_index_async nutzt jetzt semantic_chunk() (Token-Limit, Overlap, Kontext-Prefix aus
+  Betreff|Intent|Unterkunft|Buchungsnr.) statt des naiven Absatz-Splits. Reiche Chunk-Metadaten
+  (chunk_index, token_count, char_start/end, context_prefix) werden mitgespeichert. Re-Index ist
+  jetzt idempotent: erst alle Embeddings berechnen, dann alte Chunks/Embeddings der correlation_id
+  löschen und neu schreiben — kein Datenverlust bei Embedding-Fehler, keine Waisen bei weniger
+  Chunks. Das Reindex-Skript profitiert automatisch (ruft denselben _index_async). subject und
+  body_html werden durch schedule_index gereicht. Neue Settings CHUNK_MAX_TOKENS (512) /
+  CHUNK_OVERLAP_TOKENS (64). chunk_text entfernt (war nur hier genutzt).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+- **rag**: Similar_cases PII-maskiert und nur als Stilreferenz in den Draft
+  ([`3bf6305`](https://github.com/siinanXD/Booking-email-check/commit/3bf630580f3a5a5badb2a01d2d5db4817bc7cc53))
+
+similar_cases gingen als rohe Mongo-Dicts (fremde PII, account_id, fremde Buchungsnummern) in die
+  "Fakten" des Draft-Prompts — Halluzinationsrisiko. Jetzt: _compact_similar_cases reduziert auf
+  intent + PII-maskierten Auszug (mask_pii, max 5 Fälle, interne Metadaten entfernt). Im Prompt als
+  "aehnliche_faelle_nur_stil" gekennzeichnet; draft.md weist den LLM an, daraus NIE Fakten zu
+  übernehmen. Grounding prüft Referenzen weiterhin gegen reservations und flaggt aus Stil-Auszügen
+  kopierte Fakten.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+- **rag**: Such-query symmetrisch zum Index aufbauen
+  ([`1c674d1`](https://github.com/siinanXD/Booking-email-check/commit/1c674d1cd1cdbdcdb9eb1e9d4f56a841bb3a378f))
+
+retrieve() embeddet nicht mehr den rohen email.body_text, sondern eine Query mit demselben Aufbau
+  wie die indexierten Chunks: Kontext-Prefix (Betreff | Intent | Unterkunft | Buchungsnr.) +
+  zitatbereinigter Body (build_context_prefix + preprocess_mail_body). Damit passen Query- und
+  Dokument-Vektorraum zusammen und Zitat-Historie/Signaturen verschlechtern das Query-Embedding
+  nicht mehr. Leere Query überspringt die Suche.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+- **rag**: Zweistufiges Retrieval mit LLM-Reranking
+  ([`4061db0`](https://github.com/siinanXD/Booking-email-check/commit/4061db057e19440e52010ecfedf6a1431590e19e))
+
+Neuer RerankService ordnet die Vektor-Kandidaten per LLM nach Relevanz zur Anfrage und schneidet auf
+  top_k. RetrievalService holt bei aktivem Reranking top_k*Multiplier Kandidaten und reranked sie;
+  bei Fehler/Timeout Fallback auf die Vektor-Reihenfolge (nicht-blockierend). Kandidaten-Text wird
+  als untrusted behandelt. search_by_vector_atlas projiziert jetzt den vectorSearchScore und lässt
+  den großen embedding-Vektor weg. Settings RERANK_ENABLED/PROVIDER/ CANDIDATE_MULTIPLIER/MODEL (nur
+  Provider "llm" implementiert), default aus.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+
 ## v0.21.1 (2026-06-15)
 
 ### Bug Fixes
