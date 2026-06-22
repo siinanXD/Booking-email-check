@@ -16,6 +16,28 @@ logger = logging.getLogger(__name__)
 VECTOR_INDEX_NAME = "embedding_vector_index"
 
 
+def build_vector_index_definition(
+    *, dimensions: int = 1536, similarity: str = "cosine"
+) -> dict[str, Any]:
+    """Atlas-$vectorSearch-Definition: embedding-Vektor + account_id-Filter.
+
+    Der account_id-Filter ist zwingend — jede Suche ist mandantengefiltert
+    (``{account_id: ...}``); ohne deklariertes Filterfeld scheitert
+    ``$vectorSearch`` und RAG liefert nie similar_cases.
+    """
+    return {
+        "fields": [
+            {
+                "type": "vector",
+                "path": "embedding",
+                "numDimensions": dimensions,
+                "similarity": similarity,
+            },
+            {"type": "filter", "path": "account_id"},
+        ]
+    }
+
+
 class EmbeddingRepository:
     """Collection `embeddings` mit Metadaten für Hybrid-Suche."""
 
