@@ -11,6 +11,7 @@ from typing import Any, Protocol
 from langfuse.decorators import langfuse_context, observe
 
 from backend.ai.domain.booking.extraction import BookingExtraction
+from backend.ai.services.semantic_chunking import semantic_chunk
 from backend.infrastructure.observability.alerts import AlertService
 from backend.infrastructure.repositories.chunk_repository import ChunkRepository
 from backend.infrastructure.repositories.embedding_repository import EmbeddingRepository
@@ -68,16 +69,6 @@ class EmbeddingFn(Protocol):
         ...
 
 
-def chunk_text(body: str, max_chunks: int = 3) -> list[str]:
-    """Schlankes Chunking: Absätze oder ein Ganzes."""
-    paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
-    if not paragraphs:
-        return [body] if body.strip() else []
-    if len(paragraphs) <= max_chunks:
-        return paragraphs
-    return paragraphs[:max_chunks]
-
-
 class EmbeddingClient:
     """OpenAI Embeddings client."""
 
@@ -125,12 +116,19 @@ class IndexingService:
         embed_client: EmbeddingFn,
         chunk_repo: ChunkRepository | None = None,
         alerts: AlertService | None = None,
+        *,
+        max_chunk_tokens: int = 512,
+        overlap_tokens: int = 64,
+        embedding_model: str = "text-embedding-3-small",
     ) -> None:
         """Initialize the instance with its dependencies."""
         self._repo = embedding_repo
         self._chunk_repo = chunk_repo
         self._embed = embed_client
         self._alerts = alerts
+        self._max_chunk_tokens = max_chunk_tokens
+        self._overlap_tokens = overlap_tokens
+        self._embedding_model = embedding_model
 
     def schedule_index(
         self,
@@ -139,18 +137,28 @@ class IndexingService:
         extraction: BookingExtraction | None = None,
         *,
         account_id: str | None = None,
+        subject: str | None = None,
+        body_html: str | None = None,
     ) -> None:
         """Startet Indexierung ohne den Aufrufer zu blockieren."""
+
+        def _coro() -> Any:
+            return self._index_async(
+                correlation_id,
+                body,
+                extraction,
+                account_id,
+                subject=subject,
+                body_html=body_html,
+            )
+
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(
-                self._index_async(correlation_id, body, extraction, account_id),
-                name=f"index-{correlation_id}",
-            )
+            loop.create_task(_coro(), name=f"index-{correlation_id}")
         except RuntimeError:
             threading.Thread(
                 target=asyncio.run,
-                args=(self._index_async(correlation_id, body, extraction, account_id),),
+                args=(_coro(),),
                 daemon=True,
                 name=f"index-{correlation_id}",
             ).start()
@@ -161,32 +169,71 @@ class IndexingService:
         body: str,
         extraction: BookingExtraction | None,
         account_id: str | None = None,
+        *,
+        subject: str | None = None,
+        body_html: str | None = None,
     ) -> None:
         try:
             intent = (
                 extraction.intent.value if extraction and extraction.intent else None
             )
-            chunks = chunk_text(body)
-            for i, chunk in enumerate(chunks):
-                vector = await asyncio.to_thread(self._embed.embed, chunk)
-                chunk_id = f"{correlation_id}:{i}"
+            chunks = semantic_chunk(
+                body,
+                subject=subject,
+                extraction=extraction,
+                body_html=body_html,
+                max_tokens=self._max_chunk_tokens,
+                overlap_tokens=self._overlap_tokens,
+                embedding_model=self._embedding_model,
+            )
+            # Erst alle Embeddings berechnen, dann ersetzen: Schlägt das Embedding
+            # fehl, bleiben die alten Chunks erhalten (kein Datenverlust).
+            embedded = [
+                (chunk, await asyncio.to_thread(self._embed.embed, chunk.text))
+                for chunk in chunks
+            ]
+            # Idempotenz: alte Chunks/Embeddings vor Re-Index entfernen, damit bei
+            # weniger Chunks keine Waisen zurückbleiben.
+            await asyncio.to_thread(
+                self._repo.delete_by_correlation_id,
+                correlation_id,
+                account_id=account_id,
+            )
+            if self._chunk_repo is not None:
+                await asyncio.to_thread(
+                    self._chunk_repo.delete_by_correlation_id,
+                    correlation_id,
+                    account_id=account_id,
+                )
+            for chunk, vector in embedded:
+                chunk_id = f"{correlation_id}:{chunk.chunk_index}"
                 if self._chunk_repo is not None:
                     await asyncio.to_thread(
                         self._chunk_repo.upsert_chunk,
                         chunk_id,
                         correlation_id,
-                        chunk,
+                        chunk.text,
                         intent,
                         account_id=account_id,
+                        chunk_index=chunk.chunk_index,
+                        token_count=chunk.token_count,
+                        char_start=chunk.char_start,
+                        char_end=chunk.char_end,
+                        context_prefix=chunk.context_prefix,
                     )
                 await asyncio.to_thread(
                     self._repo.upsert_chunk,
                     chunk_id,
                     correlation_id,
-                    chunk,
+                    chunk.text,
                     vector,
                     intent,
                     account_id=account_id,
+                    chunk_index=chunk.chunk_index,
+                    token_count=chunk.token_count,
+                    char_start=chunk.char_start,
+                    char_end=chunk.char_end,
+                    context_prefix=chunk.context_prefix,
                 )
         except Exception as exc:
             logger.exception("Async indexing failed for %s", correlation_id)

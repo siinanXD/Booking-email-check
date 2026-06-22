@@ -174,7 +174,15 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         mail_cost=mail_cost,
     )
     ingestion = IngestionService(email_repo, triage)
-    indexing = IndexingService(embedding_repo, embed_client, chunk_repo, alerts=alerts)
+    indexing = IndexingService(
+        embedding_repo,
+        embed_client,
+        chunk_repo,
+        alerts=alerts,
+        max_chunk_tokens=cfg.chunk_max_tokens,
+        overlap_tokens=cfg.chunk_overlap_tokens,
+        embedding_model=cfg.embedding_model,
+    )
     classification = ClassificationService(
         llm,
         cfg.openai_model_classify,
