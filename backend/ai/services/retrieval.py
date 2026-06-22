@@ -8,6 +8,10 @@ from uuid import uuid4
 
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.services.entity_resolution import EntityResolutionService
+from backend.ai.services.semantic_chunking import (
+    build_context_prefix,
+    preprocess_mail_body,
+)
 from backend.ai.services.similarity_search import SimilaritySearchService
 from backend.core.models.email import StoredEmail
 from backend.core.models.entities import Guest, Reservation
@@ -131,11 +135,13 @@ class RetrievalService:
             top_k = 3
             if self._llm_config_repo is not None:
                 top_k = self._llm_config_repo.get_or_default().similarity_top_k
-            similar = self._similarity.find_similar_cases(
-                email.body_text,
-                limit=top_k,
-                account_id=account_id,
-            )
+            query_text = self._similarity_query(email, extraction)
+            if query_text:
+                similar = self._similarity.find_similar_cases(
+                    query_text,
+                    limit=top_k,
+                    account_id=account_id,
+                )
 
         return RetrievalHits(
             guest=guest,
@@ -143,6 +149,28 @@ class RetrievalService:
             thread_emails=thread_emails or None,
             similar_cases=similar,
         )
+
+    @staticmethod
+    def _similarity_query(
+        email: StoredEmail,
+        extraction: BookingExtraction | None,
+    ) -> str:
+        """Such-Query symmetrisch zum Index: Kontext-Prefix + zitatbereinigter Body.
+
+        Spiegelt die Struktur der indexierten Chunks (``build_context_prefix`` +
+        ``preprocess_mail_body``), damit Query- und Dokument-Vektorraum
+        zusammenpassen. Rohe Zitat-Historie/Signaturen verschlechtern sonst das
+        Query-Embedding.
+        """
+        intent = extraction.intent.value if extraction and extraction.intent else None
+        prefix = build_context_prefix(
+            subject=email.subject,
+            intent=intent,
+            property_name=extraction.property_name if extraction else None,
+            booking_number=extraction.booking_number if extraction else None,
+        )
+        body = preprocess_mail_body(email.body_text or "", email.body_html)
+        return f"{prefix}{body}".strip()
 
     @staticmethod
     def _should_create_guest(
