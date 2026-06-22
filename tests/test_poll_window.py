@@ -19,7 +19,9 @@ def test_format_graph_datetime_utc() -> None:
 
 
 def test_compute_poll_since_uses_max_received_overlap() -> None:
-    newest = datetime(2026, 6, 6, 12, 0, tzinfo=UTC)
+    # newest relativ zu "jetzt", damit newest - overlap im Standardfenster liegt
+    # (sonst gewinnt das 7-Tage-Default und der Test ist wanduhrabhängig).
+    newest = datetime.now(UTC) - timedelta(hours=2)
     since = compute_poll_since(
         max_received_at=newest.isoformat().replace("+00:00", "Z"),
         last_sync_at=None,
@@ -47,12 +49,38 @@ def test_format_imap_since_date() -> None:
     assert format_imap_since_date(dt) == "06-Jun-2026"
 
 
-def test_resolve_poll_since_for_account_initial_sync() -> None:
-    anchor = datetime(2026, 6, 1, 0, 0, tzinfo=UTC)
+def test_resolve_poll_since_for_account_initial_sync_caps_one_day() -> None:
+    """Erst-Sync schaut standardmäßig nur 1 Tag ab Anker zurück."""
+    anchor = datetime.now(UTC)
     since = resolve_poll_since_for_account(
         max_received_at=None,
         last_sync_at=None,
         initial_sync=True,
         ingest_anchor_at=anchor,
     )
-    assert since == anchor - timedelta(days=60)
+    assert since == anchor - timedelta(days=1)
+
+
+def test_resolve_poll_since_for_account_initial_sync_configurable() -> None:
+    """lookback_days steuert die Rückschau konfigurierbar (Anker ~ Anmeldung)."""
+    anchor = datetime.now(UTC)
+    since = resolve_poll_since_for_account(
+        max_received_at=None,
+        last_sync_at=None,
+        initial_sync=True,
+        ingest_anchor_at=anchor,
+        lookback_days=3,
+    )
+    assert since == anchor - timedelta(days=3)
+
+
+def test_resolve_poll_since_for_account_non_initial_unchanged() -> None:
+    """Ohne initial_sync greift das 7-Tage-Standardfenster."""
+    anchor = datetime.now(UTC)
+    since = resolve_poll_since_for_account(
+        max_received_at=None,
+        last_sync_at=None,
+        initial_sync=False,
+        ingest_anchor_at=anchor,
+    )
+    assert since <= anchor - timedelta(days=6)
