@@ -125,8 +125,7 @@
       "intent": "new_booking",
       "booking_number": "DIR50",
       "check_in": "2026-08-01",
-      "check_out": "2026-08-05",
-      "guest_count": 2
+      "check_out": "2026-08-05"
     }
   }
 ]

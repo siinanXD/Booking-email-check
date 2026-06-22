@@ -65,13 +65,19 @@ pytest tests/eval/test_offline_eval.py -v -s --no-cov
 Ergebnis (z. B. `field_accuracy`, `case_hit_rate`) hier oder im PR-Kommentar festhalten.
 **Mock=1.0** bedeutet nicht, dass Live=1.0 ist — Live misst Modellqualität.
 
-### Live-Baseline (2026-06-04, `gpt-4o-mini`, 10 Fälle)
+### Live-Baseline (2026-06-22, `gpt-4o-mini`, 10 Fälle)
 
 | Metrik | Wert |
 |--------|------|
-| Klassifikation `hit_rate` | 0.10 (1/10) |
-| Extraktion `field_accuracy` | 0.38 (9/24 Felder) |
-| Extraktion `case_hit_rate` | 0.22 (2/9 Fälle mit `expected_extraction`) |
+| Klassifikation `hit_rate` | 1.00 (10/10) |
+| Extraktion `field_accuracy` | 1.00 (23/23 Felder) |
+| Extraktion `case_hit_rate` | 1.00 (9/9 Fälle mit `expected_extraction`) |
+
+> Die frühere Baseline (2026-06-04: 0.10 / 0.38 / 0.22) war ein veralteter Messstand
+> aus einer frühen, defekten Pipeline-Phase und entsprach nicht der Modellqualität.
+> Harness verifiziert korrekt (Slug→Enum-Mapping, Feld-für-Feld-Vergleich). Fall
+> `eval-010` hatte zudem eine unbegründete `guest_count=2`-Erwartung (Text nennt keine
+> Gästezahl) — entfernt.
 
 Lokal ausführen (lädt `.env`):
 
