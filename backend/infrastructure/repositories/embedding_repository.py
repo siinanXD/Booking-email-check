@@ -123,7 +123,20 @@ class EmbeddingRepository:
             }
             if filter:
                 vector_search["filter"] = filter
-            pipeline = [{"$vectorSearch": vector_search}]
+            pipeline = [
+                {"$vectorSearch": vector_search},
+                {
+                    "$project": {
+                        "text": 1,
+                        "correlation_id": 1,
+                        "intent": 1,
+                        "account_id": 1,
+                        "chunk_index": 1,
+                        "context_prefix": 1,
+                        "score": {"$meta": "vectorSearchScore"},
+                    }
+                },
+            ]
             return list(self._col.aggregate(pipeline))
         except OperationFailure:
             logger.warning(

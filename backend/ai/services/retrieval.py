@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.services.entity_resolution import EntityResolutionService
+from backend.ai.services.reranking import RerankService
 from backend.ai.services.semantic_chunking import (
     build_context_prefix,
     preprocess_mail_body,
@@ -47,6 +48,7 @@ class RetrievalService:
         entity_resolution: EntityResolutionService | None = None,
         alerts: AlertService | None = None,
         llm_config_repo: PlatformLlmConfigRepository | None = None,
+        reranker: RerankService | None = None,
     ) -> None:
         """Initialize the instance with its dependencies."""
         self._entities = entity_repo
@@ -57,6 +59,7 @@ class RetrievalService:
         )
         self._alerts = alerts
         self._llm_config_repo = llm_config_repo
+        self._reranker = reranker
 
     def retrieve(
         self,
@@ -137,11 +140,20 @@ class RetrievalService:
                 top_k = self._llm_config_repo.get_or_default().similarity_top_k
             query_text = self._similarity_query(email, extraction)
             if query_text:
-                similar = self._similarity.find_similar_cases(
+                fetch_limit = (
+                    self._reranker.candidate_limit(top_k)
+                    if self._reranker is not None
+                    else top_k
+                )
+                candidates = self._similarity.find_similar_cases(
                     query_text,
-                    limit=top_k,
+                    limit=fetch_limit,
                     account_id=account_id,
                 )
+                if self._reranker is not None:
+                    similar = self._reranker.rerank(query_text, candidates, top_k)
+                else:
+                    similar = candidates[:top_k]
 
         return RetrievalHits(
             guest=guest,
