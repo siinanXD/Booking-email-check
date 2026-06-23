@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { fetchCosts } from "@/lib/api/costs";
+import { fetchMailVolume } from "@/lib/api/dashboard";
 import { defaultDateRange } from "@/lib/dateRange";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { ErrorState } from "@/shared/components/ErrorState";
@@ -27,8 +27,8 @@ export function MailVolumeChart() {
   const range = defaultDateRange(RANGE_DAYS);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["costs", "mail-volume", RANGE_DAYS],
-    queryFn: () => fetchCosts(range.fromDate, range.toDate, "day"),
+    queryKey: ["mail-volume", RANGE_DAYS],
+    queryFn: () => fetchMailVolume(range.fromDate, range.toDate),
     refetchInterval: 60_000,
   });
 
