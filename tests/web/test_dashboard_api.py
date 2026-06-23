@@ -59,3 +59,15 @@ def test_dashboard_stats_with_mail(
     assert data["booking_emails_week"] >= 1
     assert data["nav_bookings"] >= 1
     assert data["new_bookings_today"] >= 1
+
+
+def test_mail_volume_accessible_for_tenant(
+    client: Any,
+    tenant_owner_auth_headers: dict[str, str],
+) -> None:
+    """Mandanten dürfen ihre eigene Mail-Volumen-Tagesreihe lesen (kein 403)."""
+    resp = client.get("/api/dashboard/mail-volume", headers=tenant_owner_auth_headers)
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert isinstance(data["series"], list)
+    assert "total_usd" in data
