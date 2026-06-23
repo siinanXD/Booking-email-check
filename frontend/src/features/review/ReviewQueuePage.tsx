@@ -110,14 +110,14 @@ export function ReviewQueuePage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="flex max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           {TABS.map((t) => {
             const count = tabCount(t.id);
             return (
               <button
                 key={t.id}
                 type="button"
-                className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
+                className={`flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
                   tab === t.id
                     ? "bg-indigo-600 text-white shadow-sm"
                     : "text-slate-500 hover:text-slate-800"

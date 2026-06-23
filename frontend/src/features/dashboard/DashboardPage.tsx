@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   CalendarCheck,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { fetchDashboardStats } from "@/lib/api/dashboard";
 import { fetchMailConnection, syncMailConnection } from "@/lib/api/mail";
+import { MailVolumeChart } from "@/features/dashboard/MailVolumeChart";
 import { StatCard } from "@/shared/components/StatCard";
 import { ErrorState } from "@/shared/components/ErrorState";
 import { Button } from "@/shared/ui/Button";
@@ -116,6 +118,24 @@ export function DashboardPage() {
       </div>
 
       {/* Notices */}
+      {mailConnection && !mailConnection.onboarding_completed && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <Mail size={16} className="mt-0.5 flex-shrink-0 text-indigo-600" />
+            <p className="text-sm text-indigo-900">
+              <span className="font-semibold">Postfach noch nicht verbunden.</span>{" "}
+              Verbinde dein Postfach, damit Buchungsmails automatisch gelesen und
+              klassifiziert werden.
+            </p>
+          </div>
+          <Link
+            to="/onboarding"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white no-underline shadow-sm transition-colors hover:bg-indigo-500"
+          >
+            Postfach einrichten
+          </Link>
+        </div>
+      )}
       {mailConnection?.last_error && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
@@ -206,6 +226,9 @@ export function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Trend */}
+      <MailVolumeChart />
 
       {/* Grounding */}
       {!loading && ((stats!.pending_grounding_review ?? 0) > 0 || stats!.grounding_failures_today > 0) && (

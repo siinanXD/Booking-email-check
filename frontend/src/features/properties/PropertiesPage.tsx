@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/properties";
 import { Trash2 } from "lucide-react";
 import { PropertySuggestionsCard } from "@/features/properties/PropertySuggestionsCard";
+import { EmptyState } from "@/shared/components/EmptyState";
 import { toast } from "@/shared/feedback/toastStore";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
@@ -162,7 +163,11 @@ export function PropertiesPage() {
           <h3 className="font-medium">Unterkünfte ({year})</h3>
         </div>
         {(properties?.items.length ?? 0) === 0 ? (
-          <p className="text-sm text-slate-500">Noch keine Unterkünfte angelegt.</p>
+          <EmptyState
+            bare
+            title="Noch keine Unterkünfte angelegt"
+            message="Lege unten eine Unterkunft an oder übernimm einen KI-Vorschlag aus deinen Buchungs-Mails."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
