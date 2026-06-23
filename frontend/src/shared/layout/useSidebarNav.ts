@@ -12,6 +12,7 @@ import {
   Tag,
   LifeBuoy,
   Ticket,
+  ScrollText,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardStats } from "@/lib/api/dashboard";
@@ -46,6 +47,7 @@ const tenantLinks: SidebarLink[] = [
 const adminLinks: SidebarLink[] = [
   { to: "/admin/overview", label: "Übersicht", icon: Shield },
   { to: "/admin/accounts", label: "Mandanten", icon: Users, badge: true },
+  { to: "/admin/audit", label: "Audit-Log", icon: ScrollText },
   { to: "/admin/diagnostics", label: "Diagnose", icon: Stethoscope },
   { to: "/admin/observability", label: "Observability", icon: LineChart },
   { to: "/admin/tickets", label: "Tickets", icon: Ticket },

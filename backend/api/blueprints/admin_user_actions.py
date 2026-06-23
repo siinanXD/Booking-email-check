@@ -29,6 +29,35 @@ def _user_or_404(user_id: str, account_id: str) -> Any | None:
     return user
 
 
+def _actor_id() -> str | None:
+    """ID des handelnden Plattform-Admins (aus dem JWT)."""
+    current = getattr(g, "current_user", None)
+    return current.get("id") if isinstance(current, dict) else None
+
+
+def _audit(action: str, **details: Any) -> None:
+    """Schreibt einen Audit-Eintrag für die laufende Admin-Aktion."""
+    g.ctx.admin_audit_log_repo.append(action, user_id=_actor_id(), details=details)
+
+
+def _forbidden(message: str) -> tuple[Any, int]:
+    return jsonify({"error": message, "code": 403}), 403
+
+
+def _guard_user_lockout(user: Any, user_id: str) -> tuple[Any, int] | None:
+    """Verhindert das Aussperren: eigener Benutzer und letzter Plattform-Admin."""
+    if user_id == _actor_id():
+        return _forbidden("Der eigene Benutzer kann nicht gesperrt/gelöscht werden.")
+    if (
+        getattr(user, "role", None) == "platform_admin"
+        and g.ctx.user_repo.count_by_role("platform_admin") <= 1
+    ):
+        return _forbidden(
+            "Der letzte Plattform-Admin kann nicht gesperrt/gelöscht werden."
+        )
+    return None
+
+
 # ── Account: Ablaufdatum ──────────────────────────────────────────────────
 
 
@@ -49,6 +78,7 @@ def set_account_expiry(account_id: str) -> tuple[Any, int]:
     g.ctx.account_repo.set_expiry(account_id, expires_at)
     exp_iso = expires_at.isoformat() if expires_at else None
     msg = f"Ablaufdatum: {exp_iso}" if expires_at else "Ablaufdatum entfernt."
+    _audit("account.expiry", account_id=account_id, expires_at=exp_iso)
     return jsonify({"id": account_id, "expires_at": exp_iso, "message": msg}), 200
 
 
@@ -62,7 +92,10 @@ def suspend_account(account_id: str) -> tuple[Any, int]:
     """Sperrt einen Mandanten (status → suspended)."""
     if _account_or_404(account_id) is None:
         return jsonify({"error": "Account not found", "code": 404}), 404
+    if account_id == getattr(g, "current_account_id", None):
+        return _forbidden("Der eigene Account kann nicht gesperrt werden.")
     g.ctx.account_repo.update_status(account_id, "suspended")
+    _audit("account.suspend", account_id=account_id)
     return jsonify({"id": account_id, "status": "suspended"}), 200
 
 
@@ -74,6 +107,7 @@ def unsuspend_account(account_id: str) -> tuple[Any, int]:
     if _account_or_404(account_id) is None:
         return jsonify({"error": "Account not found", "code": 404}), 404
     g.ctx.account_repo.update_status(account_id, "active")
+    _audit("account.unsuspend", account_id=account_id)
     return jsonify({"id": account_id, "status": "active"}), 200
 
 
@@ -87,9 +121,14 @@ def delete_account(account_id: str) -> tuple[Any, int]:
     """Löscht einen Mandanten und alle seine Benutzer (unwiderruflich)."""
     if _account_or_404(account_id) is None:
         return jsonify({"error": "Account not found", "code": 404}), 404
+    if account_id == getattr(g, "current_account_id", None):
+        return _forbidden("Der eigene Account kann nicht gelöscht werden.")
+    user_count = 0
     for user in g.ctx.user_repo.list_by_account_id(account_id):
         g.ctx.user_repo.delete(user.id)
+        user_count += 1
     g.ctx.account_repo.delete(account_id)
+    _audit("account.delete", account_id=account_id, deleted_users=user_count)
     return jsonify({"id": account_id, "message": "Mandant gelöscht."}), 200
 
 
@@ -101,13 +140,24 @@ def delete_account(account_id: str) -> tuple[Any, int]:
 @require_platform_admin
 def lock_user(account_id: str, user_id: str) -> tuple[Any, int]:
     """Sperrt oder entsperrt einen einzelnen Benutzer."""
-    if _user_or_404(user_id, account_id) is None:
+    user = _user_or_404(user_id, account_id)
+    if user is None:
         return jsonify({"error": "User not found", "code": 404}), 404
     body = UserLockRequest.model_validate(
         request.get_json(silent=True) or {"locked": True}
     )
+    if body.locked:
+        guard = _guard_user_lockout(user, user_id)
+        if guard is not None:
+            return guard
     g.ctx.user_repo.set_locked(user_id, body.locked)
     state = "gesperrt" if body.locked else "entsperrt"
+    _audit(
+        "user.lock",
+        account_id=account_id,
+        target_user_id=user_id,
+        locked=body.locked,
+    )
     return jsonify({"id": user_id, "is_locked": body.locked, "message": state}), 200
 
 
@@ -124,6 +174,7 @@ def reset_user_password(account_id: str, user_id: str) -> tuple[Any, int]:
     body = UserResetPasswordRequest.model_validate(request.get_json(silent=True) or {})
     new_hash = generate_password_hash(body.new_password)
     g.ctx.user_repo.reset_password_hash(user_id, new_hash)
+    _audit("user.reset_password", account_id=account_id, target_user_id=user_id)
     return jsonify({"id": user_id, "message": "Passwort zurückgesetzt."}), 200
 
 
@@ -135,7 +186,12 @@ def reset_user_password(account_id: str, user_id: str) -> tuple[Any, int]:
 @require_platform_admin
 def delete_user(account_id: str, user_id: str) -> tuple[Any, int]:
     """Löscht einen einzelnen Benutzer eines Mandanten."""
-    if _user_or_404(user_id, account_id) is None:
+    user = _user_or_404(user_id, account_id)
+    if user is None:
         return jsonify({"error": "User not found", "code": 404}), 404
+    guard = _guard_user_lockout(user, user_id)
+    if guard is not None:
+        return guard
     g.ctx.user_repo.delete(user_id)
+    _audit("user.delete", account_id=account_id, target_user_id=user_id)
     return jsonify({"id": user_id, "message": "Benutzer gelöscht."}), 200
