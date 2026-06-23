@@ -1,6 +1,120 @@
 # CHANGELOG
 
 
+## v0.28.0 (2026-06-23)
+
+### Chores
+
+- **ci**: Bump actions/checkout from 4 to 7
+  ([`e92a5bc`](https://github.com/siinanXD/Booking-email-check/commit/e92a5bc0dba6b72a62c4f4644f78f30458f02273))
+
+Bumps [actions/checkout](https://github.com/actions/checkout) from 4 to 7. - [Release
+  notes](https://github.com/actions/checkout/releases) -
+  [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md) -
+  [Commits](https://github.com/actions/checkout/compare/v4...v7)
+
+--- updated-dependencies: - dependency-name: actions/checkout dependency-version: '7'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+- **ci**: Bump actions/setup-node from 4 to 6
+  ([`36f35a2`](https://github.com/siinanXD/Booking-email-check/commit/36f35a281f2d79f9252c1e88572a32ed7a94316a))
+
+Bumps [actions/setup-node](https://github.com/actions/setup-node) from 4 to 6. - [Release
+  notes](https://github.com/actions/setup-node/releases) -
+  [Commits](https://github.com/actions/setup-node/compare/v4...v6)
+
+--- updated-dependencies: - dependency-name: actions/setup-node dependency-version: '6'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+- **ci**: Bump actions/setup-python from 5 to 6
+  ([`b6b13a0`](https://github.com/siinanXD/Booking-email-check/commit/b6b13a002e65f3d99366b3c3302786d5f41f57ba))
+
+Bumps [actions/setup-python](https://github.com/actions/setup-python) from 5 to 6. - [Release
+  notes](https://github.com/actions/setup-python/releases) -
+  [Commits](https://github.com/actions/setup-python/compare/v5...v6)
+
+--- updated-dependencies: - dependency-name: actions/setup-python dependency-version: '6'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+- **deps**: Bump axios from 1.16.1 to 1.18.1 in /frontend
+  ([`174ac8b`](https://github.com/siinanXD/Booking-email-check/commit/174ac8b9149e1d281a962e4e5a4f5af446932648))
+
+Bumps [axios](https://github.com/axios/axios) from 1.16.1 to 1.18.1. - [Release
+  notes](https://github.com/axios/axios/releases) -
+  [Changelog](https://github.com/axios/axios/blob/v1.x/CHANGELOG.md) -
+  [Commits](https://github.com/axios/axios/compare/v1.16.1...v1.18.1)
+
+--- updated-dependencies: - dependency-name: axios dependency-version: 1.18.1
+
+dependency-type: direct:production
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+- **deps**: Bump pre-commit from 4.0.1 to 4.6.0
+  ([`cd91314`](https://github.com/siinanXD/Booking-email-check/commit/cd91314a5dabf4899e13740961de0f665e348ee2))
+
+Bumps [pre-commit](https://github.com/pre-commit/pre-commit) from 4.0.1 to 4.6.0. - [Release
+  notes](https://github.com/pre-commit/pre-commit/releases) -
+  [Changelog](https://github.com/pre-commit/pre-commit/blob/main/CHANGELOG.md) -
+  [Commits](https://github.com/pre-commit/pre-commit/compare/v4.0.1...v4.6.0)
+
+--- updated-dependencies: - dependency-name: pre-commit dependency-version: 4.6.0
+
+dependency-type: direct:development
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+- **deps**: Bump sentry-sdk from 2.20.0 to 2.63.0
+  ([`d35ae15`](https://github.com/siinanXD/Booking-email-check/commit/d35ae1519f269b23c43616fab12c95b3c763f839))
+
+Bumps [sentry-sdk](https://github.com/getsentry/sentry-python) from 2.20.0 to 2.63.0. - [Release
+  notes](https://github.com/getsentry/sentry-python/releases) -
+  [Changelog](https://github.com/getsentry/sentry-python/blob/master/CHANGELOG.md) -
+  [Commits](https://github.com/getsentry/sentry-python/compare/2.20.0...2.63.0)
+
+--- updated-dependencies: - dependency-name: sentry-sdk dependency-version: 2.63.0
+
+dependency-type: direct:production
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+### Features
+
+- **mail**: Doppeltes Polling beheben — dedizierter Poll-Worker
+  ([`2221e20`](https://github.com/siinanXD/Booking-email-check/commit/2221e209798501e76ea81a35dc4cdac93407d7ab))
+
+Jeder Gunicorn-Worker startete einen eigenen Poll-Thread → jeder Account wurde pro Zyklus mehrfach
+  gepollt (doppelte Graph-Calls, mögliche doppelte LLM-Verarbeitung). Neues Flag MAIL_POLL_IN_WEB
+  (Default true = keine Regression): auf false pollt der Web-Prozess nicht, stattdessen läuft der
+  dedizierte Procfile-"worker" (scripts/run_mail_poll_loop.py) als einzelner Prozess.
+
+Rollout: in Railway MAIL_POLL_IN_WEB=false am Web-Service setzen + worker als eigenen Service
+  starten.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+
 ## v0.27.0 (2026-06-23)
 
 ### Features
