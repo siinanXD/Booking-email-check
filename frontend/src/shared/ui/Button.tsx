@@ -1,8 +1,11 @@
-import type { ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
+  loading?: boolean;
 }
 
 const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
@@ -24,19 +27,35 @@ const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {
   lg: "px-5 py-2.5 text-sm rounded-lg",
 };
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  className = "",
-  children,
-  ...props
-}: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = "primary",
+    size = "md",
+    loading = false,
+    className = "",
+    type = "button",
+    disabled,
+    children,
+    ...props
+  },
+  ref
+) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-1.5 font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      ref={ref}
+      type={type}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={cn(
+        "inline-flex items-center justify-center gap-1.5 font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed",
+        variants[variant],
+        sizes[size],
+        className
+      )}
       {...props}
     >
+      {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
       {children}
     </button>
   );
-}
+});

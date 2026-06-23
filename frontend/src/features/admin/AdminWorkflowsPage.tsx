@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchAllAccounts } from "@/lib/api/admin";
+import { useAllAccounts } from "@/features/admin/useAllAccounts";
 import { WorkflowsPage } from "@/features/workflows/WorkflowsPage";
 import { Card } from "@/shared/ui/Card";
 
@@ -8,10 +7,7 @@ export function AdminWorkflowsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const accountId = searchParams.get("account") ?? "";
 
-  const { data: accounts, isLoading } = useQuery({
-    queryKey: ["admin-accounts", "all"],
-    queryFn: fetchAllAccounts,
-  });
+  const { data: accounts, isLoading } = useAllAccounts();
 
   const activeAccounts = (accounts?.items ?? []).filter((a) => a.status === "active");
   const selected = activeAccounts.find((a) => a.id === accountId);

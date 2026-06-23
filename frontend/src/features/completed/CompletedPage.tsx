@@ -3,9 +3,12 @@ import { useState } from "react";
 import { fetchEmailActivity, fetchEmailDetail } from "@/lib/api/emails";
 import { fetchReviewQueue } from "@/lib/api/review";
 import { EmailDetailPanel } from "@/shared/components/EmailDetailPanel";
+import { ErrorState } from "@/shared/components/ErrorState";
 import { IntentBadge } from "@/shared/components/IntentBadge";
 import { Card } from "@/shared/ui/Card";
 import type { ReviewQueueItem } from "@/lib/types/api";
+
+const COMPLETED_LIMIT = 100;
 
 function formatActivityTime(iso: string): string {
   const date = new Date(iso);
@@ -24,9 +27,9 @@ function formatActivityTime(iso: string): string {
 export function CompletedPage() {
   const [selected, setSelected] = useState<ReviewQueueItem | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["review-queue", "completed"],
-    queryFn: () => fetchReviewQueue("completed", 100),
+    queryFn: () => fetchReviewQueue("completed", COMPLETED_LIMIT),
     refetchInterval: 60_000,
   });
 
@@ -54,6 +57,12 @@ export function CompletedPage() {
         <Card className="max-h-[70vh] overflow-y-auto p-0">
           {isLoading ? (
             <p className="p-4 text-slate-500">Lade…</p>
+          ) : isError ? (
+            <ErrorState
+              className="m-4"
+              message="Abgeschlossene Reviews konnten nicht geladen werden."
+              onRetry={() => refetch()}
+            />
           ) : (data?.items.length ?? 0) === 0 ? (
             <p className="p-4 text-slate-500">Noch keine abgeschlossenen Reviews.</p>
           ) : (
@@ -77,6 +86,11 @@ export function CompletedPage() {
                   </button>
                 </li>
               ))}
+              {data!.items.length >= COMPLETED_LIMIT && (
+                <li className="px-4 py-3 text-center text-xs text-slate-400">
+                  Nur die neuesten {COMPLETED_LIMIT} Einträge werden angezeigt.
+                </li>
+              )}
             </ul>
           )}
         </Card>

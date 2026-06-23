@@ -10,16 +10,10 @@ import {
 import { ActivityBadge } from "@/features/admin/components/ActivityBadge";
 import { StatCard } from "@/shared/components/StatCard";
 import { Card } from "@/shared/ui/Card";
+import { formatTs } from "@/lib/format";
 
 function formatUsd(value: number): string {
   return `$${value.toFixed(4)}`;
-}
-
-function formatTs(value: string | null | undefined): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("de-DE");
 }
 
 export function AdminOverviewPage() {
@@ -108,12 +102,14 @@ export function AdminOverviewPage() {
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500">
-                <th className="pb-2 pr-4 font-medium">Name</th>
-                <th className="pb-2 pr-4 font-medium">Aktivität</th>
-                <th className="pb-2 pr-4 font-medium">Kosten 30d</th>
-                <th className="pb-2 pr-4 font-medium">Mails 30d</th>
-                <th className="pb-2 pr-4 font-medium">Letzter Sync</th>
-                <th className="pb-2 font-medium"></th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Name</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Aktivität</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Kosten 30d</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Mails 30d</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Letzter Sync</th>
+                <th scope="col" className="pb-2 font-medium">
+                  <span className="sr-only">Aktionen</span>
+                </th>
               </tr>
             </thead>
             <tbody>

@@ -14,15 +14,10 @@ import { TokenSplitChart } from "@/features/admin/components/charts/TokenSplitCh
 import { CostChart } from "@/shared/components/CostChart";
 import { StatCard } from "@/shared/components/StatCard";
 import { Card } from "@/shared/ui/Card";
+import { formatTs } from "@/lib/format";
 
 function formatUsd(value: number): string {
   return `$${value.toFixed(4)}`;
-}
-
-function formatTs(value: string): string {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("de-DE");
 }
 
 export function AdminObservabilityPage() {
@@ -113,10 +108,10 @@ export function AdminObservabilityPage() {
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500">
-                <th className="pb-2 pr-4 font-medium">Mandant</th>
-                <th className="pb-2 pr-4 font-medium">Kosten</th>
-                <th className="pb-2 pr-4 font-medium">Tokens</th>
-                <th className="pb-2 font-medium">Mails</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Mandant</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Kosten</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Tokens</th>
+                <th scope="col" className="pb-2 font-medium">Mails</th>
               </tr>
             </thead>
             <tbody>
@@ -153,10 +148,10 @@ export function AdminObservabilityPage() {
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500">
-                <th className="pb-2 pr-4 font-medium">Kosten</th>
-                <th className="pb-2 pr-4 font-medium">Tokens</th>
-                <th className="pb-2 pr-4 font-medium">Zeit</th>
-                <th className="pb-2 font-medium">Langfuse</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Kosten</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Tokens</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">Zeit</th>
+                <th scope="col" className="pb-2 font-medium">Langfuse</th>
               </tr>
             </thead>
             <tbody>

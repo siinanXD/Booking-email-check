@@ -1,21 +1,24 @@
+import { useState } from "react";
 import { TriangleAlert, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 
 export interface SettingsDangerZoneProps {
-  wipeConfirm: string;
-  onWipeConfirmChange: (value: string) => void;
-  onWipe: () => void;
+  onWipe: () => Promise<unknown>;
   wipePending: boolean;
 }
 
-export function SettingsDangerZone({
-  wipeConfirm,
-  onWipeConfirmChange,
-  onWipe,
-  wipePending,
-}: SettingsDangerZoneProps) {
-  const confirmed = wipeConfirm === "ALLE DATEN LOESCHEN";
+export function SettingsDangerZone({ onWipe, wipePending }: SettingsDangerZoneProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleConfirm = async () => {
+    try {
+      await onWipe();
+      setOpen(false);
+    } catch {
+      // Failure is surfaced via the global error toast — keep the dialog open.
+    }
+  };
 
   return (
     <div className="rounded-xl border border-red-200/80 bg-red-50/50 p-5 space-y-4">
@@ -31,26 +34,22 @@ export function SettingsDangerZone({
           </p>
         </div>
       </div>
-      <div className="space-y-2">
-        <label className="block text-xs font-medium text-red-700">
-          Tippe zur Bestätigung: <code className="rounded bg-red-100 px-1">ALLE DATEN LOESCHEN</code>
-        </label>
-        <Input
-          value={wipeConfirm}
-          onChange={(e) => onWipeConfirmChange(e.target.value)}
-          placeholder="ALLE DATEN LOESCHEN"
-          className="border-red-200 bg-white focus:border-red-400 focus:ring-red-100"
-        />
-      </div>
-      <Button
-        variant="danger"
-        size="sm"
-        disabled={!confirmed || wipePending}
-        onClick={onWipe}
-      >
+      <Button variant="danger" size="sm" onClick={() => setOpen(true)}>
         <Trash2 size={14} />
-        {wipePending ? "Wird gelöscht…" : "Alle Daten löschen"}
+        Alle Daten löschen
       </Button>
+
+      <ConfirmDialog
+        open={open}
+        title="Wirklich alle Daten löschen?"
+        message="Diese Aktion kann nicht rückgängig gemacht werden. Alle E-Mails, Reviews, Metriken und Einstellungen werden dauerhaft entfernt."
+        confirmLabel="Endgültig löschen"
+        tone="danger"
+        loading={wipePending}
+        requirePhrase="ALLE DATEN LOESCHEN"
+        onConfirm={handleConfirm}
+        onCancel={() => !wipePending && setOpen(false)}
+      />
     </div>
   );
 }

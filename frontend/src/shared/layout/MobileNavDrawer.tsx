@@ -10,19 +10,39 @@ type Props = {
 export function MobileNavDrawer({ open, onClose }: Props) {
   const titleId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
+      previouslyFocused?.focus?.();
     };
   }, [open, onClose]);
 
@@ -37,6 +57,7 @@ export function MobileNavDrawer({ open, onClose }: Props) {
         onClick={onClose}
       />
       <aside
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

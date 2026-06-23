@@ -15,10 +15,10 @@ export function CostsPage() {
       fetchCosts(from.toISOString().slice(0, 10), undefined, "day"),
   });
 
+  const PERIOD_DAYS = 30;
   const totalMails =
     data?.series.reduce((sum, p) => sum + p.mail_count, 0) ?? 0;
-  const avgPerDay =
-    (data?.total_usd ?? 0) / Math.max(data?.series.length ?? 1, 1);
+  const avgPerDay = (data?.total_usd ?? 0) / PERIOD_DAYS;
 
   return (
     <div className="space-y-6">

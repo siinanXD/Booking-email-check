@@ -6,7 +6,6 @@ interface Props {
   suggestions: PropertySuggestion[];
   addedNames: Set<string>;
   adoptPending: boolean;
-  adoptMessage: string | null;
   onAddToList: (name: string) => void;
   onCreateProfile: (name: string) => void;
 }
@@ -15,7 +14,6 @@ export function PropertySuggestionsCard({
   suggestions,
   addedNames,
   adoptPending,
-  adoptMessage,
   onAddToList,
   onCreateProfile,
 }: Props) {
@@ -56,9 +54,6 @@ export function PropertySuggestionsCard({
             </li>
           ))}
         </ul>
-      )}
-      {adoptMessage && (
-        <p className="mt-2 text-sm text-slate-600">{adoptMessage}</p>
       )}
     </Card>
   );

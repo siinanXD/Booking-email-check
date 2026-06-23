@@ -1,29 +1,32 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { fetchEmailDetail } from "@/lib/api/emails";
-import {
-  approveReview,
-  completeReview,
-  fetchGroundZeroQueue,
-  rejectReview,
-} from "@/lib/api/review";
+import { fetchGroundZeroQueue } from "@/lib/api/review";
+import { useReviewActions } from "@/features/review/useReviewActions";
 import { ReviewWhatsAppCard } from "@/features/review/ReviewWhatsAppCard";
 import { EmailDetailPanel } from "@/shared/components/EmailDetailPanel";
+import { ErrorState } from "@/shared/components/ErrorState";
 import { IntentCategoryFilter } from "@/shared/components/IntentCategoryFilter";
 import { IntentBadge } from "@/shared/components/IntentBadge";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
-import type { ReviewQueueItem } from "@/lib/types/api";
 
 export function GroundZeroPage() {
   const [intentFilter, setIntentFilter] = useState("");
-  const [selected, setSelected] = useState<ReviewQueueItem | null>(null);
-  const [draftEdit, setDraftEdit] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
-  const queryClient = useQueryClient();
+  const {
+    selected,
+    draftEdit,
+    setDraftEdit,
+    rejectReason,
+    setRejectReason,
+    approveMut,
+    completeMut,
+    rejectMut,
+    selectItem,
+  } = useReviewActions("review-ground-zero");
 
-  const { data: queue, isLoading } = useQuery({
+  const { data: queue, isLoading, isError, refetch } = useQuery({
     queryKey: ["review-ground-zero", intentFilter],
     queryFn: () => fetchGroundZeroQueue(50, intentFilter || undefined),
     refetchInterval: 30_000,
@@ -34,44 +37,6 @@ export function GroundZeroPage() {
     queryFn: () => fetchEmailDetail(selected!.correlation_id),
     enabled: Boolean(selected?.correlation_id),
   });
-
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["review-ground-zero"] });
-    void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-  };
-
-  const approveMut = useMutation({
-    mutationFn: () =>
-      approveReview(selected!.correlation_id, draftEdit || undefined),
-    onSuccess: () => {
-      setSelected(null);
-      setDraftEdit("");
-      invalidate();
-    },
-  });
-
-  const completeMut = useMutation({
-    mutationFn: () => completeReview(selected!.correlation_id),
-    onSuccess: () => {
-      setSelected(null);
-      invalidate();
-    },
-  });
-
-  const rejectMut = useMutation({
-    mutationFn: () => rejectReview(selected!.correlation_id, rejectReason),
-    onSuccess: () => {
-      setSelected(null);
-      setRejectReason("");
-      invalidate();
-    },
-  });
-
-  function selectItem(item: ReviewQueueItem) {
-    setSelected(item);
-    setDraftEdit(item.draft_body);
-    setRejectReason("");
-  }
 
   const isPending = selected?.review_status === "pending";
 
@@ -89,6 +54,12 @@ export function GroundZeroPage() {
         <Card className="max-h-[70vh] overflow-y-auto p-0">
           {isLoading ? (
             <p className="p-4 text-slate-500">Lade…</p>
+          ) : isError ? (
+            <ErrorState
+              className="m-4"
+              message="Grounding-Fälle konnten nicht geladen werden."
+              onRetry={() => refetch()}
+            />
           ) : (queue?.items.length ?? 0) === 0 ? (
             <p className="p-4 text-slate-500">Keine Grounding-Fälle offen.</p>
           ) : (
@@ -146,7 +117,8 @@ export function GroundZeroPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         onClick={() => approveMut.mutate()}
-                        disabled={approveMut.isPending || !draftEdit.trim()}
+                        loading={approveMut.isPending}
+                        disabled={!draftEdit.trim()}
                       >
                         Freigeben
                       </Button>
@@ -161,7 +133,7 @@ export function GroundZeroPage() {
                         variant="danger"
                         className="mt-2"
                         onClick={() => rejectMut.mutate()}
-                        disabled={rejectMut.isPending}
+                        loading={rejectMut.isPending}
                       >
                         Ablehnen
                       </Button>
@@ -171,7 +143,7 @@ export function GroundZeroPage() {
                 {!isPending && (
                   <Button
                     onClick={() => completeMut.mutate()}
-                    disabled={completeMut.isPending}
+                    loading={completeMut.isPending}
                   >
                     Als abgeschlossen markieren
                   </Button>

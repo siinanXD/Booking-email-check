@@ -10,6 +10,7 @@ import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
+import { toast } from "@/shared/feedback/toastStore";
 import type { AccountListItem } from "@/lib/types/api";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
 import { AccountStatusChart } from "@/features/admin/components/charts/AccountStatusChart";
@@ -90,7 +91,7 @@ export function AdminApprovalsPage() {
   const [showAll, setShowAll] = useState(false);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["admin-accounts", showAll],
+    queryKey: showAll ? ["admin-accounts", "all"] : ["admin-accounts", "pending"],
     queryFn: showAll ? fetchAllAccounts : fetchPendingAccounts,
   });
 
@@ -109,8 +110,12 @@ export function AdminApprovalsPage() {
       } else {
         await rejectAccount(accountId, reason);
       }
+      return action;
     },
-    onSuccess: () => {
+    onSuccess: (action) => {
+      toast.success(
+        action === "approve" ? "Mandant freigeschaltet." : "Mandant abgelehnt."
+      );
       void queryClient.invalidateQueries({ queryKey: ["admin-accounts"] });
     },
   });

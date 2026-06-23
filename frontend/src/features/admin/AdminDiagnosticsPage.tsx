@@ -3,9 +3,9 @@ import { useMemo, useState } from "react";
 import {
   fetchAccountMailConnection,
   fetchAccountWhatsAppInfo,
-  fetchAllAccounts,
   testAccountMailConnection,
 } from "@/lib/api/admin";
+import { useAllAccounts } from "@/features/admin/useAllAccounts";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
 import { AdminWhatsAppDiagnosticsCard } from "@/features/admin/AdminWhatsAppDiagnosticsCard";
 import { Button } from "@/shared/ui/Button";
@@ -13,12 +13,9 @@ import { Card } from "@/shared/ui/Card";
 
 export function AdminDiagnosticsPage() {
   const [accountId, setAccountId] = useState("");
-  const [mailResult, setMailResult] = useState<string | null>(null);
+  const [mailResult, setMailResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  const { data: accounts } = useQuery({
-    queryKey: ["admin-accounts", "all"],
-    queryFn: fetchAllAccounts,
-  });
+  const { data: accounts } = useAllAccounts();
 
   const activeAccounts = useMemo(
     () => accounts?.items.filter((a) => a.status === "active") ?? [],
@@ -40,13 +37,15 @@ export function AdminDiagnosticsPage() {
   const mailTestMut = useMutation({
     mutationFn: () => testAccountMailConnection(accountId),
     onSuccess: (res) => {
-      setMailResult(
-        res.success
-          ? `OK — ${res.message}${res.mailbox_count != null ? ` (${res.mailbox_count} Nachrichten)` : ""}`
-          : `Fehler: ${res.message}`
-      );
+      setMailResult({
+        ok: res.success,
+        message: res.success
+          ? `${res.message}${res.mailbox_count != null ? ` (${res.mailbox_count} Nachrichten)` : ""}`
+          : res.message,
+      });
     },
-    onError: () => setMailResult("Postfach-Test fehlgeschlagen."),
+    onError: () =>
+      setMailResult({ ok: false, message: "Postfach-Test fehlgeschlagen." }),
   });
 
   function handleAccountChange(id: string) {
@@ -130,9 +129,12 @@ export function AdminDiagnosticsPage() {
                 </Button>
                 {mailResult && (
                   <p
-                    className={`text-sm ${mailResult.startsWith("OK") ? "text-green-700" : "text-red-600"}`}
+                    role="status"
+                    aria-live="polite"
+                    className={`text-sm ${mailResult.ok ? "text-green-700" : "text-red-600"}`}
                   >
-                    {mailResult}
+                    {mailResult.ok ? "OK — " : "Fehler: "}
+                    {mailResult.message}
                   </p>
                 )}
               </>

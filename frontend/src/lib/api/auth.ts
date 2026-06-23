@@ -27,6 +27,15 @@ export async function register(
   return data;
 }
 
+export async function refreshSession(
+  refreshToken: string
+): Promise<TokenResponse> {
+  const { data } = await apiClient.post<TokenResponse>("/api/auth/refresh", {
+    refresh_token: refreshToken,
+  });
+  return data;
+}
+
 export async function fetchMe(accessToken: string): Promise<UserResponse> {
   const { data } = await apiClient.get<UserResponse>("/api/auth/me", {
     headers: { Authorization: `Bearer ${accessToken}` },

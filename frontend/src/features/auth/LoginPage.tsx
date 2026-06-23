@@ -109,6 +109,7 @@ export function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={loading}
                   autoComplete="off"
                   placeholder="ihre@email.de"
                   className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-600 transition-all focus:border-indigo-500/50 focus:bg-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -135,6 +136,7 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={loading}
                   autoComplete="new-password"
                   placeholder="••••••••"
                   className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-600 transition-all focus:border-indigo-500/50 focus:bg-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -143,25 +145,17 @@ export function LoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3"
+              >
                 <AlertCircle size={14} className="mt-0.5 flex-shrink-0 text-red-400" />
                 <p className="text-xs text-red-300">{error}</p>
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="mt-2 w-full py-2.5"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Wird angemeldet…
-                </span>
-              ) : (
-                "Anmelden"
-              )}
+            <Button type="submit" className="mt-2 w-full py-2.5" loading={loading}>
+              {loading ? "Wird angemeldet…" : "Anmelden"}
             </Button>
 
             <p className="text-center text-xs text-slate-500">

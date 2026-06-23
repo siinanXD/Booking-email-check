@@ -168,20 +168,29 @@ export function AdminTicketsPage() {
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500">
-                <th className="pb-2 pr-3 font-medium">Datum</th>
-                <th className="pb-2 pr-3 font-medium">Mandant</th>
-                <th className="pb-2 pr-3 font-medium">Dringlichkeit</th>
-                <th className="pb-2 font-medium">Status</th>
+                <th scope="col" className="pb-2 pr-3 font-medium">Datum</th>
+                <th scope="col" className="pb-2 pr-3 font-medium">Mandant</th>
+                <th scope="col" className="pb-2 pr-3 font-medium">Dringlichkeit</th>
+                <th scope="col" className="pb-2 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
               {tickets?.items.map((t) => (
                 <tr
                   key={t.ticket_id}
-                  className={`cursor-pointer border-b border-slate-100 hover:bg-slate-50 ${
+                  role="button"
+                  tabIndex={0}
+                  aria-selected={selectedId === t.ticket_id}
+                  className={`cursor-pointer border-b border-slate-100 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-400 ${
                     selectedId === t.ticket_id ? "bg-indigo-50" : ""
                   }`}
                   onClick={() => openDetail(t)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openDetail(t);
+                    }
+                  }}
                 >
                   <td className="py-2 pr-3 text-slate-600">
                     {new Date(t.created_at).toLocaleString("de-DE")}

@@ -26,13 +26,27 @@ const dots: Record<string, string> = {
   default: "bg-slate-400",
 };
 
+export type BadgeTone =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "discarded"
+  | "booking"
+  | "cancellation"
+  | "change"
+  | "inquiry"
+  | "complaint"
+  | "payment"
+  | "default";
+
 export function Badge({
   label,
   tone = "default",
   dot = false,
 }: {
   label: string;
-  tone?: string;
+  // Known tones get autocomplete; arbitrary strings fall back to "default".
+  tone?: BadgeTone | (string & {});
   dot?: boolean;
 }) {
   const key = styles[tone] ? tone : "default";

@@ -12,6 +12,7 @@ import { SettingsWhatsAppRecipientsCard } from "@/features/settings/SettingsWhat
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
+import { toast } from "@/shared/feedback/toastStore";
 
 function SectionHeader({ title }: { title: string }) {
   return <h3 className="text-sm font-semibold text-slate-800">{title}</h3>;
@@ -31,9 +32,7 @@ export function SettingsPage() {
   const [testRecipient, setTestRecipient] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [userWhatsappEnabled, setUserWhatsappEnabled] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [testMessage, setTestMessage] = useState<string | null>(null);
-  const [wipeConfirm, setWipeConfirm] = useState("");
 
   const { data: mailData } = useQuery({
     queryKey: ["mail-connection"],
@@ -44,13 +43,14 @@ export function SettingsPage() {
   const mailTestMut = useMutation({
     mutationFn: testMailConnection,
     onSuccess: (res) => {
-      setSaveMessage(
-        res.success
-          ? `Postfach-Verbindung OK${res.mailbox_count != null ? ` (${res.mailbox_count} Nachrichten)` : ""}.`
-          : `Postfach-Test fehlgeschlagen: ${res.message}`
-      );
+      if (res.success) {
+        toast.success(
+          `Postfach-Verbindung OK${res.mailbox_count != null ? ` (${res.mailbox_count} Nachrichten)` : ""}.`
+        );
+      } else {
+        toast.error(`Postfach-Test fehlgeschlagen: ${res.message}`);
+      }
     },
-    onError: () => setSaveMessage("Postfach-Test fehlgeschlagen."),
   });
 
   useEffect(() => {
@@ -74,14 +74,14 @@ export function SettingsPage() {
         },
       }),
     onSuccess: () => {
-      setSaveMessage("Einstellungen gespeichert.");
+      toast.success("Einstellungen gespeichert.");
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
-    onError: () => setSaveMessage("Speichern fehlgeschlagen."),
   });
 
   const testMut = useMutation({
     mutationFn: () => testWhatsApp(testRecipient || undefined),
+    meta: { skipGlobalError: true },
     onSuccess: (res) => {
       setTestMessage(
         res.success
@@ -103,11 +103,9 @@ export function SettingsPage() {
     mutationFn: wipeAllData,
     onSuccess: (res) => {
       const total = Object.values(res.deleted).reduce((a, b) => a + b, 0);
-      setSaveMessage(`Alle Daten gelöscht (${total} Dokumente).`);
-      setWipeConfirm("");
+      toast.success(`Alle Daten gelöscht (${total} Dokumente).`);
       void queryClient.invalidateQueries();
     },
-    onError: () => setSaveMessage("Löschen fehlgeschlagen."),
   });
 
   if (isPlatformAdmin) {
@@ -211,25 +209,14 @@ export function SettingsPage() {
 
       {/* Save */}
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+        <Button onClick={() => saveMut.mutate()} loading={saveMut.isPending}>
           <Save size={15} />
-          {saveMut.isPending ? "Speichern…" : "Einstellungen speichern"}
+          Einstellungen speichern
         </Button>
-        {saveMessage && (
-          <p
-            className={`text-sm ${
-              saveMessage.includes("fehlgeschlagen") ? "text-red-600" : "text-emerald-700"
-            }`}
-          >
-            {saveMessage}
-          </p>
-        )}
       </div>
 
       <SettingsDangerZone
-        wipeConfirm={wipeConfirm}
-        onWipeConfirmChange={setWipeConfirm}
-        onWipe={() => wipeMut.mutate()}
+        onWipe={() => wipeMut.mutateAsync()}
         wipePending={wipeMut.isPending}
       />
     </div>
