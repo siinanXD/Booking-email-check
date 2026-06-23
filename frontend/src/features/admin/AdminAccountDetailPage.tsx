@@ -1,47 +1,25 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   fetchAdminAccountDetail,
-  suspendAccount, unsuspendAccount,
-  setAccountExpiry, deleteAccount,
   lockUser, resetUserPassword, deleteUser,
 } from "@/lib/api/admin";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
 import { ActivityBadge } from "@/features/admin/components/ActivityBadge";
+import { AdminAccountActions } from "@/features/admin/components/AdminAccountActions";
 import { DbCountsBarChart } from "@/features/admin/components/charts/DbCountsBarChart";
 import { Card } from "@/shared/ui/Card";
-
-const EXPIRY_OPTIONS = [
-  { label: "1 Woche", days: 7 },
-  { label: "1 Monat", days: 30 },
-  { label: "3 Monate", days: 90 },
-  { label: "1 Jahr", days: 365 },
-];
-
-function addDays(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString();
-}
+import { formatTs } from "@/lib/format";
 
 function formatUsd(value: number): string {
   return `$${value.toFixed(4)}`;
 }
 
-function formatTs(value: string | null | undefined): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("de-DE");
-}
-
 export function AdminAccountDetailPage() {
   const { accountId } = useParams<{ accountId: string }>();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const [resetPw, setResetPw] = useState<{ userId: string; value: string } | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-account-detail", accountId],
@@ -51,13 +29,6 @@ export function AdminAccountDetailPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-account-detail", accountId] });
 
-  const suspendMut = useMutation({ mutationFn: () => suspendAccount(accountId!), onSuccess: invalidate });
-  const unsuspendMut = useMutation({ mutationFn: () => unsuspendAccount(accountId!), onSuccess: invalidate });
-  const expiryMut = useMutation({ mutationFn: (iso: string | null) => setAccountExpiry(accountId!, iso), onSuccess: invalidate });
-  const deleteMut = useMutation({
-    mutationFn: () => deleteAccount(accountId!),
-    onSuccess: () => navigate("/admin/overview"),
-  });
   const lockMut = useMutation({ mutationFn: ({ uid, locked }: { uid: string; locked: boolean }) => lockUser(accountId!, uid, locked), onSuccess: invalidate });
   const resetPwMut = useMutation({
     mutationFn: ({ uid, pw }: { uid: string; pw: string }) => resetUserPassword(accountId!, uid, pw),
@@ -136,55 +107,15 @@ export function AdminAccountDetailPage() {
       {/* ── Admin Actions ─────────────────────────────────────────── */}
       <Card className="space-y-4">
         <h3 className="font-medium text-slate-900">Mandanten-Verwaltung</h3>
-
-        {/* Suspend / Expiry / Delete */}
-        <div className="flex flex-wrap gap-2">
-          {isSuspended ? (
-            <button onClick={() => unsuspendMut.mutate()} disabled={unsuspendMut.isPending}
-              className="rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
-              ✅ Entsperren
-            </button>
-          ) : (
-            <button onClick={() => suspendMut.mutate()} disabled={suspendMut.isPending}
-              className="rounded-lg bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50">
-              ⏸ Sperren
-            </button>
-          )}
-
-          {/* Expiry dropdown */}
-          <select defaultValue=""
-            onChange={(e) => { if (e.target.value) expiryMut.mutate(e.target.value === "remove" ? null : addDays(Number(e.target.value))); e.target.value = ""; }}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-            <option value="" disabled>⏰ Zugang begrenzen…</option>
-            {EXPIRY_OPTIONS.map((o) => (
-              <option key={o.days} value={o.days}>{o.label}</option>
-            ))}
-            <option value="remove">Begrenzung entfernen</option>
-          </select>
-
-          {data?.account && "expires_at" in data.account && (data.account as { expires_at?: string | null }).expires_at && (
-            <span className="flex items-center rounded-lg bg-orange-50 px-3 py-1.5 text-xs text-orange-700">
-              Läuft ab: {formatTs((data.account as { expires_at?: string | null }).expires_at)}
-            </span>
-          )}
-
-          {/* Delete account */}
-          {!confirmDelete ? (
-            <button onClick={() => setConfirmDelete(true)}
-              className="ml-auto rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100">
-              🗑 Mandant löschen
-            </button>
-          ) : (
-            <div className="ml-auto flex items-center gap-2">
-              <span className="text-sm text-red-700">Sicher? Alle Daten werden gelöscht.</span>
-              <button onClick={() => deleteMut.mutate()} disabled={deleteMut.isPending}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
-                Ja, löschen
-              </button>
-              <button onClick={() => setConfirmDelete(false)} className="text-sm text-slate-500 hover:text-slate-700">Abbrechen</button>
-            </div>
-          )}
-        </div>
+        <AdminAccountActions
+          accountId={accountId}
+          isSuspended={isSuspended}
+          expiresAt={
+            data.account && "expires_at" in data.account
+              ? (data.account as { expires_at?: string | null }).expires_at
+              : undefined
+          }
+        />
       </Card>
 
       <Card className="space-y-3">

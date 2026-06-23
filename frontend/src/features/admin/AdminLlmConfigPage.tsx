@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   fetchAdminLlmConfig,
   previewAdminLlmConfig,
@@ -13,6 +13,7 @@ import { LlmTemperatureChart } from "@/features/admin/components/charts/LlmTempe
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
+import { toast } from "@/shared/feedback/toastStore";
 
 type PromptTab = "classify" | "extract" | "draft";
 
@@ -39,7 +40,7 @@ export function AdminLlmConfigPage() {
   const [previewStep, setPreviewStep] = useState<AdminLlmPreviewStep>("classify");
   const [previewResult, setPreviewResult] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const seeded = useRef(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-llm-config"],
@@ -47,7 +48,9 @@ export function AdminLlmConfigPage() {
   });
 
   useEffect(() => {
-    if (!data) return;
+    // Seed form fields only once so a background refetch can't clobber edits.
+    if (!data || seeded.current) return;
+    seeded.current = true;
     setClassifyTemp(data.classify_temperature);
     setExtractTemp(data.extract_temperature);
     setDraftTemp(data.draft_temperature);
@@ -73,9 +76,8 @@ export function AdminLlmConfigPage() {
       void queryClient.invalidateQueries({
         queryKey: ["admin-llm-prompt-history"],
       });
-      setSaveMessage("Konfiguration gespeichert.");
+      toast.success("Konfiguration gespeichert.");
     },
-    onError: () => setSaveMessage("Speichern fehlgeschlagen."),
   });
 
   const previewMut = useMutation({
@@ -230,18 +232,9 @@ export function AdminLlmConfigPage() {
         />
 
         <div className="flex gap-2">
-          <Button
-            disabled={saveMut.isPending}
-            onClick={() => {
-              setSaveMessage(null);
-              saveMut.mutate();
-            }}
-          >
+          <Button loading={saveMut.isPending} onClick={() => saveMut.mutate()}>
             Speichern
           </Button>
-          {saveMessage && (
-            <p className="self-center text-sm text-slate-600">{saveMessage}</p>
-          )}
         </div>
       </Card>
 

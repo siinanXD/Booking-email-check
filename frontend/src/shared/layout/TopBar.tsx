@@ -1,13 +1,14 @@
 import { Link, useLocation } from "react-router-dom";
-import { LogOut, Settings, Bell, Menu } from "lucide-react";
+import { LogOut, Settings, Menu } from "lucide-react";
 import { useAuthStore } from "@/features/auth/authStore";
 
 function getInitials(email: string): string {
-  const parts = email.split("@")[0].split(/[._-]/);
+  const local = email.split("@")[0] ?? "";
+  const parts = local.split(/[._-]/).filter(Boolean);
   if (parts.length >= 2) {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
-  return email.slice(0, 2).toUpperCase();
+  return (local || email).slice(0, 2).toUpperCase() || "??";
 }
 
 const PAGE_TITLES: Record<string, string> = {
@@ -58,17 +59,6 @@ export function TopBar({ onMenuOpen }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Notification bell placeholder */}
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-          title="Benachrichtigungen"
-        >
-          <Bell size={16} />
-        </button>
-
-        <div className="mx-1 h-5 w-px bg-slate-200" />
-
         {/* User */}
         <Link
           to={profileLink}

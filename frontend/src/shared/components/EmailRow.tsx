@@ -79,10 +79,12 @@ export function EmailRow({
 
   return (
     <tr
-      className={`transition-colors duration-100 ${
+      className={`transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-400 ${
         onClick ? "cursor-pointer hover:bg-indigo-50/40" : ""
       } ${isSelected ? "bg-indigo-50" : ""}`}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      aria-selected={onClick ? isSelected : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
         onClick

@@ -1,82 +1,143 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "@/shared/layout/Layout";
-import { AdminAccountDetailPage } from "@/features/admin/AdminAccountDetailPage";
-import { AdminApprovalsPage } from "@/features/admin/AdminApprovalsPage";
-import { AdminDiagnosticsPage } from "@/features/admin/AdminDiagnosticsPage";
-import { AdminLayout } from "@/features/admin/AdminLayout";
-import { AdminLlmConfigPage } from "@/features/admin/AdminLlmConfigPage";
-import { AdminWorkflowsPage } from "@/features/admin/AdminWorkflowsPage";
-import { AdminObservabilityPage } from "@/features/admin/AdminObservabilityPage";
-import { AdminOverviewPage } from "@/features/admin/AdminOverviewPage";
-import { AdminTicketsPage } from "@/features/admin/AdminTicketsPage";
-import { BookingsPage } from "@/features/emails/BookingsPage";
-import { CancellationsPage } from "@/features/emails/CancellationsPage";
-import { ChangesPage } from "@/features/emails/ChangesPage";
-import { DashboardPage } from "@/features/dashboard/DashboardPage";
-import { LoginPage } from "@/features/auth/LoginPage";
-import { MessagesPage } from "@/features/emails/MessagesPage";
-import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
-import { PropertiesPage } from "@/features/properties/PropertiesPage";
-import { PropertyProfilePage } from "@/features/properties/PropertyProfilePage";
-import { RegisterPage } from "@/features/auth/RegisterPage";
-import { CompletedPage } from "@/features/completed/CompletedPage";
-import { GroundZeroPage } from "@/features/review/GroundZeroPage";
-import { ReviewQueuePage } from "@/features/review/ReviewQueuePage";
-import { SettingsPage } from "@/features/settings/SettingsPage";
-import { SupportPage } from "@/features/support/SupportPage";
-import { WorkflowRubrikPage } from "@/features/workflows/WorkflowRubrikPage";
+import { NotFoundPage } from "@/shared/components/NotFoundPage";
 import { PlatformAdminRoute } from "@/routes/PlatformAdminRoute";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { TenantRoute } from "@/routes/TenantRoute";
 
+const AdminAccountDetailPage = lazy(() =>
+  import("@/features/admin/AdminAccountDetailPage").then((m) => ({ default: m.AdminAccountDetailPage }))
+);
+const AdminApprovalsPage = lazy(() =>
+  import("@/features/admin/AdminApprovalsPage").then((m) => ({ default: m.AdminApprovalsPage }))
+);
+const AdminDiagnosticsPage = lazy(() =>
+  import("@/features/admin/AdminDiagnosticsPage").then((m) => ({ default: m.AdminDiagnosticsPage }))
+);
+const AdminLayout = lazy(() =>
+  import("@/features/admin/AdminLayout").then((m) => ({ default: m.AdminLayout }))
+);
+const AdminLlmConfigPage = lazy(() =>
+  import("@/features/admin/AdminLlmConfigPage").then((m) => ({ default: m.AdminLlmConfigPage }))
+);
+const AdminWorkflowsPage = lazy(() =>
+  import("@/features/admin/AdminWorkflowsPage").then((m) => ({ default: m.AdminWorkflowsPage }))
+);
+const AdminObservabilityPage = lazy(() =>
+  import("@/features/admin/AdminObservabilityPage").then((m) => ({ default: m.AdminObservabilityPage }))
+);
+const AdminOverviewPage = lazy(() =>
+  import("@/features/admin/AdminOverviewPage").then((m) => ({ default: m.AdminOverviewPage }))
+);
+const AdminTicketsPage = lazy(() =>
+  import("@/features/admin/AdminTicketsPage").then((m) => ({ default: m.AdminTicketsPage }))
+);
+const BookingsPage = lazy(() =>
+  import("@/features/emails/BookingsPage").then((m) => ({ default: m.BookingsPage }))
+);
+const CancellationsPage = lazy(() =>
+  import("@/features/emails/CancellationsPage").then((m) => ({ default: m.CancellationsPage }))
+);
+const ChangesPage = lazy(() =>
+  import("@/features/emails/ChangesPage").then((m) => ({ default: m.ChangesPage }))
+);
+const DashboardPage = lazy(() =>
+  import("@/features/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage }))
+);
+const LoginPage = lazy(() =>
+  import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage }))
+);
+const MessagesPage = lazy(() =>
+  import("@/features/emails/MessagesPage").then((m) => ({ default: m.MessagesPage }))
+);
+const OnboardingPage = lazy(() =>
+  import("@/features/onboarding/OnboardingPage").then((m) => ({ default: m.OnboardingPage }))
+);
+const PropertiesPage = lazy(() =>
+  import("@/features/properties/PropertiesPage").then((m) => ({ default: m.PropertiesPage }))
+);
+const PropertyProfilePage = lazy(() =>
+  import("@/features/properties/PropertyProfilePage").then((m) => ({ default: m.PropertyProfilePage }))
+);
+const RegisterPage = lazy(() =>
+  import("@/features/auth/RegisterPage").then((m) => ({ default: m.RegisterPage }))
+);
+const CompletedPage = lazy(() =>
+  import("@/features/completed/CompletedPage").then((m) => ({ default: m.CompletedPage }))
+);
+const GroundZeroPage = lazy(() =>
+  import("@/features/review/GroundZeroPage").then((m) => ({ default: m.GroundZeroPage }))
+);
+const ReviewQueuePage = lazy(() =>
+  import("@/features/review/ReviewQueuePage").then((m) => ({ default: m.ReviewQueuePage }))
+);
+const SettingsPage = lazy(() =>
+  import("@/features/settings/SettingsPage").then((m) => ({ default: m.SettingsPage }))
+);
+const SupportPage = lazy(() =>
+  import("@/features/support/SupportPage").then((m) => ({ default: m.SupportPage }))
+);
+const WorkflowRubrikPage = lazy(() =>
+  import("@/features/workflows/WorkflowRubrikPage").then((m) => ({ default: m.WorkflowRubrikPage }))
+);
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
+      Lade…
+    </div>
+  );
+}
+
 export function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route element={<Layout />}>
-            <Route element={<PlatformAdminRoute />}>
-              <Route path="admin" element={<AdminLayout />}>
-                <Route index element={<Navigate to="overview" replace />} />
-                <Route path="overview" element={<AdminOverviewPage />} />
-                <Route path="accounts" element={<AdminApprovalsPage />} />
-                <Route path="accounts/:accountId" element={<AdminAccountDetailPage />} />
-                <Route path="diagnostics" element={<AdminDiagnosticsPage />} />
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route element={<Layout />}>
+              <Route element={<PlatformAdminRoute />}>
+                <Route path="admin" element={<AdminLayout />}>
+                  <Route index element={<Navigate to="overview" replace />} />
+                  <Route path="overview" element={<AdminOverviewPage />} />
+                  <Route path="accounts" element={<AdminApprovalsPage />} />
+                  <Route path="accounts/:accountId" element={<AdminAccountDetailPage />} />
+                  <Route path="diagnostics" element={<AdminDiagnosticsPage />} />
+                  <Route path="observability" element={<AdminObservabilityPage />} />
+                  <Route path="llm-config" element={<AdminLlmConfigPage />} />
+                  <Route path="tickets" element={<AdminTicketsPage />} />
+                  <Route path="workflows" element={<AdminWorkflowsPage />} />
+                </Route>
                 <Route
-                  path="observability"
-                  element={<AdminObservabilityPage />}
+                  path="admin/approvals"
+                  element={<Navigate to="/admin/accounts" replace />}
                 />
-                <Route path="llm-config" element={<AdminLlmConfigPage />} />
-                <Route path="tickets" element={<AdminTicketsPage />} />
-                <Route path="workflows" element={<AdminWorkflowsPage />} />
               </Route>
-              <Route
-                path="admin/approvals"
-                element={<Navigate to="/admin/accounts" replace />}
-              />
-            </Route>
-            <Route element={<TenantRoute />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="bookings" element={<BookingsPage />} />
-              <Route path="cancellations" element={<CancellationsPage />} />
-              <Route path="changes" element={<ChangesPage />} />
-              <Route path="messages" element={<MessagesPage />} />
-              <Route path="properties" element={<PropertiesPage />} />
-              <Route path="properties/:propertyId" element={<PropertyProfilePage />} />
-              <Route path="review" element={<ReviewQueuePage />} />
-              <Route path="ground-zero" element={<GroundZeroPage />} />
-              <Route path="completed" element={<CompletedPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="support" element={<SupportPage />} />
-              <Route path="rubrics/:slug" element={<WorkflowRubrikPage />} />
+              <Route element={<TenantRoute />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="bookings" element={<BookingsPage />} />
+                <Route path="cancellations" element={<CancellationsPage />} />
+                <Route path="changes" element={<ChangesPage />} />
+                <Route path="messages" element={<MessagesPage />} />
+                <Route path="properties" element={<PropertiesPage />} />
+                <Route path="properties/:propertyId" element={<PropertyProfilePage />} />
+                <Route path="review" element={<ReviewQueuePage />} />
+                <Route path="ground-zero" element={<GroundZeroPage />} />
+                <Route path="completed" element={<CompletedPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="support" element={<SupportPage />} />
+                <Route path="rubrics/:slug" element={<WorkflowRubrikPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
             </Route>
           </Route>
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

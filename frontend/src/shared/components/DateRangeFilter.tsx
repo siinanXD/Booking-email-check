@@ -51,6 +51,8 @@ export function DateRangeFilter({ value, onChange }: Props) {
         <Calendar size={13} className="text-slate-400" />
         <input
           type="date"
+          aria-label="Von"
+          max={value.toDate || today()}
           className="bg-transparent text-xs text-slate-600 outline-none focus:text-slate-900"
           value={value.fromDate}
           onChange={(e) => onChange({ ...value, fromDate: e.target.value })}
@@ -58,6 +60,9 @@ export function DateRangeFilter({ value, onChange }: Props) {
         <span className="text-slate-300">–</span>
         <input
           type="date"
+          aria-label="Bis"
+          min={value.fromDate}
+          max={today()}
           className="bg-transparent text-xs text-slate-600 outline-none focus:text-slate-900"
           value={value.toDate}
           onChange={(e) => onChange({ ...value, toDate: e.target.value })}

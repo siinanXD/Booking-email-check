@@ -4,10 +4,12 @@ import { User, Mail, Phone, Lock, Building2, CheckCircle2, AlertCircle, Zap } fr
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { useAuthStore } from "@/features/auth/authStore";
+import { useAuthHydrated } from "@/features/auth/useAuthHydrated";
 
 type AccountType = "private" | "business";
 
 export function RegisterPage() {
+  const hydrated = useAuthHydrated();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -22,6 +24,14 @@ export function RegisterPage() {
   const register = useAuthStore((s) => s.register);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
+  if (!hydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+      </div>
+    );
+  }
+
   if (isAuthenticated()) {
     return <Navigate to="/" replace />;
   }
@@ -30,6 +40,10 @@ export function RegisterPage() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    if (password !== passwordConfirm) {
+      setError("Die Passwörter stimmen nicht überein.");
+      return;
+    }
     setLoading(true);
     try {
       const result = await register({
@@ -249,21 +263,17 @@ export function RegisterPage() {
               </div>
 
               {error && (
-                <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3"
+                >
                   <AlertCircle size={14} className="mt-0.5 flex-shrink-0 text-red-400" />
                   <p className="text-xs text-red-300">{error}</p>
                 </div>
               )}
 
-              <Button type="submit" className="mt-1 w-full py-2.5" disabled={loading}>
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Wird gesendet…
-                  </span>
-                ) : (
-                  "Registrieren"
-                )}
+              <Button type="submit" className="mt-1 w-full py-2.5" loading={loading}>
+                {loading ? "Wird gesendet…" : "Registrieren"}
               </Button>
 
               <p className="text-center text-xs text-slate-500">

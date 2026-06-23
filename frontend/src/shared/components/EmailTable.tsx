@@ -30,12 +30,12 @@ export function EmailTable({
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/80">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Datum</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Absender</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Buchung</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Plattform</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Intent</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Betreff</th>
+              <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Datum</th>
+              <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Absender</th>
+              <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Buchung</th>
+              <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Plattform</th>
+              <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Intent</th>
+              <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Betreff</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

@@ -1,22 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, XCircle, Inbox, ChevronRight } from "lucide-react";
 import { fetchEmailDetail } from "@/lib/api/emails";
-import {
-  approveReview,
-  completeReview,
-  fetchReviewQueue,
-  rejectReview,
-  type ReviewQueueTab,
-} from "@/lib/api/review";
+import { fetchReviewQueue, type ReviewQueueTab } from "@/lib/api/review";
+import { useReviewActions } from "@/features/review/useReviewActions";
 import { ReviewWhatsAppCard } from "@/features/review/ReviewWhatsAppCard";
 import { EmailDetailPanel } from "@/shared/components/EmailDetailPanel";
+import { ErrorState } from "@/shared/components/ErrorState";
 import { IntentCategoryFilter } from "@/shared/components/IntentCategoryFilter";
 import { IntentBadge } from "@/shared/components/IntentBadge";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
-import type { ReviewQueueItem } from "@/lib/types/api";
 
 const TABS: { id: ReviewQueueTab; label: string }[] = [
   { id: "pending", label: "Ausstehend" },
@@ -42,12 +37,20 @@ export function ReviewQueuePage() {
   const redirectGrounding = searchParams.get("grounding") === "1";
   const [tab, setTab] = useState<ReviewQueueTab>("pending");
   const [intentFilter, setIntentFilter] = useState("");
-  const [selected, setSelected] = useState<ReviewQueueItem | null>(null);
-  const [draftEdit, setDraftEdit] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
-  const queryClient = useQueryClient();
+  const {
+    selected,
+    draftEdit,
+    setDraftEdit,
+    rejectReason,
+    setRejectReason,
+    approveMut,
+    completeMut,
+    rejectMut,
+    selectItem,
+    clearSelection,
+  } = useReviewActions("review-queue");
 
-  const { data: queue, isLoading } = useQuery({
+  const { data: queue, isLoading, isError, refetch } = useQuery({
     queryKey: ["review-queue", tab, intentFilter],
     queryFn: () => fetchReviewQueue(tab, 50, intentFilter || undefined),
     refetchInterval: 30_000,
@@ -58,32 +61,6 @@ export function ReviewQueuePage() {
     queryFn: () => fetchEmailDetail(selected!.correlation_id),
     enabled: Boolean(selected?.correlation_id),
   });
-
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["review-queue"] });
-    void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-  };
-
-  const approveMut = useMutation({
-    mutationFn: () => approveReview(selected!.correlation_id, draftEdit || undefined),
-    onSuccess: () => { setSelected(null); setDraftEdit(""); invalidate(); },
-  });
-
-  const completeMut = useMutation({
-    mutationFn: () => completeReview(selected!.correlation_id),
-    onSuccess: () => { setSelected(null); invalidate(); },
-  });
-
-  const rejectMut = useMutation({
-    mutationFn: () => rejectReview(selected!.correlation_id, rejectReason),
-    onSuccess: () => { setSelected(null); setRejectReason(""); invalidate(); },
-  });
-
-  function selectItem(item: ReviewQueueItem) {
-    setSelected(item);
-    setDraftEdit(item.draft_body);
-    setRejectReason("");
-  }
 
   if (redirectGrounding) {
     return <Navigate to="/ground-zero" replace />;
@@ -110,7 +87,7 @@ export function ReviewQueuePage() {
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-800"
               }`}
-              onClick={() => { setTab(t.id); setSelected(null); }}
+              onClick={() => { setTab(t.id); clearSelection(); }}
             >
               {t.label}
             </button>
@@ -131,6 +108,12 @@ export function ReviewQueuePage() {
           <div className="max-h-[65vh] overflow-y-auto">
             {isLoading ? (
               <QueueSkeleton />
+            ) : isError ? (
+              <ErrorState
+                className="m-4"
+                message="Warteschlange konnte nicht geladen werden."
+                onRetry={() => refetch()}
+              />
             ) : (queue?.items.length ?? 0) === 0 ? (
               <div className="flex flex-col items-center gap-3 py-14 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
@@ -224,10 +207,11 @@ export function ReviewQueuePage() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         onClick={() => approveMut.mutate()}
-                        disabled={approveMut.isPending || !draftEdit.trim()}
+                        loading={approveMut.isPending}
+                        disabled={!draftEdit.trim()}
                       >
                         <CheckCircle2 size={15} />
-                        {approveMut.isPending ? "Freigeben…" : "Freigeben"}
+                        Freigeben
                       </Button>
                     </div>
                     <div className="rounded-xl border border-red-100 bg-red-50/50 p-4 space-y-3">
@@ -241,10 +225,10 @@ export function ReviewQueuePage() {
                         variant="danger"
                         size="sm"
                         onClick={() => rejectMut.mutate()}
-                        disabled={rejectMut.isPending}
+                        loading={rejectMut.isPending}
                       >
                         <XCircle size={14} />
-                        {rejectMut.isPending ? "Ablehnen…" : "Ablehnen"}
+                        Ablehnen
                       </Button>
                     </div>
                   </>
@@ -253,10 +237,10 @@ export function ReviewQueuePage() {
                 {tab === "released" && (
                   <Button
                     onClick={() => completeMut.mutate()}
-                    disabled={completeMut.isPending}
+                    loading={completeMut.isPending}
                   >
                     <CheckCircle2 size={15} />
-                    {completeMut.isPending ? "Wird markiert…" : "Als abgeschlossen markieren"}
+                    Als abgeschlossen markieren
                   </Button>
                 )}
               </div>

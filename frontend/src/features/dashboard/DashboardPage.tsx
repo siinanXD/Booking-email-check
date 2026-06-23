@@ -14,12 +14,13 @@ import {
 import { fetchDashboardStats } from "@/lib/api/dashboard";
 import { fetchMailConnection, syncMailConnection } from "@/lib/api/mail";
 import { StatCard } from "@/shared/components/StatCard";
+import { ErrorState } from "@/shared/components/ErrorState";
 import { Button } from "@/shared/ui/Button";
 
-function formatTimestamp(value: string | null | undefined): string {
+function formatTimestamp(value: string | number | null | undefined): string {
   if (!value) return "—";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleString("de-DE", {
     day: "2-digit",
     month: "2-digit",
@@ -33,7 +34,7 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
   const [showSyncErrors, setShowSyncErrors] = useState(false);
 
-  const { data: stats, isLoading, dataUpdatedAt } = useQuery({
+  const { data: stats, isLoading, isError, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: fetchDashboardStats,
     refetchInterval: 30_000,
@@ -70,7 +71,7 @@ export function DashboardPage() {
         <div>
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Übersicht</h2>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-400">
-            <span>Aktualisiert: <span className="text-slate-600 font-medium">{loading ? dash : formatTimestamp(new Date(dataUpdatedAt).toISOString())}</span></span>
+            <span>Aktualisiert: <span className="text-slate-600 font-medium">{loading ? dash : formatTimestamp(dataUpdatedAt)}</span></span>
             <span>·</span>
             <span>Sync: <span className="text-slate-600 font-medium">{formatTimestamp(stats?.last_sync_at)}</span></span>
             <span>·</span>
@@ -130,12 +131,19 @@ export function DashboardPage() {
         </div>
       )}
 
+      {isError && (
+        <ErrorState
+          message="Kennzahlen konnten nicht geladen werden."
+          onRetry={() => refetch()}
+        />
+      )}
+
       {/* Primary KPIs */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Heute</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Überblick</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Buchungs-Mails erkannt"
+            title="Buchungs-Mails (7 Tage)"
             value={loading ? dash : stats!.booking_emails_week}
             hint={loading ? "Laden…" : `${stats!.booking_emails_total} gesamt · ${stats!.total_emails_today} heute`}
             icon={<Mail size={20} />}

@@ -9,7 +9,9 @@ import {
   fetchPropertySuggestions,
   savePropertyRecipients,
 } from "@/lib/api/properties";
+import { Trash2 } from "lucide-react";
 import { PropertySuggestionsCard } from "@/features/properties/PropertySuggestionsCard";
+import { toast } from "@/shared/feedback/toastStore";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
@@ -46,8 +48,6 @@ export function PropertiesPage() {
   });
 
   const [propertyRows, setPropertyRows] = useState<PropertyRecipientItem[]>([]);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [adoptMessage, setAdoptMessage] = useState<string | null>(null);
   const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -82,22 +82,20 @@ export function PropertiesPage() {
           }))
       ),
     onSuccess: () => {
-      setSaveMessage("Unterkünfte gespeichert.");
+      toast.success("Unterkünfte gespeichert.");
       void queryClient.invalidateQueries({ queryKey: ["property-recipients"] });
     },
-    onError: () => setSaveMessage("Speichern fehlgeschlagen."),
   });
 
   const adoptMut = useMutation({
     mutationFn: (name: string) =>
       createProperty({ name, from_suggestion: true }),
     onSuccess: (created) => {
-      setAdoptMessage("Unterkunft angelegt.");
+      toast.success("Unterkunft angelegt.");
       void queryClient.invalidateQueries({ queryKey: ["property-suggestions"] });
       void queryClient.invalidateQueries({ queryKey: ["properties"] });
       navigate(`/properties/${created.property_id}`);
     },
-    onError: () => setAdoptMessage("Anlegen fehlgeschlagen."),
   });
 
   function addRowFromSuggestion(name: string) {
@@ -119,6 +117,10 @@ export function PropertiesPage() {
       ...rows,
       { property_name: "", employees: [{ phone_e164: "", locale: DEFAULT_EMPLOYEE_WHATSAPP_LOCALE }] },
     ]);
+  }
+
+  function removeRow(index: number) {
+    setPropertyRows((rows) => rows.filter((_, i) => i !== index));
   }
 
   function updatePropertyRow(
@@ -219,32 +221,43 @@ export function PropertiesPage() {
           <p className="text-slate-500">Lade…</p>
         ) : (
           propertyRows.map((row, index) => (
-            <div key={index} className="grid gap-2 sm:grid-cols-2">
-              <Input
-                placeholder="Unterkunftsname"
-                value={row.property_name}
-                onChange={(e) =>
-                  updatePropertyRow(index, "property_name", e.target.value)
-                }
-              />
-              <EmployeeWhatsAppField
-                phone={row.employees[0]?.phone_e164 ?? ""}
-                locale={row.employees[0]?.locale ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE}
-                onPhoneChange={(phone) => updatePropertyRow(index, "phone", phone)}
-                onLocaleChange={(locale) => updatePropertyRow(index, "locale", locale)}
-              />
+            <div key={index} className="flex items-start gap-2">
+              <div className="grid flex-1 gap-2 sm:grid-cols-2">
+                <Input
+                  placeholder="Unterkunftsname"
+                  aria-label="Unterkunftsname"
+                  value={row.property_name}
+                  onChange={(e) =>
+                    updatePropertyRow(index, "property_name", e.target.value)
+                  }
+                />
+                <EmployeeWhatsAppField
+                  phone={row.employees[0]?.phone_e164 ?? ""}
+                  locale={row.employees[0]?.locale ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE}
+                  onPhoneChange={(phone) => updatePropertyRow(index, "phone", phone)}
+                  onLocaleChange={(locale) => updatePropertyRow(index, "locale", locale)}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-0.5"
+                aria-label="Zeile entfernen"
+                onClick={() => removeRow(index)}
+              >
+                <Trash2 size={15} aria-hidden />
+              </Button>
             </div>
           ))
         )}
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+          <Button onClick={() => saveMut.mutate()} loading={saveMut.isPending}>
             Speichern
           </Button>
           <Button variant="secondary" onClick={addEmptyRow}>
             + Zeile hinzufügen
           </Button>
         </div>
-        {saveMessage && <p className="text-sm text-slate-600">{saveMessage}</p>}
       </Card>
       </div>
 
@@ -252,7 +265,6 @@ export function PropertiesPage() {
         suggestions={suggestions?.items ?? []}
         addedNames={addedNames}
         adoptPending={adoptMut.isPending}
-        adoptMessage={adoptMessage}
         onAddToList={addRowFromSuggestion}
         onCreateProfile={(name) => adoptMut.mutate(name)}
       />
