@@ -1,6 +1,26 @@
 # CHANGELOG
 
 
+## v0.25.0 (2026-06-23)
+
+### Features
+
+- **frontend**: Ux/quality pass across all routes
+  ([`9b19f17`](https://github.com/siinanXD/Booking-email-check/commit/9b19f179c43e663ad857b93d54590c0790de3041))
+
+- Global feedback: toast store + Toaster, MutationCache.onError surfaces all mutation errors;
+  ErrorBoundary + inline ErrorState for queries - Destructive actions gated by ConfirmDialog
+  (settings wipe, admin suspend/expiry/delete) with typed confirmation - Route-level code splitting
+  (React.lazy + Suspense) and a real 404 page - 401 single-flight token refresh before logout -
+  Dedupe: useSidebarNav (desktop+mobile), useReviewActions (review+ ground-zero), useAllAccounts
+  (admin), shared format/cn/errors helpers - A11y: table scope/role/aria-selected, focus rings,
+  drawer focus trap + restore, role=alert on auth errors, date-range min/max - UI primitives: Button
+  loading/forwardRef/type=button, Input forwardRef/ label/error, Badge tone union - Search debounce,
+  isError handling, KPI label fix, properties row removal
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+
 ## v0.24.0 (2026-06-22)
 
 
