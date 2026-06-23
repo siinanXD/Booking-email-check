@@ -223,7 +223,15 @@ def create_app(settings: Settings | None = None) -> Flask:
 
 
 def _start_mail_poll(app: Flask, settings: Settings) -> None:
-    """Startet Mail-Polling als Hintergrund-Thread (dev + production)."""
+    """Startet Mail-Polling als Hintergrund-Thread (dev + production).
+
+    Bei MAIL_POLL_IN_WEB=false pollt der Web-Prozess nicht — dann übernimmt ein
+    separater Worker (scripts/run_mail_poll_loop.py), damit nicht jeder
+    Gunicorn-Worker dieselben Accounts doppelt pollt.
+    """
+    if not settings.mail_poll_in_web:
+        logger.info("Mail poll im Web-Prozess deaktiviert (MAIL_POLL_IN_WEB=false)")
+        return
     if app.debug and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
         return
 
