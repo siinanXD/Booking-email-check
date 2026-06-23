@@ -18,6 +18,7 @@ from backend.core.models.email import StoredEmail
 from backend.core.models.response import GeneratedResponse
 from backend.core.utils.pii import mask_pii
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import log_token_usage
 from backend.infrastructure.observability.mail_cost import MailCostTracker
 from backend.infrastructure.repositories.platform_llm_config_repository import (
     PlatformLlmConfigRepository,
@@ -73,6 +74,7 @@ class ResponseGenerationService:
         extraction: BookingExtraction,
         hits: RetrievalHits | None,
     ) -> GeneratedResponse:
+        trace_id: str | None = None
         if self._tracing:
             langfuse_context.update_current_trace(
                 session_id=email.correlation_id,
@@ -82,6 +84,7 @@ class ResponseGenerationService:
                 },
             )
             langfuse_context.update_current_observation(model=self._model)
+            trace_id = langfuse_context.get_current_trace_id()
         if hits is None:
             hits = self._retrieval.retrieve(email, extraction)
         facts = self._facts_json(hits, extraction)
@@ -100,12 +103,15 @@ class ResponseGenerationService:
             )
             if self._mail_cost is not None:
                 self._mail_cost.add(email.correlation_id, completion)
+            if self._tracing:
+                log_token_usage(completion.prompt_tokens, completion.completion_tokens)
             draft = GeneratedResponse(
                 correlation_id=email.correlation_id,
                 body=completion.text,
                 model=self._model,
                 prompt_tokens=completion.prompt_tokens,
                 completion_tokens=completion.completion_tokens,
+                langfuse_trace_id=trace_id,
             )
         except LLM_PIPELINE_ERRORS as exc:
             notify_llm_failure(
@@ -119,6 +125,7 @@ class ResponseGenerationService:
                 body=fallback_draft_body(email, extraction),
                 model=self._model,
                 grounding_ok=False,
+                langfuse_trace_id=trace_id,
             )
             return draft
         if hits.guest and hits.guest.name:

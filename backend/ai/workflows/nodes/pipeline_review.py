@@ -85,20 +85,24 @@ class PipelineReviewMixin:
                     account_id=email.account_id,
                 )
         approved_body = review.approved_body if review else None
-        if (
-            status == "approved"
-            and approved_body
-            and self._feedback_tracker is not None
-            and self._langfuse_tracer is not None
-        ):
+        if self._feedback_tracker is not None and self._langfuse_tracer is not None:
             draft = state.get("draft")
-            draft_body = draft.body if draft is not None else ""
-            self._feedback_tracker.record(
-                email.correlation_id,
-                draft_body,
-                approved_body,
-                self._langfuse_tracer,
-            )
+            trace_id = draft.langfuse_trace_id if draft is not None else None
+            if status == "approved" and approved_body:
+                self._feedback_tracker.record(
+                    email.correlation_id,
+                    draft.body if draft is not None else "",
+                    approved_body,
+                    self._langfuse_tracer,
+                    trace_id=trace_id,
+                )
+            elif status == "rejected":
+                self._feedback_tracker.record_rejection(
+                    email.correlation_id,
+                    self._langfuse_tracer,
+                    trace_id=trace_id,
+                    reason=review.reviewer_note if review else None,
+                )
         return {
             "review": ReviewStatus(
                 correlation_id=email.correlation_id,

@@ -13,6 +13,7 @@ from langfuse.decorators import langfuse_context, observe
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.services.semantic_chunking import semantic_chunk
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import log_token_usage
 from backend.infrastructure.repositories.chunk_repository import ChunkRepository
 from backend.infrastructure.repositories.embedding_repository import EmbeddingRepository
 
@@ -104,6 +105,10 @@ class EmbeddingClient:
             input=truncate_for_embedding(text),
             model=self._model,
         )
+        if self._tracing:
+            usage = getattr(response, "usage", None)
+            if usage is not None:
+                log_token_usage(usage.prompt_tokens)
         return list(response.data[0].embedding)
 
 

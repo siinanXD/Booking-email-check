@@ -21,6 +21,9 @@ class GeneratedResponse(BaseModel):
     completion_tokens: int = 0
     grounding_ok: bool = True
     created_at: datetime = Field(default_factory=_utc_now)
+    # Langfuse-Trace der Draft-Generation; ermöglicht später Review-Scores auf
+    # genau diesen Trace (überlebt den Human-Interrupt im Workflow-State).
+    langfuse_trace_id: str | None = None
 
 
 class ReviewStatus(BaseModel):

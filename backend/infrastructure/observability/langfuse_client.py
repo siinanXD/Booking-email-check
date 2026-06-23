@@ -14,6 +14,7 @@ __all__ = [
     "LangfuseTracer",
     "configure_langfuse_env",
     "log_mail_cost",
+    "log_token_usage",
     "tracing_enabled",
 ]
 
@@ -53,6 +54,21 @@ class LangfuseTracer:
             value=value,
             comment=comment,
         )
+
+
+def log_token_usage(prompt_tokens: int, completion_tokens: int = 0) -> None:
+    """Hängt Token-Usage an die laufende @observe-Generation.
+
+    Übergibt ausschließlich Token-Zahlen (kein Prompt-/Antworttext, PII-sicher).
+    Langfuse berechnet daraus die Kosten für alle Modelle, deren Preise es kennt.
+    """
+    langfuse_context.update_current_observation(
+        usage_details={
+            "input": prompt_tokens,
+            "output": completion_tokens,
+            "total": prompt_tokens + completion_tokens,
+        }
+    )
 
 
 def log_mail_cost(correlation_id: str, usage: dict[str, float | int]) -> None:

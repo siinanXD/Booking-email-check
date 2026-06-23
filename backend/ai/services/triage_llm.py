@@ -12,6 +12,7 @@ from backend.ai.services.llm_errors import LLM_PIPELINE_ERRORS, notify_llm_failu
 from backend.ai.services.prompt_loader import format_resolved_prompt
 from backend.core.models.email import IncomingEmail
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import log_token_usage
 from backend.infrastructure.observability.mail_cost import MailCostTracker
 
 
@@ -60,6 +61,8 @@ class TriageLlmService:
             completion = self._llm.complete(prompt, self._model, temperature=0.0)
             if self._mail_cost is not None:
                 self._mail_cost.add(email.correlation_id, completion)
+            if self._tracing:
+                log_token_usage(completion.prompt_tokens, completion.completion_tokens)
             slug = completion.text.strip().lower().replace(" ", "_")
             if slug == "relevant":
                 return TriageResult(

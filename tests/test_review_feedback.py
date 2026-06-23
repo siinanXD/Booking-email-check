@@ -25,6 +25,10 @@ class _MockTracer(LangfuseTracer):
         self.scores.append((trace_id, name, value))
 
 
+def _scores_named(tracer: _MockTracer, name: str) -> list[tuple[str, str, float]]:
+    return [s for s in tracer.scores if s[1] == name]
+
+
 def test_identical_text_zero_distance() -> None:
     """Identischer Text ergibt Edit-Distanz 0.0."""
     tracer = _MockTracer()
@@ -67,3 +71,32 @@ def test_high_edit_distance_triggers_alert(caplog) -> None:
     )
     assert distance > 0.4
     assert any("draft_quality_low" in r.message for r in caplog.records)
+
+
+def test_approval_logs_human_review_score_on_trace_id() -> None:
+    """Freigabe loggt human_review=1.0 an die Draft-Trace, nicht correlation_id."""
+    tracer = _MockTracer()
+    text = "Sehr geehrter Gast, danke für Ihre Nachricht."
+    ReviewFeedbackTracker().record("corr-5", text, text, tracer, trace_id="trace-abc")
+    review = _scores_named(tracer, "human_review")
+    assert review == [("trace-abc", "human_review", 1.0)]
+    # Edit-Distanz hängt ebenfalls an der echten Trace-ID
+    assert _scores_named(tracer, "draft_edit_distance")[0][0] == "trace-abc"
+
+
+def test_rejection_logs_human_review_zero() -> None:
+    """Ablehnung loggt human_review=0.0 (ohne Edit-Distanz)."""
+    tracer = _MockTracer()
+    ReviewFeedbackTracker().record_rejection(
+        "corr-6", tracer, trace_id="trace-xyz", reason="Ton unpassend"
+    )
+    assert _scores_named(tracer, "human_review") == [("trace-xyz", "human_review", 0.0)]
+    assert _scores_named(tracer, "draft_edit_distance") == []
+
+
+def test_record_falls_back_to_correlation_id_without_trace() -> None:
+    """Ohne trace_id bleibt das Altverhalten (correlation_id als Ziel)."""
+    tracer = _MockTracer()
+    text = "Hallo, alles klar."
+    ReviewFeedbackTracker().record("corr-7", text, text, tracer)
+    assert all(s[0] == "corr-7" for s in tracer.scores)
