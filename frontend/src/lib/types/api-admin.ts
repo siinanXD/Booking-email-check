@@ -206,3 +206,15 @@ export interface AdminLlmPromptHistoryResponse {
   prompt_type: AdminLlmPromptType;
   entries: AdminLlmPromptHistoryEntry[];
 }
+
+export interface AdminAuditLogEntry {
+  id: string;
+  action: string;
+  user_id: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AdminAuditLogResponse {
+  items: AdminAuditLogEntry[];
+}

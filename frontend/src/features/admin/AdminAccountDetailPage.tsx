@@ -10,6 +10,7 @@ import { ActivityBadge } from "@/features/admin/components/ActivityBadge";
 import { AdminAccountActions } from "@/features/admin/components/AdminAccountActions";
 import { DbCountsBarChart } from "@/features/admin/components/charts/DbCountsBarChart";
 import { Card } from "@/shared/ui/Card";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { formatTs } from "@/lib/format";
 
 function formatUsd(value: number): string {
@@ -20,6 +21,7 @@ export function AdminAccountDetailPage() {
   const { accountId } = useParams<{ accountId: string }>();
   const qc = useQueryClient();
   const [resetPw, setResetPw] = useState<{ userId: string; value: string } | null>(null);
+  const [confirmDelUser, setConfirmDelUser] = useState<{ id: string; email: string } | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-account-detail", accountId],
@@ -34,7 +36,13 @@ export function AdminAccountDetailPage() {
     mutationFn: ({ uid, pw }: { uid: string; pw: string }) => resetUserPassword(accountId!, uid, pw),
     onSuccess: () => setResetPw(null),
   });
-  const deleteUserMut = useMutation({ mutationFn: (uid: string) => deleteUser(accountId!, uid), onSuccess: invalidate });
+  const deleteUserMut = useMutation({
+    mutationFn: (uid: string) => deleteUser(accountId!, uid),
+    onSuccess: () => {
+      invalidate();
+      setConfirmDelUser(null);
+    },
+  });
 
   const isSuspended = data?.account.status === "suspended";
 
@@ -183,7 +191,7 @@ export function AdminAccountDetailPage() {
                       </button>
                     )}
                     {/* Delete user */}
-                    <button onClick={() => { if (confirm(`Benutzer ${u.email} löschen?`)) deleteUserMut.mutate(u.id); }}
+                    <button onClick={() => setConfirmDelUser({ id: u.id, email: u.email })}
                       disabled={deleteUserMut.isPending}
                       className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50">
                       Löschen
@@ -226,6 +234,21 @@ export function AdminAccountDetailPage() {
           </a>
         </Card>
       )}
+
+      <ConfirmDialog
+        open={confirmDelUser !== null}
+        title="Benutzer löschen?"
+        message={
+          confirmDelUser
+            ? `Der Benutzer ${confirmDelUser.email} wird unwiderruflich gelöscht.`
+            : ""
+        }
+        confirmLabel="Löschen"
+        tone="danger"
+        loading={deleteUserMut.isPending}
+        onConfirm={() => confirmDelUser && deleteUserMut.mutate(confirmDelUser.id)}
+        onCancel={() => !deleteUserMut.isPending && setConfirmDelUser(null)}
+      />
     </div>
   );
 }

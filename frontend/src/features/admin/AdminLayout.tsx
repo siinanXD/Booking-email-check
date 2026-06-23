@@ -4,6 +4,7 @@ import { Shield } from "lucide-react";
 const adminTabs = [
   { to: "/admin/overview", label: "Übersicht" },
   { to: "/admin/accounts", label: "Mandanten" },
+  { to: "/admin/audit", label: "Audit-Log" },
   { to: "/admin/diagnostics", label: "Diagnose" },
   { to: "/admin/observability", label: "Observability" },
   { to: "/admin/tickets", label: "Tickets" },
@@ -32,14 +33,14 @@ export function AdminLayout() {
 
       {/* Tab navigation */}
       <div className="border-b border-slate-200">
-        <nav className="-mb-px flex flex-wrap gap-0">
+        <nav className="-mb-px flex gap-0 overflow-x-auto">
           {adminTabs.map(({ to, label }) => (
             <NavLink
               key={to}
               to={to}
               end={false}
               className={({ isActive }) =>
-                `relative px-4 py-2.5 text-sm font-medium transition-colors duration-150 ${
+                `relative shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors duration-150 ${
                   isActive
                     ? "text-indigo-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-t after:bg-indigo-600"
                     : "text-slate-500 hover:text-slate-800"

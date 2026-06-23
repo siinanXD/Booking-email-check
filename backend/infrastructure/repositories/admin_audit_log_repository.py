@@ -48,3 +48,8 @@ class AdminAuditLogRepository:
         doc["_id"] = entry_id
         self._col.insert_one(doc)
         return entry
+
+    def list_recent(self, limit: int = 100) -> list[AdminAuditLogEntry]:
+        """Neueste Audit-Einträge (absteigend nach Zeit)."""
+        cursor = self._col.find().sort("created_at", -1).limit(limit)
+        return [AdminAuditLogEntry.model_validate(doc) for doc in cursor]

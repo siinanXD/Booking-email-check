@@ -1,5 +1,7 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { ArrowUpDown } from "lucide-react";
 import { fetchAdminOverview } from "@/lib/api/admin";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
 import { ActivityStatusChart } from "@/features/admin/components/charts/ActivityStatusChart";
@@ -8,6 +10,7 @@ import {
   TenantMailsBarChart,
 } from "@/features/admin/components/charts/TenantMetricsBarChart";
 import { ActivityBadge } from "@/features/admin/components/ActivityBadge";
+import { ErrorState } from "@/shared/components/ErrorState";
 import { StatCard } from "@/shared/components/StatCard";
 import { Card } from "@/shared/ui/Card";
 import { formatTs } from "@/lib/format";
@@ -16,12 +19,86 @@ function formatUsd(value: number): string {
   return `$${value.toFixed(4)}`;
 }
 
+type SortKey = "name" | "cost" | "mails" | "sync";
+
+type TenantRow = {
+  account: { display_name: string; contact_email: string };
+  costs_30d_usd: number;
+  mails_processed_30d: number;
+  last_sync_at: string | null;
+};
+
+function compareTenants(a: TenantRow, b: TenantRow, key: SortKey): number {
+  if (key === "name") {
+    return a.account.display_name.localeCompare(b.account.display_name);
+  }
+  if (key === "cost") return a.costs_30d_usd - b.costs_30d_usd;
+  if (key === "mails") return a.mails_processed_30d - b.mails_processed_30d;
+  return (a.last_sync_at ?? "").localeCompare(b.last_sync_at ?? "");
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: "asc" | "desc" };
+  onSort: (key: SortKey) => void;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(sortKey)}
+      className={`inline-flex items-center gap-1 font-medium ${
+        active ? "text-indigo-600" : "text-slate-500 hover:text-slate-800"
+      }`}
+    >
+      {label}
+      <ArrowUpDown size={12} className={active ? "" : "opacity-40"} aria-hidden />
+      {active && (
+        <span className="sr-only">
+          {sort.dir === "asc" ? "aufsteigend" : "absteigend"}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function AdminOverviewPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-overview"],
     queryFn: fetchAdminOverview,
     refetchInterval: 60_000,
   });
+
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
+    key: "cost",
+    dir: "desc",
+  });
+
+  const toggleSort = (key: SortKey) =>
+    setSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "name" ? "asc" : "desc" }
+    );
+
+  const visibleTenants = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const rows = (data?.tenants ?? []).filter(
+      (t) =>
+        !q ||
+        t.account.display_name.toLowerCase().includes(q) ||
+        t.account.contact_email.toLowerCase().includes(q)
+    );
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => dir * compareTenants(a, b, sort.key));
+  }, [data, search, sort]);
 
   const activeTenantCostSum =
     data?.tenants.reduce((sum, t) => sum + t.costs_30d_usd, 0) ?? 0;
@@ -34,11 +111,7 @@ export function AdminOverviewPage() {
   }
 
   if (error || !data) {
-    return (
-      <Card>
-        <p className="text-sm text-red-600">Übersicht konnte nicht geladen werden.</p>
-      </Card>
-    );
+    return <ErrorState message="Übersicht konnte nicht geladen werden." />;
   }
 
   return (
@@ -93,27 +166,47 @@ export function AdminOverviewPage() {
 
       <Card className="overflow-x-auto">
         <h2 className="mb-1 text-lg font-medium text-slate-900">Mandanten im Detail</h2>
-        <p className="mb-4 text-xs text-slate-500">
-          Sortiert nach Kosten — „Details“ öffnet DB-Counts, Benutzer und Postfach-Status
+        <p className="mb-3 text-xs text-slate-500">
+          Spaltenkopf klicken zum Sortieren — „Details“ öffnet DB-Counts, Benutzer und Postfach-Status
         </p>
+        <div className="mb-4 max-w-sm">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Mandant suchen (Name oder E-Mail)…"
+            aria-label="Mandant suchen"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          />
+        </div>
         {data.tenants.length === 0 ? (
           <p className="text-sm text-slate-500">Keine aktiven Mandanten.</p>
+        ) : visibleTenants.length === 0 ? (
+          <p className="text-sm text-slate-500">Keine Treffer für die Suche.</p>
         ) : (
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500">
-                <th scope="col" className="pb-2 pr-4 font-medium">Name</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">
+                  <SortHeader label="Name" sortKey="name" sort={sort} onSort={toggleSort} />
+                </th>
                 <th scope="col" className="pb-2 pr-4 font-medium">Aktivität</th>
-                <th scope="col" className="pb-2 pr-4 font-medium">Kosten 30d</th>
-                <th scope="col" className="pb-2 pr-4 font-medium">Mails 30d</th>
-                <th scope="col" className="pb-2 pr-4 font-medium">Letzter Sync</th>
+                <th scope="col" className="pb-2 pr-4 font-medium">
+                  <SortHeader label="Kosten 30d" sortKey="cost" sort={sort} onSort={toggleSort} />
+                </th>
+                <th scope="col" className="pb-2 pr-4 font-medium">
+                  <SortHeader label="Mails 30d" sortKey="mails" sort={sort} onSort={toggleSort} />
+                </th>
+                <th scope="col" className="pb-2 pr-4 font-medium">
+                  <SortHeader label="Letzter Sync" sortKey="sync" sort={sort} onSort={toggleSort} />
+                </th>
                 <th scope="col" className="pb-2 font-medium">
                   <span className="sr-only">Aktionen</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {data.tenants.map((row) => (
+              {visibleTenants.map((row) => (
                 <tr key={row.account.id} className="border-b border-slate-100">
                   <td className="py-3 pr-4">
                     <div className="font-medium text-slate-900">

@@ -161,6 +161,10 @@ class UserRepository:
             users.append(self._from_doc(doc))
         return users
 
+    def count_by_role(self, role: UserRole) -> int:
+        """Anzahl der Benutzer mit einer bestimmten Rolle."""
+        return self._col.count_documents({"role": role})
+
     @staticmethod
     def _from_doc(doc: dict[str, Any]) -> UserRecord:
         payload = {k: v for k, v in doc.items() if k != "_id"}

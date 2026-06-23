@@ -26,6 +26,13 @@ from backend.api.services.admin_overview_queries import (
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
 
+def _append_audit(action: str, **details: Any) -> None:
+    """Schreibt einen Audit-Eintrag mit dem aktuellen Admin als Akteur."""
+    current = getattr(g, "current_user", None)
+    actor = current.get("id") if isinstance(current, dict) else None
+    g.ctx.admin_audit_log_repo.append(action, user_id=actor, details=details)
+
+
 @admin_bp.get("/me")
 @require_auth
 @require_platform_admin
@@ -111,6 +118,7 @@ def approve_account(account_id: str) -> tuple[Any, int]:
     updated = g.ctx.account_repo.update_status(account_id, "active")
     if updated is None:
         return jsonify({"error": "Account not found", "code": 404}), 404
+    _append_audit("account.approve", account_id=account_id)
     return (
         jsonify(
             AccountActionResponse(
@@ -139,6 +147,7 @@ def reject_account(account_id: str) -> tuple[Any, int]:
     )
     if updated is None:
         return jsonify({"error": "Account not found", "code": 404}), 404
+    _append_audit("account.reject", account_id=account_id, reason=body.reason)
     return (
         jsonify(
             AccountActionResponse(
@@ -149,6 +158,20 @@ def reject_account(account_id: str) -> tuple[Any, int]:
         ),
         200,
     )
+
+
+@admin_bp.get("/audit-log")
+@require_auth
+@require_platform_admin
+def audit_log() -> tuple[Any, int]:
+    """Neueste Plattform-Admin-Aktionen (Audit-Trail)."""
+    try:
+        limit = int(request.args.get("limit", 100))
+    except ValueError:
+        limit = 100
+    limit = max(1, min(limit, 500))
+    entries = g.ctx.admin_audit_log_repo.list_recent(limit)
+    return jsonify({"items": [e.model_dump(mode="json") for e in entries]}), 200
 
 
 def _parse_days(default: int = 30) -> int:

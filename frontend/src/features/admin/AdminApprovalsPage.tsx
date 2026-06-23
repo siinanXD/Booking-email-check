@@ -10,6 +10,7 @@ import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
+import { ErrorState } from "@/shared/components/ErrorState";
 import { toast } from "@/shared/feedback/toastStore";
 import type { AccountListItem } from "@/lib/types/api";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
@@ -86,13 +87,33 @@ function AccountRow({
   );
 }
 
+const STATUS_OPTIONS = [
+  { value: "", label: "Alle Status" },
+  { value: "pending", label: "Ausstehend" },
+  { value: "active", label: "Aktiv" },
+  { value: "suspended", label: "Gesperrt" },
+  { value: "rejected", label: "Abgelehnt" },
+];
+
 export function AdminApprovalsPage() {
   const queryClient = useQueryClient();
   const [showAll, setShowAll] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: showAll ? ["admin-accounts", "all"] : ["admin-accounts", "pending"],
     queryFn: showAll ? fetchAllAccounts : fetchPendingAccounts,
+  });
+
+  const q = search.trim().toLowerCase();
+  const filteredItems = (data?.items ?? []).filter((a) => {
+    const matchesSearch =
+      !q ||
+      a.display_name.toLowerCase().includes(q) ||
+      a.contact_email.toLowerCase().includes(q);
+    const matchesStatus = !showAll || !statusFilter || a.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   const mutation = useMutation({
@@ -147,6 +168,31 @@ export function AdminApprovalsPage() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[220px] flex-1">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Suche (Name oder E-Mail)…"
+            aria-label="Mandanten suchen"
+          />
+        </div>
+        {showAll && (
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Nach Status filtern"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value || "all"} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
       {showAll && data?.items && data.items.length > 0 && (
         <div className="max-w-md">
           <AccountStatusChart accounts={data.items} />
@@ -155,13 +201,11 @@ export function AdminApprovalsPage() {
 
       {isLoading && <p className="text-sm text-slate-500">Lade…</p>}
       {error && (
-        <p className="text-sm text-red-600">
-          Freischaltungen konnten nicht geladen werden.
-        </p>
+        <ErrorState message="Freischaltungen konnten nicht geladen werden." />
       )}
 
       <div className="space-y-3">
-        {data?.items.map((account) => (
+        {filteredItems.map((account) => (
           <AccountRow
             key={account.id}
             account={account}
@@ -174,12 +218,14 @@ export function AdminApprovalsPage() {
             }
           />
         ))}
-        {data && data.items.length === 0 && (
+        {data && filteredItems.length === 0 && (
           <Card>
             <p className="text-sm text-slate-500">
-              {showAll
-                ? "Keine Accounts vorhanden."
-                : "Keine ausstehenden Freischaltungen."}
+              {(data.items.length > 0)
+                ? "Keine Treffer für die aktuelle Suche/Filterung."
+                : showAll
+                  ? "Keine Accounts vorhanden."
+                  : "Keine ausstehenden Freischaltungen."}
             </p>
           </Card>
         )}
