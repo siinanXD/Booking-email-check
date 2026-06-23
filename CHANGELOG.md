@@ -1,6 +1,21 @@
 # CHANGELOG
 
 
+## v0.28.1 (2026-06-23)
+
+### Bug Fixes
+
+- **health**: 503 nur bei DB-Ausfall, poll_stale nur als Feld
+  ([`61e9303`](https://github.com/siinanXD/Booking-email-check/commit/61e93037aaf5865bbb2598fc7eb470d2b1ae5dab))
+
+Der Docker-HEALTHCHECK (curl /health) + Railway-Restart-Policy hätten bei hängendem Polling
+  (poll_stale → 503) einen Container-Neustart-Loop ausgelöst. /health liefert 503 jetzt
+  ausschließlich bei nicht erreichbarer DB (echte Liveness); poll_stale bleibt ein Feld
+  (status=degraded) fürs externe Monitoring.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+
 ## v0.28.0 (2026-06-23)
 
 ### Chores
