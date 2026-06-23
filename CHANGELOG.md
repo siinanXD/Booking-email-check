@@ -1,6 +1,74 @@
 # CHANGELOG
 
 
+## v0.26.0 (2026-06-23)
+
+### Bug Fixes
+
+- **scripts**: Reindex-dry-run zählt Purges nicht mehr als "indexiert"
+  ([`ddb4c13`](https://github.com/siinanXD/Booking-email-check/commit/ddb4c1349c112a403e27b0144368e57ff24c7d2c))
+
+Im --dry-run wurde processed für index- UND purge-Vorschauen erhöht, sodass der Bericht "N
+  indexiert, 0 gepurged" zeigte, obwohl Mails gepurged würden. Jetzt getrennt gezählt. (Die
+  vectorSearchScore-Projektion liefert korrekt Scores — verifiziert gegen Prod, kein Fix nötig.)
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Continuous Integration
+
+- **security**: Dependency-/secret-scanning (pip-audit, bandit, npm audit, Dependabot)
+  ([`a420706`](https://github.com/siinanXD/Booking-email-check/commit/a420706463da285f82e7ae7bbcc4c4616c614d7f))
+
+Supply-Chain-Lücke für eine Auth+PII-SaaS geschlossen: neuer security-Job mit pip-audit
+  (Abhängigkeits-CVEs) und bandit (Code-Sicherheit), npm audit im Frontend-Job, plus
+  .github/dependabot.yml (wöchentlich pip/npm/github-actions). Scans starten nicht-blockierend
+  (continue-on-error), bis der Bestand sauber ist — dann scharf schalten.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Features
+
+- **observability**: Sentry-error-tracking (opt-in, PII-maskiert)
+  ([`ee1060c`](https://github.com/siinanXD/Booking-email-check/commit/ee1060cb0eae4a766255cd0907532c911abb5bff))
+
+Pipeline- und Polling-Fehler verschwanden bisher in den Railway-Logs. sentry-sdk wird früh in
+  create_app initialisiert — nur wenn SENTRY_DSN gesetzt ist (lokal/ Tests neutral). before_send
+  maskiert E-Mail/Telefon (mask_pii), send_default_pii ist aus. Settings SENTRY_DSN +
+  SENTRY_TRACES_SAMPLE_RATE.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Performance Improvements
+
+- **workflow**: Extraktion für klar nicht-buchungsbezogene Mails überspringen
+  ([`a8e2ed2`](https://github.com/siinanXD/Booking-email-check/commit/a8e2ed2814bac88d1e6f63694feb4a67cbbf886d))
+
+graph.add_edge("classify","extract") war unbedingt — nach intent=OTHER lief die Extraktion
+  (LLM-Call) trotzdem, verworfen wurde erst nach der Validierung. Neue Conditional-Edge
+  after_classify (analog after_validate) verwirft intent=OTHER ohne Rettungssignale direkt nach der
+  Klassifikation (DISCARDED, not_booking_pre_extract) und spart so den Extraktions-LLM-Call für
+  Marketing/ Newsletter/Kalender. Informelle Buchungsanfragen bleiben sicher: extrahiert wird weiter
+  bei has_reservation_request_signals / is_probable_booking_mail / infer_beds24_intent — exakt die
+  Signale, die enrich_extraction später als Buchung wertet.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Testing
+
+- **eval**: Golden-set um 20 harte Live-Fälle erweitern (echte Qualitätsmessung)
+  ([`993a13c`](https://github.com/siinanXD/Booking-email-check/commit/993a13c0000aa85d86e46aca436629f4888734a9))
+
+10 triviale Fälle bei 100% sagten nichts aus. Neue cases_live.json mit 20 realistischen Edge-Cases
+  (Beds24/Relay-Absender, mehrsprachig IT/FR, generischer property_name, informelle Anfragen,
+  Marketing/Kalender/Bestellung als other, fehlende Felder). Nur im Live-Modus evaluiert (MockLLM
+  kann sie nicht reproduzieren) — der Mock-Lauf bleibt das 100%-Verdrahtungs-Gate auf den Basis-10.
+
+Live-Baseline (gpt-4o-mini, 30 Fälle): classify 0.93, extraction 0.99. Aufgedeckt: informelle
+  Anfrage→guest_inquiry, italienische Bestätigung→cancellation (Kandidaten für Prompt-Verbesserung).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+
 ## v0.25.0 (2026-06-23)
 
 ### Features
