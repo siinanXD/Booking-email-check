@@ -199,6 +199,11 @@ class Settings(BaseSettings):
     )
     mail_poll_run_once: bool = Field(default=False, alias="MAIL_POLL_RUN_ONCE")
     mail_poll_max_workers: int = Field(default=1, alias="MAIL_POLL_MAX_WORKERS")
+    # true = Web-Dyno startet den Poll-Thread (Default, keine Regression).
+    # In Produktion mit mehreren Gunicorn-Workern auf false setzen und einen
+    # separaten Worker-Prozess (scripts/run_mail_poll_loop.py) laufen lassen —
+    # sonst pollt JEDER Worker und jeder Account wird mehrfach gepollt.
+    mail_poll_in_web: bool = Field(default=True, alias="MAIL_POLL_IN_WEB")
     poll_heartbeat_stale_seconds: int = Field(
         default=900, alias="POLL_HEARTBEAT_STALE_SECONDS"
     )
