@@ -14,7 +14,7 @@ dependencies = [
     "langgraph-checkpoint-mongodb==0.1.4",
     "langchain==0.3.30",
     "langchain-openai==0.2.14",
-    "openai==1.109.1",
+    "openai==2.43.0",
     "tiktoken==0.13.0",
     "pymongo==4.12.1",
     "langfuse==2.60.10",
