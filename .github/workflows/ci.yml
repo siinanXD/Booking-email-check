@@ -40,6 +40,31 @@ jobs:
       - name: Max file lines (300)
         run: python scripts/check_max_file_lines.py
 
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.11 einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Nicht-blockierend (continue-on-error), bis der Bestand sauber ist —
+      # dann scharf schalten, sonst blockiert ein Alt-CVE sofort alle PRs.
+      - name: pip-audit (Abhaengigkeits-CVEs)
+        continue-on-error: true
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip install -e .
+          pip-audit --desc
+
+      - name: Bandit (Code-Sicherheit)
+        continue-on-error: true
+        run: |
+          pip install bandit
+          bandit -r backend -ll
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -60,3 +85,7 @@ jobs:
           npm ci
           npm test
           npm run build
+
+      - name: npm audit (High)
+        continue-on-error: true
+        run: npm audit --audit-level=high
