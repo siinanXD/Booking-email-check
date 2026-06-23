@@ -30,6 +30,9 @@ if TYPE_CHECKING:
         MailSummaryRepository,
     )
     from backend.infrastructure.repositories.mongo import Db
+    from backend.infrastructure.repositories.notification_repository import (
+        NotificationRepository,
+    )
     from backend.infrastructure.repositories.outlook_oauth_flow_repository import (
         OutlookOAuthFlowRepository,
     )
@@ -92,5 +95,6 @@ class AppContext:
     tenant_learned_examples_repo: TenantLearnedExamplesRepository
     support_ticket_repo: SupportTicketRepository
     platform_admin_config_repo: PlatformAdminConfigRepository
+    notification_repo: NotificationRepository
     indexing_service: IndexingService | None = None
     gemini_client: GeminiClientProtocol | None = None

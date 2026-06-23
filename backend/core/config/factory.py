@@ -294,6 +294,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         tenant_learned_examples_repo=tenant_learned_examples_repo,
         support_ticket_repo=support_ticket_repo,
         platform_admin_config_repo=platform_admin_config_repo,
+        notification_repo=notification_repo,
         indexing_service=indexing,
         gemini_client=gemini_client,
     )
