@@ -17,6 +17,7 @@ from backend.ai.services.prompt_loader import format_resolved_prompt_with_few_sh
 from backend.core.models.email import StoredEmail
 from backend.core.utils.pii import mask_pii
 from backend.infrastructure.observability.alerts import AlertService
+from backend.infrastructure.observability.langfuse_client import log_token_usage
 from backend.infrastructure.observability.mail_cost import MailCostTracker
 from backend.infrastructure.repositories.platform_llm_config_repository import (
     PlatformLlmConfigRepository,
@@ -96,6 +97,8 @@ class ExtractionService:
             )
             if self._mail_cost is not None:
                 self._mail_cost.add(email.correlation_id, completion)
+            if self._tracing:
+                log_token_usage(completion.prompt_tokens, completion.completion_tokens)
             data = self._parse_json(completion.text)
         except LLM_PIPELINE_ERRORS as exc:
             notify_llm_failure(
