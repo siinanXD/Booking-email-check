@@ -46,12 +46,3 @@ export async function fetchEmailActivity(
   );
   return data;
 }
-
-export async function fetchBookings(
-  params: Omit<EmailListParams, "intent"> = {}
-): Promise<EmailListResponse> {
-  const { data } = await apiClient.get<EmailListResponse>("/api/bookings/", {
-    params,
-  });
-  return data;
-}

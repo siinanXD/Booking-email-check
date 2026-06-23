@@ -148,18 +148,21 @@ export function DashboardPage() {
             hint={loading ? "Laden…" : `${stats!.booking_emails_total} gesamt · ${stats!.total_emails_today} heute`}
             icon={<Mail size={20} />}
             tone="indigo"
+            to="/inbox?intent=new_booking"
           />
           <StatCard
             title="Neue Buchungen"
             value={loading ? dash : stats!.new_bookings_today}
             icon={<CalendarCheck size={20} />}
             tone="success"
+            to="/inbox?intent=new_booking"
           />
           <StatCard
             title="Review ausstehend"
             value={loading ? dash : stats!.pending_review}
             highlight={!loading && stats!.pending_review > 0}
             icon={<AlertTriangle size={20} />}
+            to="/review"
           />
           <StatCard
             title="Geprüft heute"
@@ -167,6 +170,7 @@ export function DashboardPage() {
             hint="freigegeben oder abgelehnt"
             icon={<CheckCircle2 size={20} />}
             tone="success"
+            to="/review?tab=released"
           />
         </div>
       </div>
@@ -180,17 +184,20 @@ export function DashboardPage() {
             value={loading ? dash : stats!.cancellations_today}
             icon={<XCircle size={20} />}
             tone={!loading && stats!.cancellations_today > 0 ? "danger" : "default"}
+            to="/inbox?intent=cancellation"
           />
           <StatCard
             title="Änderungen heute"
             value={loading ? dash : stats!.changes_today}
             icon={<RefreshCw size={20} />}
             tone="info"
+            to="/inbox?intent=change"
           />
           <StatCard
             title="Freigegeben heute"
             value={loading ? dash : stats!.processed_today}
             icon={<Inbox size={20} />}
+            to="/review?tab=released"
           />
           <StatCard
             title="Spam verworfen"

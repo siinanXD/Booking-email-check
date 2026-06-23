@@ -44,6 +44,17 @@ export function DateRangeFilter({ value, onChange }: Props) {
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={() => onChange({ fromDate: "", toDate: "" })}
+          className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
+            !value.fromDate && !value.toDate
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          Alle
+        </button>
       </div>
 
       {/* Custom range */}

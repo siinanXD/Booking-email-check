@@ -455,6 +455,12 @@ Bestehend: `tests/web/test_admin_overview.py::test_admin_metrics_costs_cross_ten
 
 ## Phase 9 — Review-Navigation aufteilen (Review · Ground Zero · Abgeschlossen)
 
+> ⚠️ **Überholt durch Phase 13 (2026-06).** Die hier beschriebene Aufteilung in drei
+> Sidebar-Einträge (`/review`, `/ground-zero`, `/completed`) wurde wieder zu **einer**
+> Review-Seite mit vier Tabs zusammengeführt (`Ausstehend · Freigegeben · Abgeschlossen ·
+> Grounding`). Die Routen `/ground-zero` und `/completed` leiten jetzt auf
+> `/review?tab=…` um. Der historische Abschnitt bleibt zur Nachvollziehbarkeit erhalten.
+
 **Ziel:** Die Sidebar trennt den Human-Review-Workflow in **eigene Navigationspunkte**, statt alles unter einem `/review` mit internen Tabs und einem versteckten `?grounding=1`-Filter.
 
 **Ist-Zustand (Problem):**
@@ -602,6 +608,11 @@ Nach `complete` nur noch unter **Abgeschlossen** (falls Grounding dann cleared o
 ---
 
 ## Phase 10 — Abgeschlossen: klickbar, Mail-Detail & Arbeitsverlauf
+
+> ⚠️ **Teilweise überholt durch Phase 13 (2026-06).** Detail-Ansicht und Arbeitsverlauf
+> bleiben erhalten, leben aber jetzt im Tab **„Abgeschlossen"** der konsolidierten
+> Review-Seite ([`ReviewActionPanel.tsx`](../frontend/src/features/review/ReviewActionPanel.tsx))
+> statt in einer eigenen `CompletedPage.tsx`.
 
 **Ziel:** Unter **`/completed`** kann der User einen Eintrag **anklicken** und sieht dieselben
 Detail-Infos wie in der Review-Queue: Buchungsnummer, Extraktion, Entwurf, ggf. Langfuse —
@@ -931,6 +942,42 @@ RERANK_MODEL=...                # provider-spezifisch
 
 ---
 
+## Phase 13 — Navigation konsolidiert (Review-Tabs + Posteingang)
+
+**Ziel:** Die Tenant-Navigation kompakter und selbsterklärender machen. Frühere Aufteilungen
+(Phase 9: drei Review-Seiten; vier separate Mail-Kategorieseiten) versteckten Daten in
+schwer auffindbaren Rubriken — typisches Symptom: „Abgeschlossen ist leer", obwohl der
+Vorgang nur im Status `released` hing.
+
+**Ergebnis (Sidebar: 10 → 5 Tenant-Einträge):**
+
+```text
+Dashboard · Posteingang · Unterkünfte · Support · Review
+```
+
+### 13.1 Review — eine Seite, vier Tabs
+
+- [x] `ReviewQueuePage.tsx` mit Tabs **Ausstehend · Freigegeben · Abgeschlossen · Grounding** (mit Zähler-Badges)
+- [x] Aufgeteilt in `ReviewList.tsx` (Liste) + `ReviewActionPanel.tsx` (Detail + tab-abhängige Aktionen inkl. Arbeitsverlauf)
+- [x] Tab/Filter im URL (`/review?tab=…&intent=…`) → deeplinkbar
+- [x] `GroundZeroPage.tsx` und `CompletedPage.tsx` entfernt; `/ground-zero` → `/review?tab=grounding`, `/completed` → `/review?tab=completed`
+
+### 13.2 Posteingang — eine Seite, Intent-Tabs
+
+- [x] `InboxPage.tsx` mit Tabs **Alle · Buchungen · Stornos · Änderungen · Nachrichten** (Zähler aus `nav_*`-KPIs)
+- [x] Vereinheitlicht auf `GET /api/emails` mit `intent`-Filter (separater `/api/bookings`-Aufruf im Frontend entfällt)
+- [x] `BookingsPage`/`CancellationsPage`/`ChangesPage`/`MessagesPage` + `EmailListPage` entfernt; alte Routen leiten auf `/inbox?intent=…` um
+
+### 13.3 Date-Filter sichtbar & KPIs klickbar
+
+- [x] `DateRangeFilter.tsx`: Preset **„Alle"** (hebt den stillen 30-Tage-Default auf)
+- [x] Leere Liste nennt den **aktiven Zeitraum** + Button „Alle anzeigen"
+- [x] Dashboard-`StatCard`s verlinken (`to=`) in die gefilterte Inbox/Review-Ansicht
+
+**Kerndateien:** `ReviewQueuePage.tsx`, `ReviewList.tsx`, `ReviewActionPanel.tsx`, `InboxPage.tsx`, `DateRangeFilter.tsx`, `DashboardPage.tsx`, `useSidebarNav.ts`, `App.tsx`
+
+---
+
 ## Weitere Roadmap-Punkte (Platzhalter)
 
 | ID | Feature | Status |
@@ -938,11 +985,12 @@ RERANK_MODEL=...                # provider-spezifisch
 | 6 | Support-Tickets + Admin-WhatsApp | [x] erledigt (1 manueller Meta-Template-Schritt offen) |
 | 7 | Erst-Import: Anker + 50 Lookback | [x] erledigt (1 optionaler Onboarding-Hinweis offen) |
 | 8 | Admin-Kosten: Gesamt + pro Mandant verifizieren | [x] erledigt |
-| 9 | Review-Nav: Review / Ground Zero / Abgeschlossen | [x] erledigt |
-| 10 | Abgeschlossen: Detail + Arbeitsverlauf | [x] erledigt |
+| 9 | Review-Nav: Review / Ground Zero / Abgeschlossen | [x] erledigt — **überholt durch 13** |
+| 10 | Abgeschlossen: Detail + Arbeitsverlauf | [x] erledigt (jetzt Review-Tab, siehe 13) |
 | 11 | Unterkünfte: Tage/Umsatz, KI-Anlegen, Profil | [x] erledigt (1 optionaler Feature-Flag offen) |
 | 12 | Semantisches Chunking | [x] erledigt (RAM-Endlosschleife gefixt) |
 | 12 | Re-Ranking (`reranking.py`) | [ ] offen — bewusst zurückgestellt (siehe AGENTS.md) |
+| 13 | Navigation konsolidiert (Review-Tabs + Posteingang) | [x] erledigt |
 | — | Custom-Workflow: Draft + Review nach Validierung | [ ] siehe `docs/PR_STEP_4_5.md` |
 | — | Auto-Versand Buchungs-Antworten | [ ] bewusst ausgeschlossen (Human Review) |
 | — | Atlas Vector Search Produktion | [~] `SIMILARITY_USE_ATLAS`; In-Memory-Fallback entfernt (RAM-Schutz) |
