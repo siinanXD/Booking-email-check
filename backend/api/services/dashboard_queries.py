@@ -17,8 +17,12 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
     now = datetime.now(UTC)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=7)
+    # Matches the booking lists' default date filter (last 30 days) so the
+    # sidebar nav badges agree with what the list shows by default.
+    window_start = today_start - timedelta(days=30)
     today_iso = today_start.isoformat()
     week_iso = week_start.isoformat()
+    window_iso = window_start.isoformat()
 
     email_repo = ctx.email_repo
     metrics_repo = ctx.metrics_repo
@@ -48,6 +52,7 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
         account_id=account_id,
         today_iso=today_iso,
         week_iso=week_iso,
+        window_iso=window_iso,
     )
     nav_completed = ctx.review_repo.count_by_status_since(
         ["completed"],
@@ -98,14 +103,16 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
         last_email_received_at=last_email_received_at,
         last_booking_detected_at=last_booking_detected_at,
         mail_fetch_unread_only=ctx.settings.outlook_fetch_unread_only,
-        nav_bookings=booking_stats.intents_all.get(BookingIntent.NEW_BOOKING.value, 0),
-        nav_cancellations=booking_stats.intents_all.get(
+        nav_bookings=booking_stats.intents_window.get(
+            BookingIntent.NEW_BOOKING.value, 0
+        ),
+        nav_cancellations=booking_stats.intents_window.get(
             BookingIntent.CANCELLATION.value, 0
         ),
-        nav_changes=booking_stats.intents_all.get(BookingIntent.CHANGE.value, 0),
+        nav_changes=booking_stats.intents_window.get(BookingIntent.CHANGE.value, 0),
         nav_messages=(
-            booking_stats.intents_all.get(BookingIntent.GUEST_INQUIRY.value, 0)
-            + booking_stats.intents_all.get(BookingIntent.COMPLAINT.value, 0)
+            booking_stats.intents_window.get(BookingIntent.GUEST_INQUIRY.value, 0)
+            + booking_stats.intents_window.get(BookingIntent.COMPLAINT.value, 0)
         ),
         nav_ground_zero=nav_ground_zero(ctx, account_id),
         nav_completed=nav_completed,

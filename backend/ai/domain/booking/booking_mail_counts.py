@@ -80,6 +80,7 @@ class BookingMailStats:
     booking_week: int = 0
     intents_today: dict[str, int] = field(default_factory=dict)
     intents_all: dict[str, int] = field(default_factory=dict)
+    intents_window: dict[str, int] = field(default_factory=dict)
     latest_booking_received_at: datetime | None = None
 
 
@@ -90,6 +91,7 @@ def aggregate_booking_mail_stats(
     account_id: str | None,
     today_iso: str,
     week_iso: str,
+    window_iso: str | None = None,
 ) -> BookingMailStats:
     """Einzelner Scan: alle KPIs + letzte Buchungs-Mail."""
     emails = email_repo if isinstance(email_repo, EmailRepository) else None
@@ -127,6 +129,8 @@ def aggregate_booking_mail_stats(
         eff = effective_booking_intent(email, ext)
         key = eff.value if eff else "heuristic"
         stats.intents_all[key] = stats.intents_all.get(key, 0) + 1
+        if received_iso and (window_iso is None or received_iso >= window_iso):
+            stats.intents_window[key] = stats.intents_window.get(key, 0) + 1
         if received_iso and received_iso >= today_iso:
             stats.intents_today[key] = stats.intents_today.get(key, 0) + 1
 
