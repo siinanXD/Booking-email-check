@@ -22,7 +22,11 @@ from backend.ai.services.validation import ValidationService
 from backend.ai.workflows.checkpointer import clear_thread_checkpoints
 from backend.ai.workflows.helpers import finalize_mail_cost
 from backend.ai.workflows.nodes.pipeline import WorkflowNodes
-from backend.ai.workflows.routing import after_ingest, after_validate
+from backend.ai.workflows.routing import (
+    after_classify,
+    after_ingest,
+    after_validate,
+)
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.response import ReviewStatus
 from backend.features.notifications.notification_service import NotificationService
@@ -126,7 +130,11 @@ class EmailWorkflow:
             after_ingest,
             {"end": END, "classify": "classify"},
         )
-        graph.add_edge("classify", "extract")
+        graph.add_conditional_edges(
+            "classify",
+            lambda state: after_classify(state, email_repo=self._email_repo),
+            {"end": END, "extract": "extract"},
+        )
         graph.add_edge("extract", "validate")
         graph.add_conditional_edges(
             "validate",

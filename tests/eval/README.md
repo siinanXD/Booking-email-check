@@ -39,18 +39,17 @@ Trefferquote in der Konsole, z. B.:
 
 ## Eval-Fälle (Stand)
 
-`cases.json` enthält **10** anonymisierte Fälle (`eval-001` … `eval-010`), u. a.:
+Zwei Sets:
+- **`cases.json`** — 10 Verdrahtungs-Fälle (`eval-001…010`). Der `MockLLM` reproduziert
+  sie exakt → der Mock-Lauf bleibt das 100 %-Regressions-Gate (CI).
+- **`cases_live.json`** — 20 realistische **harte** Fälle (`eval-live-001…020`):
+  Beds24/Booking/Airbnb-Relay-Absender, mehrsprachig (IT/FR), generischer `property_name`
+  („Zimmer Nummer 3"), informelle Anfragen, Marketing-/Kalender-/Bestell-Mails als `other`,
+  fehlende Felder. **Nur im Live-Modus** evaluiert (Mock kann sie nicht erzeugen) — sie
+  messen die echte Modellqualität, nicht die Verdrahtung.
 
-| ID | Intent | Schwerpunkt |
-|----|--------|-------------|
-| eval-001 | new_booking | Daten + Gästezahl |
-| eval-002 | cancellation | Buchungsnummer |
-| eval-006 | change | Check-in-Verschiebung |
-| eval-008 | guest_inquiry | Relay-Absender |
-| eval-009 | complaint | Gastname + Buchungsnr. |
-| eval-010 | new_booking | Direktbuchung |
-
-Neue Produktionsmails: JSON-Eintrag ergänzen, Mock-Lauf grün halten, dann optional Live-Baseline.
+Neue Produktionsmails: harten Fall zu `cases_live.json` hinzufügen (Live misst), Verdrahtungs-
+Fall zu `cases.json` nur, wenn der `MockLLM` ihn reproduziert (sonst bricht das Mock-Gate).
 
 ## Live-Baseline (Owner, lokal)
 
@@ -65,13 +64,21 @@ pytest tests/eval/test_offline_eval.py -v -s --no-cov
 Ergebnis (z. B. `field_accuracy`, `case_hit_rate`) hier oder im PR-Kommentar festhalten.
 **Mock=1.0** bedeutet nicht, dass Live=1.0 ist — Live misst Modellqualität.
 
-### Live-Baseline (2026-06-22, `gpt-4o-mini`, 10 Fälle)
+### Live-Baseline (2026-06-23, `gpt-4o-mini`, 30 Fälle = 10 Basis + 20 hart)
 
 | Metrik | Wert |
 |--------|------|
-| Klassifikation `hit_rate` | 1.00 (10/10) |
-| Extraktion `field_accuracy` | 1.00 (23/23 Felder) |
-| Extraktion `case_hit_rate` | 1.00 (9/9 Fälle mit `expected_extraction`) |
+| Klassifikation `hit_rate` | 0.93 (28/30) |
+| Extraktion `field_accuracy` | 0.99 (80/81 Felder) |
+| Extraktion `case_hit_rate` | 0.97 (28/29 Fälle mit `expected_extraction`) |
+
+> Bekannte offene Schwächen (von den harten Fällen aufgedeckt):
+> `eval-live-004` informelle Anfrage „Sind noch Zimmer frei?" → Modell `guest_inquiry` statt
+> `new_booking`; `eval-live-016` italienische Bestätigung „Prenotazione confermata" → Modell
+> `cancellation` statt `new_booking`. Kandidaten für Prompt-/Few-Shot-Verbesserung.
+>
+> Nur Basis-10 (Stand 2026-06-22): classify 1.00, extraction 1.00 — die alte 2026-06-04-Baseline
+> (0.10 / 0.38 / 0.22) war ein veralteter Messstand aus defekter Pipeline-Phase.
 
 > Die frühere Baseline (2026-06-04: 0.10 / 0.38 / 0.22) war ein veralteter Messstand
 > aus einer frühen, defekten Pipeline-Phase und entsprach nicht der Modellqualität.

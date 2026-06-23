@@ -78,6 +78,10 @@ class Settings(BaseSettings):
     rerank_model: str = Field(default="gpt-4o-mini", alias="RERANK_MODEL")
     max_tokens_per_mail: int = Field(default=8000, alias="MAX_TOKENS_PER_MAIL")
     webhook_alert_url: str | None = Field(default=None, alias="WEBHOOK_ALERT_URL")
+    sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
+    sentry_traces_sample_rate: float = Field(
+        default=0.0, alias="SENTRY_TRACES_SAMPLE_RATE"
+    )
     langgraph_checkpoint_uri: str | None = Field(
         default=None,
         alias="LANGGRAPH_CHECKPOINT_URI",

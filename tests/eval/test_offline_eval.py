@@ -38,9 +38,19 @@ def _build_llm() -> MockLLM | OpenAIClient:
 
 @pytest.fixture
 def eval_cases() -> list[dict[str, object]]:
-    """Execute the operation."""
+    """Basis-Fälle (cases.json); im Live-Modus zusätzlich die harten Fälle.
+
+    cases_live.json enthält realistische Edge-Cases (Relay-Absender,
+    mehrsprachig, generische property_name, Marketing-als-other). Der Mock kann
+    sie nicht reproduzieren, daher werden sie nur live evaluiert — der
+    Mock-Lauf (100 %-Gate) bleibt auf den Verdrahtungs-Fällen.
+    """
     path = Path(__file__).parent / "cases.json"
     data: list[dict[str, object]] = json.loads(path.read_text(encoding="utf-8"))
+    if _eval_mode() == "live":
+        live = Path(__file__).parent / "cases_live.json"
+        if live.exists():
+            data += json.loads(live.read_text(encoding="utf-8"))
     return data
 
 
