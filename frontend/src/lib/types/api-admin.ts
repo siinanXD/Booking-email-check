@@ -218,3 +218,31 @@ export interface AdminAuditLogEntry {
 export interface AdminAuditLogResponse {
   items: AdminAuditLogEntry[];
 }
+
+export interface ActivityNotification {
+  id: string;
+  created_at: string;
+  kind: string;
+  recipient_masked: string;
+  status: string;
+  error: string | null;
+  tenant: string | null;
+}
+
+export interface ActivityMail {
+  correlation_id: string;
+  subject: string;
+  intent: string | null;
+  processing_state: string;
+  at: string | null;
+  tenant: string | null;
+}
+
+export interface AdminActivityResponse {
+  generated_at: string;
+  notification_counts_24h: Record<string, number>;
+  notification_counts_7d: Record<string, number>;
+  mail_counts_24h: Record<string, number>;
+  recent_notifications: ActivityNotification[];
+  recent_mails: ActivityMail[];
+}

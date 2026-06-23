@@ -64,6 +64,7 @@ def _ctx(mock_db: object) -> AppContext:
         tenant_learned_examples_repo=TenantLearnedExamplesRepository(mock_db),  # type: ignore[arg-type]
         support_ticket_repo=SupportTicketRepository(mock_db),  # type: ignore[arg-type]
         platform_admin_config_repo=PlatformAdminConfigRepository(mock_db),  # type: ignore[arg-type]
+        notification_repo=None,  # type: ignore[arg-type]
         indexing_service=None,
     )
 

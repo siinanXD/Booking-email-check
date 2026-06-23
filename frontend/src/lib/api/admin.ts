@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import type {
   AccountListResponse,
+  AdminActivityResponse,
   AdminAuditLogResponse,
   AdminAccountDetailResponse,
   AdminCostsMetricsResponse,
@@ -134,6 +135,16 @@ export async function saveAccountWhatsAppTemplates(
   const { data } = await apiClient.put<AdminWhatsAppInfoResponse>(
     `/api/admin/accounts/${accountId}/whatsapp/templates`,
     payload
+  );
+  return data;
+}
+
+export async function fetchAdminActivity(
+  limit = 50
+): Promise<AdminActivityResponse> {
+  const { data } = await apiClient.get<AdminActivityResponse>(
+    "/api/admin/activity",
+    { params: { limit } }
   );
   return data;
 }

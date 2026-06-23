@@ -38,6 +38,21 @@ class NotificationRepository:
         )
         return [NotificationOutboxRecord.model_validate(doc) for doc in cursor]
 
+    def list_recent(self, limit: int = 50) -> list[NotificationOutboxRecord]:
+        """Neueste Outbox-Einträge (absteigend nach Erstellzeit)."""
+        cursor = self._col.find().sort("created_at", -1).limit(limit)
+        return [NotificationOutboxRecord.model_validate(doc) for doc in cursor]
+
+    def count_by_status(self, since_iso: str) -> dict[str, int]:
+        """Zählt Outbox-Einträge je Status seit Zeitstempel (ISO)."""
+        pipeline: list[dict[str, Any]] = [
+            {"$match": {"created_at": {"$gte": since_iso}}},
+            {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+        ]
+        return {
+            str(row["_id"]): int(row["count"]) for row in self._col.aggregate(pipeline)
+        }
+
     def get_by_idempotency_key(
         self,
         idempotency_key: str,

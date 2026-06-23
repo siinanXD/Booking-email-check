@@ -12,6 +12,9 @@ const AdminAccountDetailPage = lazy(() =>
 const AdminApprovalsPage = lazy(() =>
   import("@/features/admin/AdminApprovalsPage").then((m) => ({ default: m.AdminApprovalsPage }))
 );
+const AdminActivityPage = lazy(() =>
+  import("@/features/admin/AdminActivityPage").then((m) => ({ default: m.AdminActivityPage }))
+);
 const AdminAuditPage = lazy(() =>
   import("@/features/admin/AdminAuditPage").then((m) => ({ default: m.AdminAuditPage }))
 );
@@ -94,6 +97,7 @@ export function App() {
                   <Route path="overview" element={<AdminOverviewPage />} />
                   <Route path="accounts" element={<AdminApprovalsPage />} />
                   <Route path="accounts/:accountId" element={<AdminAccountDetailPage />} />
+                  <Route path="activity" element={<AdminActivityPage />} />
                   <Route path="audit" element={<AdminAuditPage />} />
                   <Route path="diagnostics" element={<AdminDiagnosticsPage />} />
                   <Route path="observability" element={<AdminObservabilityPage />} />
