@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.27.0 (2026-06-23)
+
+### Features
+
+- **observability**: Polling-heartbeat im /health-Endpoint (Dead-man's-Switch)
+  ([`e8e85dd`](https://github.com/siinanXD/Booking-email-check/commit/e8e85dd5fdb5ab5c3103a72c5fd39a8c7080c9d6))
+
+Fällt der Polling-Thread aus, merkte es niemand. /health prüft jetzt zusätzlich einen Mongo-Ping und
+  die Polling-Frische: newest_sync_at über alle Verbindungen (wird jeden erfolgreichen Zyklus
+  gesetzt) vs. POLL_HEARTBEAT_STALE_SECONDS (900). Bei DB-Ausfall oder veraltetem Poll →
+  status=degraded + HTTP 503, damit externes Monitoring/Railway alarmiert. Kein Fehlalarm ohne
+  pollbare Accounts. Nutzt bestehendes last_sync_at — keine neue Collection.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+
 ## v0.26.0 (2026-06-23)
 
 ### Bug Fixes
