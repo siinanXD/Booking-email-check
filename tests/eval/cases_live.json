@@ -1,0 +1,273 @@
+[
+  {
+    "message_id": "eval-live-001",
+    "from_address": "noreply@beds24.com",
+    "subject": "Neue Buchung - Ferienwohnung Seeblick",
+    "body_text": "Neue Buchungsbenachrichtigung.\nUnterkunft: Ferienwohnung Seeblick\nGast: Anna Bauer\nBuchungsnummer: BK-77123\nCheck-in: 2026-07-10\nCheck-out: 2026-07-14\nPersonen: 3\nPreis: 480 EUR",
+    "received_at": "2026-06-15T09:12:00Z",
+    "platform": "beds24",
+    "expected_intent": "new_booking",
+    "expected_extraction": {
+      "intent": "new_booking",
+      "booking_number": "BK-77123",
+      "property_name": "Ferienwohnung Seeblick",
+      "guest_name": "Anna Bauer",
+      "check_in": "2026-07-10",
+      "check_out": "2026-07-14",
+      "guest_count": 3
+    }
+  },
+  {
+    "message_id": "eval-live-002",
+    "from_address": "g7x2k9@relay.airbnb.com",
+    "subject": "Reservation confirmed - HBA9KQ2M",
+    "body_text": "Your reservation is confirmed.\nGuest: John Carter\nConfirmation code: HBA9KQ2M\nCheck-in: Aug 3, 2026\nCheck-out: Aug 7, 2026\nGuests: 2",
+    "received_at": "2026-06-16T11:00:00Z",
+    "platform": "airbnb",
+    "expected_intent": "new_booking",
+    "expected_extraction": {
+      "intent": "new_booking",
+      "booking_number": "HBA9KQ2M",
+      "guest_name": "John Carter",
+      "check_in": "2026-08-03",
+      "check_out": "2026-08-07",
+      "guest_count": 2
+    }
+  },
+  {
+    "message_id": "eval-live-003",
+    "from_address": "guest@booking.com",
+    "subject": "Ihre Buchung 1234567890 ist bestaetigt",
+    "body_text": "Sehr geehrte Frau Klein, Ihre Buchung im Apartment Altstadt ist bestaetigt. Buchungsnummer 1234567890. Anreise 12.09.2026, Abreise 15.09.2026, 2 Erwachsene.",
+    "received_at": "2026-06-17T08:30:00Z",
+    "platform": "booking.com",
+    "expected_intent": "new_booking",
+    "expected_extraction": {
+      "intent": "new_booking",
+      "booking_number": "1234567890",
+      "property_name": "Apartment Altstadt",
+      "check_in": "2026-09-12",
+      "check_out": "2026-09-15",
+      "guest_count": 2
+    }
+  },
+  {
+    "message_id": "eval-live-004",
+    "from_address": "lena.fischer@gmail.com",
+    "subject": "Anfrage Verfuegbarkeit",
+    "body_text": "Hallo, ich wuerde gerne fuer das lange Wochenende bei Ihnen uebernachten. Sind noch Zimmer frei? Viele Gruesse, Lena Fischer",
+    "received_at": "2026-06-18T19:45:00Z",
+    "expected_intent": "new_booking",
+    "expected_extraction": {
+      "intent": "new_booking",
+      "guest_name": "Lena Fischer",
+      "email": "lena.fischer@gmail.com"
+    }
+  },
+  {
+    "message_id": "eval-live-005",
+    "from_address": "noreply@beds24.com",
+    "subject": "Buchung storniert - CXL-88421",
+    "body_text": "Diese Buchung wurde durch den Gast storniert. Buchungsnummer: CXL-88421. Unterkunft: Studio Hafen.",
+    "received_at": "2026-06-19T07:05:00Z",
+    "platform": "beds24",
+    "expected_intent": "cancellation",
+    "expected_extraction": {
+      "intent": "cancellation",
+      "booking_number": "CXL-88421",
+      "property_name": "Studio Hafen"
+    }
+  },
+  {
+    "message_id": "eval-live-006",
+    "from_address": "p3r4t5@relay.airbnb.com",
+    "subject": "Cancellation - HMZ44PLO",
+    "body_text": "The guest has cancelled. Confirmation code HMZ44PLO. No further action needed.",
+    "received_at": "2026-06-19T13:20:00Z",
+    "platform": "airbnb",
+    "expected_intent": "cancellation",
+    "expected_extraction": {
+      "intent": "cancellation",
+      "booking_number": "HMZ44PLO"
+    }
+  },
+  {
+    "message_id": "eval-live-007",
+    "from_address": "guest@booking.com",
+    "subject": "Aenderung Reservierung 9988776655",
+    "body_text": "Bitte verschieben Sie meine Anreise auf den 05.10.2026. Buchungsnummer 9988776655. Danke.",
+    "received_at": "2026-06-20T10:10:00Z",
+    "platform": "booking.com",
+    "expected_intent": "change",
+    "expected_extraction": {
+      "intent": "change",
+      "booking_number": "9988776655",
+      "check_in": "2026-10-05"
+    }
+  },
+  {
+    "message_id": "eval-live-008",
+    "from_address": "markus.wolf@web.de",
+    "subject": "Frage zur Anreise",
+    "body_text": "Guten Tag, ab welcher Uhrzeit koennen wir am Anreisetag einchecken? Gibt es einen Parkplatz vor Ort? Beste Gruesse, Markus Wolf",
+    "received_at": "2026-06-20T16:40:00Z",
+    "expected_intent": "guest_inquiry",
+    "expected_extraction": {
+      "intent": "guest_inquiry",
+      "guest_name": "Markus Wolf"
+    }
+  },
+  {
+    "message_id": "eval-live-009",
+    "from_address": "ab12cd@relay.airbnb.com",
+    "subject": "Question about my stay",
+    "body_text": "Hi, I have a question regarding my booking HBQ7741X. Is early check-in possible on the arrival day? Thanks.",
+    "received_at": "2026-06-21T09:00:00Z",
+    "platform": "airbnb",
+    "expected_intent": "guest_inquiry",
+    "expected_extraction": {
+      "intent": "guest_inquiry",
+      "booking_number": "HBQ7741X"
+    }
+  },
+  {
+    "message_id": "eval-live-010",
+    "from_address": "guest@airbnb.com",
+    "subject": "Zahlung fehlgeschlagen",
+    "body_text": "Meine Kartenzahlung fuer die Buchung PAY-3321 wurde abgelehnt. Wie kann ich erneut bezahlen?",
+    "received_at": "2026-06-21T12:30:00Z",
+    "platform": "airbnb",
+    "expected_intent": "payment_issue",
+    "expected_extraction": {
+      "intent": "payment_issue",
+      "booking_number": "PAY-3321"
+    }
+  },
+  {
+    "message_id": "eval-live-011",
+    "from_address": "thomas.weber@booking.com",
+    "subject": "Beschwerde zu Buchung CMP-9090",
+    "body_text": "Sehr geehrte Damen und Herren, ich bin Thomas Weber und moechte mich ueber die Sauberkeit waehrend meines Aufenthalts beschweren. Buchungsnummer CMP-9090.",
+    "received_at": "2026-06-22T08:00:00Z",
+    "platform": "booking.com",
+    "expected_intent": "complaint",
+    "expected_extraction": {
+      "intent": "complaint",
+      "booking_number": "CMP-9090",
+      "guest_name": "Thomas Weber"
+    }
+  },
+  {
+    "message_id": "eval-live-012",
+    "from_address": "guest@expedia.com",
+    "subject": "Vielen Dank fuer Ihren Aufenthalt",
+    "body_text": "Wir hoffen, Ihnen hat der Aufenthalt gefallen. Wuerden Sie uns eine Bewertung hinterlassen?",
+    "received_at": "2026-06-22T14:15:00Z",
+    "platform": "expedia",
+    "expected_intent": "review",
+    "expected_extraction": {
+      "intent": "review"
+    }
+  },
+  {
+    "message_id": "eval-live-013",
+    "from_address": "newsletter@deals-traveldaily.com",
+    "subject": "-40% auf alle Sommerziele - nur heute!",
+    "body_text": "Verpassen Sie nicht unsere Sommeraktion! Jetzt buchen und sparen. Abmelden jederzeit moeglich.",
+    "received_at": "2026-06-22T06:00:00Z",
+    "expected_intent": "other",
+    "expected_extraction": {
+      "intent": "other"
+    }
+  },
+  {
+    "message_id": "eval-live-014",
+    "from_address": "calendar-notification@google.com",
+    "subject": "Einladung: Team-Sync @ Mi 24. Jun 2026",
+    "body_text": "Sie wurden zu einem Termin eingeladen. Team-Sync. Mittwoch, 24. Juni 2026, 10:00-10:30. Google Meet.",
+    "received_at": "2026-06-22T05:30:00Z",
+    "expected_intent": "other",
+    "expected_extraction": {
+      "intent": "other"
+    }
+  },
+  {
+    "message_id": "eval-live-015",
+    "from_address": "service@onlineshop.de",
+    "subject": "Ihre Bestellung ORD-55231 wurde versandt",
+    "body_text": "Hallo, Ihre Bestellung ORD-55231 ist unterwegs. Voraussichtliche Lieferung: 25.06.2026. Sendungsverfolgung im Kundenkonto.",
+    "received_at": "2026-06-22T07:45:00Z",
+    "expected_intent": "other",
+    "expected_extraction": {
+      "intent": "other"
+    }
+  },
+  {
+    "message_id": "eval-live-016",
+    "from_address": "prenotazioni@booking.com",
+    "subject": "Prenotazione confermata 5566778899",
+    "body_text": "Gentile Sig. Rossi, la sua prenotazione presso Casa Bella e confermata. Numero prenotazione 5566778899. Check-in 01/08/2026, check-out 05/08/2026, 2 ospiti.",
+    "received_at": "2026-06-18T10:00:00Z",
+    "platform": "booking.com",
+    "expected_intent": "new_booking",
+    "expected_extraction": {
+      "intent": "new_booking",
+      "booking_number": "5566778899",
+      "check_in": "2026-08-01",
+      "check_out": "2026-08-05",
+      "guest_count": 2
+    }
+  },
+  {
+    "message_id": "eval-live-017",
+    "from_address": "noreply@beds24.com",
+    "subject": "Neue Buchung - Zimmer Nummer 3",
+    "body_text": "Neue Buchungsbenachrichtigung. Unterkunft: Zimmer Nummer 3. Gast: Petra Lang. Buchungsnummer: ZN3-2026-44. Check-in: 2026-07-20. Check-out: 2026-07-22.",
+    "received_at": "2026-06-19T15:00:00Z",
+    "platform": "beds24",
+    "expected_intent": "new_booking",
+    "expected_extraction": {
+      "intent": "new_booking",
+      "booking_number": "ZN3-2026-44",
+      "property_name": "Zimmer Nummer 3",
+      "guest_name": "Petra Lang",
+      "check_in": "2026-07-20",
+      "check_out": "2026-07-22"
+    }
+  },
+  {
+    "message_id": "eval-live-018",
+    "from_address": "guest@booking.com",
+    "subject": "Stornierung meiner Reservierung",
+    "body_text": "Leider muss ich meine Reservierung absagen. Es liegt mir aktuell keine Buchungsnummer vor.",
+    "received_at": "2026-06-20T18:00:00Z",
+    "platform": "booking.com",
+    "expected_intent": "cancellation",
+    "expected_extraction": {
+      "intent": "cancellation"
+    }
+  },
+  {
+    "message_id": "eval-live-019",
+    "from_address": "famille.martin@orange.fr",
+    "subject": "Annulation reservation FR-7781",
+    "body_text": "Bonjour, je souhaite annuler ma reservation FR-7781. Merci de votre comprehension.",
+    "received_at": "2026-06-21T11:30:00Z",
+    "expected_intent": "cancellation",
+    "expected_extraction": {
+      "intent": "cancellation",
+      "booking_number": "FR-7781"
+    }
+  },
+  {
+    "message_id": "eval-live-020",
+    "from_address": "info@hausverwaltung-mueller.de",
+    "subject": "Monatliche Nebenkostenabrechnung",
+    "body_text": "Sehr geehrte Eigentuemer, anbei die monatliche Abrechnung der Nebenkosten fuer Ihre Immobilie. Bei Rueckfragen stehen wir zur Verfuegung.",
+    "received_at": "2026-06-22T09:30:00Z",
+    "expected_intent": "other",
+    "expected_extraction": {
+      "intent": "other"
+    }
+  }
+]
