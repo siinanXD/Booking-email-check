@@ -17,7 +17,7 @@ dependencies = [
     "openai==1.109.1",
     "tiktoken==0.13.0",
     "pymongo==4.12.1",
-    "langfuse==2.60.10",
+    "langfuse==4.9.1",
     "google-genai==2.9.0",
     "python-dotenv==1.2.2",
     "tenacity==8.5.0",                 # Retry/Backoff für externe Aufrufe
