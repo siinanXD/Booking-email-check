@@ -104,6 +104,37 @@ def test_aggregate_booking_mail_stats_single_batch_and_pass() -> None:
     assert stats.latest_booking_received_at == today
 
 
+def test_intents_window_excludes_mails_before_window() -> None:
+    """intents_window zählt nur Mails ab window_iso; intents_all zählt alle."""
+    recent = datetime(2026, 6, 5, 10, 0, tzinfo=UTC)
+    old = datetime(2026, 4, 1, 10, 0, tzinfo=UTC)  # vor dem 30-Tage-Fenster
+    email_repo = _email_repo(
+        [
+            _stored(message_id="m1", correlation_id="c1", received_at=recent),
+            _stored(message_id="m2", correlation_id="c2", received_at=old),
+        ]
+    )
+    extraction_repo = _FakeExtractionRepo(
+        {
+            "c1": BookingExtraction(intent=BookingIntent.NEW_BOOKING),
+            "c2": BookingExtraction(intent=BookingIntent.NEW_BOOKING),
+        }
+    )
+
+    stats = aggregate_booking_mail_stats(
+        email_repo,
+        extraction_repo,
+        account_id="acc-1",
+        today_iso="2026-06-05T00:00:00+00:00",
+        week_iso="2026-06-01T00:00:00+00:00",
+        window_iso="2026-05-06T00:00:00+00:00",
+    )
+
+    nb = BookingIntent.NEW_BOOKING.value
+    assert stats.intents_all[nb] == 2
+    assert stats.intents_window[nb] == 1
+
+
 def test_count_booking_mails_uses_batch_load() -> None:
     """count_booking_mails lädt Extraktionen gebündelt."""
     received = datetime(2026, 6, 5, 10, 0, tzinfo=UTC)
