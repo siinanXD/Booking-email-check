@@ -134,16 +134,19 @@ def create_app(settings: Settings | None = None) -> Flask:
             now=datetime.now(UTC),
             threshold_seconds=cfg.poll_heartbeat_stale_seconds,
         )
-        healthy = db_ok and not stale
         body = {
-            "status": "ok" if healthy else "degraded",
+            "status": "ok" if (db_ok and not stale) else "degraded",
             "version": version,
             "env": cfg.app_env,
             "db": db_ok,
             "poll_stale": stale,
             "last_poll_at": newest.isoformat() if newest else None,
         }
-        return jsonify(body), 200 if healthy else 503
+        # 503 NUR bei echtem Liveness-Ausfall (DB nicht erreichbar). Der
+        # Docker-HEALTHCHECK nutzt /health — würde poll_stale auch 503 erzeugen,
+        # gäbe es bei hängendem Polling einen Container-Neustart-Loop. poll_stale
+        # bleibt ein Feld (status=degraded) für externes Monitoring.
+        return jsonify(body), 200 if db_ok else 503
 
     app.register_blueprint(auth_bp)
     register_api_blueprints(app)
