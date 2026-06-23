@@ -7,6 +7,7 @@ import os
 import threading
 import time
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -57,6 +58,21 @@ def _init_sentry(cfg: Settings) -> None:
     logger.info("Sentry error tracking aktiv (env=%s)", cfg.app_env)
 
 
+def _poll_stale(
+    newest: datetime | None,
+    *,
+    expected: bool,
+    now: datetime,
+    threshold_seconds: int,
+) -> bool:
+    """True, wenn Polling erwartet wird, aber zu lange kein Zyklus durchlief."""
+    if not expected:
+        return False
+    if newest is None:
+        return True
+    return (now - newest).total_seconds() > threshold_seconds
+
+
 def create_app(settings: Settings | None = None) -> Flask:
     """Flask Application Factory.
 
@@ -98,7 +114,7 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     @app.get("/health")
     def health() -> tuple[Any, int]:
-        """Health-Check ohne Auth."""
+        """Health-Check ohne Auth: Version, DB-Ping und Polling-Heartbeat."""
         version = "0.1.0"
         try:
             import importlib.metadata
@@ -106,7 +122,28 @@ def create_app(settings: Settings | None = None) -> Flask:
             version = importlib.metadata.version("email-platform")
         except Exception:
             pass
-        return jsonify({"status": "ok", "version": version, "env": cfg.app_env}), 200
+        db_ok = True
+        try:
+            ctx.email_repo._col.database.command("ping")
+        except Exception:
+            db_ok = False
+        newest = ctx.mail_connection_repo.newest_sync_at()
+        stale = _poll_stale(
+            newest,
+            expected=ctx.mail_connection_repo.has_pollable(),
+            now=datetime.now(UTC),
+            threshold_seconds=cfg.poll_heartbeat_stale_seconds,
+        )
+        healthy = db_ok and not stale
+        body = {
+            "status": "ok" if healthy else "degraded",
+            "version": version,
+            "env": cfg.app_env,
+            "db": db_ok,
+            "poll_stale": stale,
+            "last_poll_at": newest.isoformat() if newest else None,
+        }
+        return jsonify(body), 200 if healthy else 503
 
     app.register_blueprint(auth_bp)
     register_api_blueprints(app)

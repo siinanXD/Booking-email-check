@@ -199,6 +199,9 @@ class Settings(BaseSettings):
     )
     mail_poll_run_once: bool = Field(default=False, alias="MAIL_POLL_RUN_ONCE")
     mail_poll_max_workers: int = Field(default=1, alias="MAIL_POLL_MAX_WORKERS")
+    poll_heartbeat_stale_seconds: int = Field(
+        default=900, alias="POLL_HEARTBEAT_STALE_SECONDS"
+    )
 
     @model_validator(mode="after")
     def apply_dev_defaults(self) -> Self:

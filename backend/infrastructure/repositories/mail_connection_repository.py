@@ -93,6 +93,27 @@ class MailConnectionRepository:
             record.last_sync_at = last_sync_at
         return self.save(record)
 
+    def newest_sync_at(self) -> datetime | None:
+        """Jüngster ``last_sync_at`` über alle Verbindungen (Polling-Heartbeat).
+
+        Wird in jedem erfolgreichen Poll-Zyklus gesetzt — ist der jüngste Wert
+        veraltet, läuft das Polling nicht mehr.
+        """
+        doc = self._col.find_one(
+            {"last_sync_at": {"$ne": None}},
+            {"last_sync_at": 1},
+            sort=[("last_sync_at", -1)],
+        )
+        raw = doc.get("last_sync_at") if doc else None
+        if not raw:
+            return None
+        value = datetime.fromisoformat(raw) if isinstance(raw, str) else raw
+        return value.replace(tzinfo=UTC) if value.tzinfo is None else value
+
+    def has_pollable(self) -> bool:
+        """True, wenn mindestens ein Mandant fürs Polling konfiguriert ist."""
+        return bool(self.list_pollable())
+
     def list_all(self) -> list[MailConnectionRecord]:
         """Lädt alle gespeicherten Postfach-Verbindungen."""
         result: list[MailConnectionRecord] = []

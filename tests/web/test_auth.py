@@ -36,10 +36,15 @@ def test_me_requires_auth(client: Any) -> None:
 
 
 def test_health(client: Any) -> None:
-    """Health ohne Auth."""
+    """Health ohne Auth: Status + DB-Ping + Heartbeat-Felder."""
     resp = client.get("/health")
     assert resp.status_code == 200
-    assert resp.get_json()["status"] == "ok"
+    body = resp.get_json()
+    assert body["status"] == "ok"
+    assert body["db"] is True
+    # Ohne pollbare Accounts kein Fehlalarm.
+    assert body["poll_stale"] is False
+    assert "last_poll_at" in body
 
 
 def test_me_with_token(client: Any, auth_headers: dict[str, str]) -> None:
