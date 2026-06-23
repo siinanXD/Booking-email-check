@@ -10,6 +10,7 @@ import { useDebounce } from "@/shared/hooks/useDebounce";
 import { DateRangeFilter } from "@/shared/components/DateRangeFilter";
 import { EmailDetailSideCard } from "@/shared/components/EmailDetailSideCard";
 import { EmailTable } from "@/shared/components/EmailTable";
+import { EmptyState } from "@/shared/components/EmptyState";
 import { ErrorState } from "@/shared/components/ErrorState";
 import { Button } from "@/shared/ui/Button";
 
@@ -84,14 +85,14 @@ export function InboxPage() {
 
       {/* Intent tabs */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex flex-wrap rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="flex max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           {TABS.map((t) => {
             const count = t.countKey && stats ? stats[t.countKey] : undefined;
             return (
               <button
                 key={t.intent || "all"}
                 type="button"
-                className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
+                className={`flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
                   intent === t.intent
                     ? "bg-indigo-600 text-white shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
@@ -149,35 +150,27 @@ export function InboxPage() {
           onRetry={() => refetch()}
         />
       ) : !data?.items.length ? (
-        <div className="space-y-3 rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <p>
-            Keine Einträge
-            {hasDateFilter ? (
-              <>
-                {" "}
-                im Zeitraum{" "}
-                <span className="font-medium">
-                  {dateRange.fromDate || "Anfang"} – {dateRange.toDate || "heute"}
-                </span>
-              </>
-            ) : (
-              ""
-            )}
-            . Neue Mails über „Postfach synchronisieren" holen.
-          </p>
-          {hasDateFilter && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setDateRange({ fromDate: "", toDate: "" });
-                setPage(1);
-              }}
-            >
-              Alle anzeigen
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          title="Keine Einträge gefunden"
+          message={
+            hasDateFilter
+              ? `Zeitraum ${dateRange.fromDate || "Anfang"} – ${
+                  dateRange.toDate || "heute"
+                }. Neue Mails über „Postfach synchronisieren" auf dem Dashboard holen.`
+              : 'Neue Mails über „Postfach synchronisieren" auf dem Dashboard holen — die KI erkennt Buchungen auch aus normalem Gasttext.'
+          }
+          action={
+            hasDateFilter
+              ? {
+                  label: "Alle anzeigen",
+                  onClick: () => {
+                    setDateRange({ fromDate: "", toDate: "" });
+                    setPage(1);
+                  },
+                }
+              : undefined
+          }
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="space-y-4">

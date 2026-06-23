@@ -1,4 +1,5 @@
-import { Inbox, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { EmptyState } from "@/shared/components/EmptyState";
 import { ErrorState } from "@/shared/components/ErrorState";
 import { IntentBadge } from "@/shared/components/IntentBadge";
 import type { ReviewQueueItem } from "@/lib/types/api";
@@ -54,12 +55,7 @@ export function ReviewList({
             onRetry={onRetry}
           />
         ) : (items?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-14 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-              <Inbox size={20} />
-            </div>
-            <p className="text-sm text-slate-500">{emptyHint}</p>
-          </div>
+          <EmptyState bare title={emptyHint} />
         ) : (
           <ul className="divide-y divide-slate-100">
             {items!.map((item) => (
