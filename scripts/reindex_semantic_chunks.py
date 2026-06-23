@@ -111,7 +111,12 @@ def main() -> int:
         # (intent=other, Marketing) wird stattdessen aus dem Index entfernt.
         relevant = is_booking_relevant(StoredEmail.from_mongo(doc), extraction)
         if args.dry_run:
-            processed += 1
+            # Getrennt zählen, damit der Dry-Run-Bericht Purges nicht als
+            # "indexiert" ausweist.
+            if relevant:
+                processed += 1
+            else:
+                purged += 1
             safe_print(f"[dry-run] {'index' if relevant else 'purge'} {correlation_id}")
             continue
         if not relevant:
