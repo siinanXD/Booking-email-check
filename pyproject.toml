@@ -49,7 +49,7 @@ dev = [
     "pytest==8.3.3",
     "pre-commit==4.6.0",
     "commitizen==3.29.1",
-    "python-semantic-release==9.8.9",
+    "python-semantic-release==10.5.3",
     "mongomock==4.2.0.post1",           # Mongo für Tests ohne echtes Atlas
 ]
 
