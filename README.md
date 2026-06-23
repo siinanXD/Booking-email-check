@@ -29,7 +29,7 @@ Human Review und Admin-Konsole.
 |---------|------------|
 | Mandanten-Dashboard (KPIs, Sync) | ![Dashboard](docs/images/screenshots/dashboard.png) |
 | Review-Warteschlange (Entwurf prüfen) | ![Review-Queue](docs/images/screenshots/review-queue.png) |
-| Buchungsliste (Intent-Filter) | ![Buchungen](docs/images/screenshots/bookings.png) |
+| Posteingang (Intent-Tabs) | ![Posteingang](docs/images/screenshots/bookings.png) |
 | Einstellungen (WhatsApp, Postfach) | ![Einstellungen](docs/images/screenshots/settings.png) |
 | Plattform-Admin (Mandanten & Kosten) | ![Admin-Übersicht](docs/images/screenshots/admin-overview.png) |
 | Login & Registrierung | ![Login](docs/images/screenshots/login.png) · ![Registrierung](docs/images/screenshots/register.png) |
@@ -57,7 +57,7 @@ npm run screenshots:production
 | KI | OpenAI GPT-4o-mini (Klassifikation, Extraktion, Entwurf) |
 | Datenbank | MongoDB Atlas (Dokumente + Vektor-Suche) |
 | Observability | Langfuse |
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4 |
 | Deployment | Railway, Docker, Gunicorn, GitHub Actions CI |
 | Notifications | Meta WhatsApp Cloud API |
 
@@ -75,10 +75,15 @@ backend/
 └── application/    # Ingestion & Review Ports
 
 frontend/src/
-├── features/       # Screens (Dashboard, Emails, Review, Settings, Onboarding)
+├── features/       # Screens (Dashboard, Posteingang, Review, Unterkünfte, Settings, Onboarding)
 ├── shared/         # UI-Komponenten, Layout
 └── lib/            # API-Clients, TypeScript Types
 ```
+
+**Tenant-Navigation:** `Dashboard · Posteingang · Unterkünfte · Support · Review`.
+Der **Posteingang** bündelt alle Mail-Kategorien als Intent-Tabs (Alle / Buchungen / Stornos /
+Änderungen / Nachrichten); **Review** vereint den Freigabe-Lebenszyklus als Tabs
+(Ausstehend / Freigegeben / Abgeschlossen / Grounding).
 
 Import-Richtung strikt von oben nach unten: `api → features → ai → infrastructure → core`. Max. 300 Zeilen pro Datei (CI-enforced).
 

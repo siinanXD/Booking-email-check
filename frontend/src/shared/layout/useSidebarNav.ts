@@ -1,12 +1,7 @@
 import {
   LayoutDashboard,
-  CalendarCheck,
-  XCircle,
-  RefreshCw,
-  MessageSquare,
+  Inbox,
   ClipboardCheck,
-  AlertTriangle,
-  CheckCircle2,
   Building2,
   Shield,
   Users,
@@ -42,15 +37,10 @@ export type SidebarLink = {
 
 const tenantLinks: SidebarLink[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/bookings", label: "Buchungen", icon: CalendarCheck, navCountKey: "nav_bookings" },
-  { to: "/cancellations", label: "Stornos", icon: XCircle, navCountKey: "nav_cancellations" },
-  { to: "/changes", label: "Änderungen", icon: RefreshCw, navCountKey: "nav_changes" },
-  { to: "/messages", label: "Nachrichten", icon: MessageSquare, navCountKey: "nav_messages" },
+  { to: "/inbox", label: "Posteingang", icon: Inbox },
   { to: "/properties", label: "Unterkünfte", icon: Building2 },
   { to: "/support", label: "Support", icon: LifeBuoy },
   { to: "/review", label: "Review", icon: ClipboardCheck, badge: true },
-  { to: "/ground-zero", label: "Ground Zero", icon: AlertTriangle, navCountKey: "nav_ground_zero" },
-  { to: "/completed", label: "Abgeschlossen", icon: CheckCircle2, navCountKey: "nav_completed" },
 ];
 
 const adminLinks: SidebarLink[] = [
@@ -100,7 +90,7 @@ export function useSidebarNav(): SidebarNavData {
   }));
   const links = isPlatformAdmin
     ? adminLinks
-    : [...tenantLinks.slice(0, 8), ...workflowRubrics, ...tenantLinks.slice(8)];
+    : [...tenantLinks, ...workflowRubrics];
 
   return {
     links,

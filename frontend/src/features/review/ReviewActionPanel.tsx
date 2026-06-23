@@ -1,0 +1,179 @@
+import { useQuery } from "@tanstack/react-query";
+import { CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import type { UseMutationResult } from "@tanstack/react-query";
+import { fetchEmailActivity, fetchEmailDetail } from "@/lib/api/emails";
+import { EmailDetailPanel } from "@/shared/components/EmailDetailPanel";
+import { Button } from "@/shared/ui/Button";
+import { Input } from "@/shared/ui/Input";
+import type { ReviewQueueItem } from "@/lib/types/api";
+import type { ReviewQueueTab } from "@/lib/api/review";
+
+function formatActivityTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+type Mut = UseMutationResult<void, Error, void, unknown>;
+
+type ReviewTab = ReviewQueueTab | "grounding";
+
+type Props = {
+  tab: ReviewTab;
+  selected: ReviewQueueItem | null;
+  draftEdit: string;
+  setDraftEdit: (v: string) => void;
+  rejectReason: string;
+  setRejectReason: (v: string) => void;
+  approveMut: Mut;
+  completeMut: Mut;
+  rejectMut: Mut;
+};
+
+/** Detail + tab-aware actions for one selected review item. */
+export function ReviewActionPanel({
+  tab,
+  selected,
+  draftEdit,
+  setDraftEdit,
+  rejectReason,
+  setRejectReason,
+  approveMut,
+  completeMut,
+  rejectMut,
+}: Props) {
+  const correlationId = selected?.correlation_id ?? null;
+
+  const { data: detail, isLoading: detailLoading } = useQuery({
+    queryKey: ["email-detail", correlationId],
+    queryFn: () => fetchEmailDetail(correlationId!),
+    enabled: Boolean(correlationId),
+  });
+
+  const { data: activity, isLoading: activityLoading } = useQuery({
+    queryKey: ["email-activity", correlationId],
+    queryFn: () => fetchEmailActivity(correlationId!),
+    enabled: Boolean(correlationId) && tab === "completed",
+  });
+
+  if (!selected) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-slate-200/80 bg-white py-16 text-center shadow-card">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <ChevronRight size={20} />
+        </div>
+        <p className="text-sm text-slate-500">Eintrag aus der Liste wählen</p>
+      </div>
+    );
+  }
+
+  const isGroundingPending =
+    tab === "grounding" && selected.review_status === "pending";
+  const canApprove = tab === "pending" || isGroundingPending;
+  const canComplete =
+    tab === "released" ||
+    (tab === "grounding" && selected.review_status === "approved");
+  const isReadOnly = tab === "completed";
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+      <div className="space-y-4 p-5">
+        <div className="border-b border-slate-100 pb-4">
+          <h3 className="font-semibold text-slate-900">{selected.subject}</h3>
+          <p className="mt-0.5 text-sm text-slate-500">{selected.from_address}</p>
+        </div>
+
+        <EmailDetailPanel
+          detail={detail}
+          isLoading={detailLoading}
+          showFullBody={isReadOnly}
+        />
+
+        {canApprove && (
+          <>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-1">
+              <p className="mb-2 px-2 pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                E-Mail-Antwort an Gast (bearbeitbar)
+              </p>
+              <textarea
+                className="h-40 w-full resize-none rounded-lg border border-transparent bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                value={draftEdit}
+                onChange={(e) => setDraftEdit(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => approveMut.mutate()}
+                loading={approveMut.isPending}
+                disabled={!draftEdit.trim()}
+              >
+                <CheckCircle2 size={15} />
+                Freigeben
+              </Button>
+            </div>
+            <div className="space-y-3 rounded-xl border border-red-100 bg-red-50/50 p-4">
+              <p className="text-xs font-semibold text-red-700">Ablehnen</p>
+              <Input
+                placeholder="Ablehnungsgrund (optional)"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => rejectMut.mutate()}
+                loading={rejectMut.isPending}
+              >
+                <XCircle size={14} />
+                Ablehnen
+              </Button>
+            </div>
+          </>
+        )}
+
+        {canComplete && (
+          <Button
+            onClick={() => completeMut.mutate()}
+            loading={completeMut.isPending}
+          >
+            <CheckCircle2 size={15} />
+            Als abgeschlossen markieren
+          </Button>
+        )}
+
+        {isReadOnly && (
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase text-slate-500">
+              Arbeitsverlauf
+            </p>
+            {activityLoading ? (
+              <p className="text-sm text-slate-500">Lade Verlauf…</p>
+            ) : (activity?.events.length ?? 0) === 0 ? (
+              <p className="text-sm text-slate-500">Kein Verlauf verfügbar.</p>
+            ) : (
+              <ol className="space-y-2 border-l border-slate-200 pl-4">
+                {activity!.events.map((event) => (
+                  <li key={`${event.kind}-${event.at}`} className="relative">
+                    <span className="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-indigo-500" />
+                    <p className="text-sm font-medium text-slate-800">
+                      {event.label}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {formatActivityTime(event.at)}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

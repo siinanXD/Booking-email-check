@@ -33,23 +33,14 @@ const AdminOverviewPage = lazy(() =>
 const AdminTicketsPage = lazy(() =>
   import("@/features/admin/AdminTicketsPage").then((m) => ({ default: m.AdminTicketsPage }))
 );
-const BookingsPage = lazy(() =>
-  import("@/features/emails/BookingsPage").then((m) => ({ default: m.BookingsPage }))
-);
-const CancellationsPage = lazy(() =>
-  import("@/features/emails/CancellationsPage").then((m) => ({ default: m.CancellationsPage }))
-);
-const ChangesPage = lazy(() =>
-  import("@/features/emails/ChangesPage").then((m) => ({ default: m.ChangesPage }))
+const InboxPage = lazy(() =>
+  import("@/features/emails/InboxPage").then((m) => ({ default: m.InboxPage }))
 );
 const DashboardPage = lazy(() =>
   import("@/features/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage }))
 );
 const LoginPage = lazy(() =>
   import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage }))
-);
-const MessagesPage = lazy(() =>
-  import("@/features/emails/MessagesPage").then((m) => ({ default: m.MessagesPage }))
 );
 const OnboardingPage = lazy(() =>
   import("@/features/onboarding/OnboardingPage").then((m) => ({ default: m.OnboardingPage }))
@@ -62,12 +53,6 @@ const PropertyProfilePage = lazy(() =>
 );
 const RegisterPage = lazy(() =>
   import("@/features/auth/RegisterPage").then((m) => ({ default: m.RegisterPage }))
-);
-const CompletedPage = lazy(() =>
-  import("@/features/completed/CompletedPage").then((m) => ({ default: m.CompletedPage }))
-);
-const GroundZeroPage = lazy(() =>
-  import("@/features/review/GroundZeroPage").then((m) => ({ default: m.GroundZeroPage }))
 );
 const ReviewQueuePage = lazy(() =>
   import("@/features/review/ReviewQueuePage").then((m) => ({ default: m.ReviewQueuePage }))
@@ -119,15 +104,34 @@ export function App() {
               </Route>
               <Route element={<TenantRoute />}>
                 <Route index element={<DashboardPage />} />
-                <Route path="bookings" element={<BookingsPage />} />
-                <Route path="cancellations" element={<CancellationsPage />} />
-                <Route path="changes" element={<ChangesPage />} />
-                <Route path="messages" element={<MessagesPage />} />
+                <Route path="inbox" element={<InboxPage />} />
+                <Route
+                  path="bookings"
+                  element={<Navigate to="/inbox?intent=new_booking" replace />}
+                />
+                <Route
+                  path="cancellations"
+                  element={<Navigate to="/inbox?intent=cancellation" replace />}
+                />
+                <Route
+                  path="changes"
+                  element={<Navigate to="/inbox?intent=change" replace />}
+                />
+                <Route
+                  path="messages"
+                  element={<Navigate to="/inbox?intent=guest_inquiry" replace />}
+                />
                 <Route path="properties" element={<PropertiesPage />} />
                 <Route path="properties/:propertyId" element={<PropertyProfilePage />} />
                 <Route path="review" element={<ReviewQueuePage />} />
-                <Route path="ground-zero" element={<GroundZeroPage />} />
-                <Route path="completed" element={<CompletedPage />} />
+                <Route
+                  path="ground-zero"
+                  element={<Navigate to="/review?tab=grounding" replace />}
+                />
+                <Route
+                  path="completed"
+                  element={<Navigate to="/review?tab=completed" replace />}
+                />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="support" element={<SupportPage />} />
                 <Route path="rubrics/:slug" element={<WorkflowRubrikPage />} />
