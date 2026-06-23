@@ -23,7 +23,7 @@ dependencies = [
     "tenacity==8.5.0",                 # Retry/Backoff für externe Aufrufe
     "msal==1.37.0",                    # Microsoft Graph (delegated + application)
     "flask==3.1.0",
-    "flask-cors==5.0.1",
+    "flask-cors==6.0.5",
     "flask-limiter==3.12",
     "PyJWT==2.10.1",
     "werkzeug==3.1.3",
