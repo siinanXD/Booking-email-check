@@ -153,6 +153,12 @@ export interface EmailActivityEvent {
   kind: string;
   label: string;
   actor?: string | null;
+  intent?: string | null;
+  confidence?: number | null;
+  auto_approved?: boolean | null;
+  escalated?: boolean | null;
+  notification_status?: string | null;
+  error?: string | null;
 }
 
 export interface EmailActivityResponse {
