@@ -1,12 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, XCircle, ChevronRight, Loader2, Undo2 } from "lucide-react";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { fetchEmailActivity, fetchEmailDetail } from "@/lib/api/emails";
+import { translateDraft, undoAutoApproval } from "@/lib/api/review";
 import { EmailDetailPanel } from "@/shared/components/EmailDetailPanel";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
+import { toast } from "@/shared/feedback/toastStore";
 import type { ReviewQueueItem } from "@/lib/types/api";
 import type { ReviewQueueTab } from "@/lib/api/review";
+
+type ReplyLang = "de" | "en";
 
 function formatActivityTime(iso: string): string {
   const date = new Date(iso);
@@ -49,12 +54,48 @@ export function ReviewActionPanel({
   rejectMut,
 }: Props) {
   const correlationId = selected?.correlation_id ?? null;
+  const queryClient = useQueryClient();
 
   const { data: detail, isLoading: detailLoading } = useQuery({
     queryKey: ["email-detail", correlationId],
     queryFn: () => fetchEmailDetail(correlationId!),
     enabled: Boolean(correlationId),
   });
+
+  const [lang, setLang] = useState<ReplyLang>("de");
+
+  // Initialise the language toggle from the detected reply language.
+  useEffect(() => {
+    setLang(detail?.reply_language ?? "de");
+  }, [detail?.reply_language, correlationId]);
+
+  const translateMut = useMutation({
+    mutationFn: (target: ReplyLang) =>
+      translateDraft(correlationId!, target, draftEdit),
+    meta: { skipGlobalError: true },
+    onSuccess: (res) => {
+      setDraftEdit(res.translated_body);
+      setLang(res.target_language === "en" ? "en" : "de");
+    },
+    onError: () => toast.error("Übersetzung fehlgeschlagen."),
+  });
+
+  const undoMut = useMutation({
+    mutationFn: () => undoAutoApproval(correlationId!),
+    meta: { skipGlobalError: true },
+    onSuccess: () => {
+      toast.success("Auto-Freigabe rückgängig gemacht");
+      void queryClient.invalidateQueries({ queryKey: ["review-queue"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: () =>
+      toast.error("Rückgängig nicht möglich (Zeitfenster abgelaufen)."),
+  });
+
+  const switchLang = (target: ReplyLang) => {
+    if (target === lang || !correlationId || translateMut.isPending) return;
+    translateMut.mutate(target);
+  };
 
   const { data: activity, isLoading: activityLoading } = useQuery({
     queryKey: ["email-activity", correlationId],
@@ -95,13 +136,51 @@ export function ReviewActionPanel({
           showFullBody={isReadOnly}
         />
 
+        {detail?.auto_approved && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => undoMut.mutate()}
+            loading={undoMut.isPending}
+          >
+            <Undo2 size={14} />
+            Rückgängig
+          </Button>
+        )}
+
         {canApprove && (
           <>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                Sprache
+              </p>
+              <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                {(["de", "en"] as ReplyLang[]).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => switchLang(l)}
+                    disabled={translateMut.isPending}
+                    className={`rounded-md px-2.5 py-1 text-xs font-semibold uppercase transition ${
+                      lang === l
+                        ? "bg-white text-indigo-600 shadow-sm"
+                        : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              {translateMut.isPending && (
+                <Loader2 size={14} className="animate-spin text-slate-400" />
+              )}
+            </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-1">
               <p className="mb-2 px-2 pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                 E-Mail-Antwort an Gast (bearbeitbar)
               </p>
               <textarea
+                data-review-draft
                 className="h-40 w-full resize-none rounded-lg border border-transparent bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
                 value={draftEdit}
                 onChange={(e) => setDraftEdit(e.target.value)}

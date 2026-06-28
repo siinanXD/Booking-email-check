@@ -30,16 +30,16 @@ function AccountRow({
   const [reason, setReason] = useState("");
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4">
+    <div className="rounded-lg border border-border p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-medium text-slate-900">{account.display_name}</p>
-          <p className="text-sm text-slate-600">{account.contact_email}</p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="font-medium text-ink">{account.display_name}</p>
+          <p className="text-sm text-muted">{account.contact_email}</p>
+          <p className="mt-1 text-xs text-muted">
             {account.account_type === "business" ? "Gewerblich" : "Privat"}
             {account.phone ? ` · ${account.phone}` : ""}
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-faint">
             Registriert: {new Date(account.created_at).toLocaleString("de-DE")}
           </p>
         </div>
@@ -58,7 +58,7 @@ function AccountRow({
       {account.status === "pending" && (
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <div className="min-w-[200px] flex-1">
-            <label className="mb-1 block text-xs text-slate-500">
+            <label className="mb-1 block text-xs text-muted">
               Ablehnungsgrund (optional)
             </label>
             <Input
@@ -81,7 +81,7 @@ function AccountRow({
       )}
 
       {account.rejection_reason && (
-        <p className="mt-2 text-sm text-red-600">{account.rejection_reason}</p>
+        <p className="mt-2 text-sm text-dangertext">{account.rejection_reason}</p>
       )}
     </div>
   );

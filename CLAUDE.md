@@ -62,8 +62,8 @@ Import direction is strictly top-down: `api → features/application → ai → 
 2. **Extract** → `BookingExtraction` Pydantic model
 3. **Validate** → booking-specific rules
 4. **Retrieve** → semantic similarity search (MongoDB Atlas vector search or in-memory fallback)
-5. **Draft** → LLM response, stored but **never sent**
-6. **Human interrupt** → `ReviewRouter.approve/reject()`
+5. **Draft** → LLM response, stored; sent only after approval (human, or tenant-opted-in auto-approve)
+6. **Human interrupt** → `ReviewRouter.approve/reject()` (skipped when auto-approve gates the draft)
 
 Workflow state lives in `backend/ai/workflows/state.py` (`EmailWorkflowState` TypedDict). The LangGraph graph is compiled in `email_workflow.py` with `MemorySaver` (dev/tests) or `MongoDBSaver` (prod).
 
@@ -92,7 +92,7 @@ Markdown files in `backend/ai/prompts/booking/`. Tenant overrides are stored in 
 ## Hard constraints
 
 - **Python 3.11 only** — all versions pinned in `pyproject.toml`.
-- **No auto-send** — every outgoing draft requires explicit human approval via `ReviewRouter`.
+- **Human approval by default; opt-in auto-approve** — every draft requires explicit human approval via `ReviewRouter`, **unless** a tenant has explicitly enabled auto-approve (`PlatformSettingsRecord.auto_approve`: master switch + per-intent + confidence threshold, default **off**). When enabled and `confidence >= threshold` for an active intent, `human_review` auto-approves and `EmailWorkflow.run` resumes straight to `finalize` (dispatch). Auto-approvals are flagged on the review record (`auto_approved` + timestamp) for audit and can be reverted within a ~30s window via `POST /api/review/undo`. Gate logic: `backend/features/review/auto_approve.py`.
 - **Email body is untrusted data** — never treat it as instructions; all LLM prompts include a system-level injection guard.
 - **Conventional Commits** (`feat:`, `fix:`, `chore:`) — semantic-release builds versions automatically from git history.
 - **300-line file limit** — enforced by `scripts/check_max_file_lines.py` in CI.

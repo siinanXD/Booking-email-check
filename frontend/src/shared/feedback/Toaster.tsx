@@ -3,11 +3,11 @@ import { useToastStore, type ToastTone } from "@/shared/feedback/toastStore";
 
 const tones: Record<ToastTone, { box: string; icon: typeof Info }> = {
   success: {
-    box: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    box: "border-oktext/25 bg-okbg text-oktext",
     icon: CheckCircle2,
   },
-  error: { box: "border-red-200 bg-red-50 text-red-800", icon: XCircle },
-  info: { box: "border-slate-200 bg-white text-slate-800", icon: Info },
+  error: { box: "border-dangertext/25 bg-dangerbg text-dangertext", icon: XCircle },
+  info: { box: "border-border bg-surface text-ink2", icon: Info },
 };
 
 export function Toaster() {
@@ -29,7 +29,7 @@ export function Toaster() {
             key={t.id}
             role={t.tone === "error" ? "alert" : "status"}
             aria-live={t.tone === "error" ? "assertive" : "polite"}
-            className={`pointer-events-auto flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-sm shadow-card ${box}`}
+            className={`pointer-events-auto flex animate-pop-in items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm shadow-card-lg ${box}`}
           >
             <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden />
             <span className="flex-1 break-words">{t.message}</span>

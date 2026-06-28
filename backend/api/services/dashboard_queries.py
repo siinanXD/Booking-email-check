@@ -98,6 +98,7 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
         avg_cost_per_mail_usd=round(avg_cost, 4),
         grounding_failures_today=grounding_today,
         pending_grounding_review=pending_grounding,
+        escalated_open=ctx.review_repo.count_escalated(account_id=account_id),
         reviewed_today=reviewed_today,
         last_sync_at=last_sync_at,
         last_email_received_at=last_email_received_at,

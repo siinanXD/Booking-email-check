@@ -69,3 +69,11 @@ class EmailDetail(BaseModel):
     approved_body: str | None = None
     mail_summary: str | None = None
     mail_sentiment: str | None = None
+    # „Warum diese Einstufung?" — Konfidenz, Signale, Belegstelle.
+    confidence: float | None = None
+    signals: list[str] = Field(default_factory=list)
+    grounding_span: str | None = None
+    escalated: bool = False
+    auto_approved: bool = False
+    # Erkannte Antwortsprache (de/en) für den DE/EN-Umschalter.
+    reply_language: str = "de"

@@ -36,23 +36,23 @@ export function MailVolumeChart() {
   const totalMails = series.reduce((sum, p) => sum + (p.mail_count ?? 0), 0);
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
+    <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-widest text-faint">
             Mail-Volumen
           </p>
-          <p className="mt-0.5 text-sm text-slate-500">Letzte {RANGE_DAYS} Tage</p>
+          <p className="mt-0.5 text-sm text-muted">Letzte {RANGE_DAYS} Tage</p>
         </div>
         {!isLoading && !isError && series.length > 0 && (
-          <p className="text-sm font-semibold tabular-nums text-slate-700">
+          <p className="text-sm font-semibold tabular-nums font-numeric text-ink2">
             {totalMails} Mails
           </p>
         )}
       </div>
 
       {isLoading ? (
-        <div className="flex h-[240px] items-center justify-center text-sm text-slate-400">
+        <div className="flex h-[240px] items-center justify-center text-sm text-faint">
           Lade…
         </div>
       ) : isError ? (

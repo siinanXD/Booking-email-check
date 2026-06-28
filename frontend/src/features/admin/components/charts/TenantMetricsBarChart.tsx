@@ -30,11 +30,11 @@ export function TenantCostBarChart({ tenants }: { tenants: AdminTenantRow[] }) {
 
   return (
     <Card>
-      <h3 className="mb-1 font-medium text-slate-900">Kosten pro Mandant (Top 8)</h3>
-      <p className="mb-4 text-xs text-slate-500">Summe der LLM-API-Kosten der letzten 30 Tage</p>
+      <h3 className="mb-1 font-medium text-ink">Kosten pro Mandant (Top 8)</h3>
+      <p className="mb-4 text-xs text-muted">Summe der LLM-API-Kosten der letzten 30 Tage</p>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} />
           <YAxis
             type="category"

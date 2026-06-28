@@ -12,6 +12,10 @@ from backend.infrastructure.repositories._email_filters import (
     build_base_match,
     build_intent_pipeline,
 )
+from backend.infrastructure.repositories._email_gdpr import (
+    delete_emails_by_sender,
+    list_emails_by_sender,
+)
 from backend.infrastructure.repositories.mongo import Db
 from backend.infrastructure.repositories.tenant_scope import with_account_filter
 
@@ -160,6 +164,18 @@ class EmailRepository:
         )
         cursor = self._col.find(query)
         return [StoredEmail.from_mongo(doc) for doc in cursor]
+
+    def list_by_sender(
+        self, from_address: str, *, account_id: str | None = None
+    ) -> list[StoredEmail]:
+        """Alle Mails eines Absenders (case-insensitive), für DSGVO-Auskunft."""
+        return list_emails_by_sender(self._col, from_address, account_id)
+
+    def delete_by_sender(
+        self, from_address: str, *, account_id: str | None = None
+    ) -> tuple[int, list[str]]:
+        """Löscht alle Mails eines Absenders. Gibt (Anzahl, Correlation-IDs) zurück."""
+        return delete_emails_by_sender(self._col, from_address, account_id)
 
     def list_filtered(
         self,

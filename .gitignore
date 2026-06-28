@@ -30,3 +30,6 @@ frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Design handoff extraction (not committed)
+.design_handoff_tmp/

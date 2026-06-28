@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.email import ProcessingState
 from backend.core.models.response import ReviewStatus
+from backend.features.review.auto_approve import should_auto_approve
 
 if TYPE_CHECKING:
     from backend.features.notifications.notification_service import (
@@ -17,7 +18,13 @@ if TYPE_CHECKING:
         ReviewFeedbackTracker,
     )
     from backend.infrastructure.repositories.email_repository import EmailRepository
+    from backend.infrastructure.repositories.platform_settings_repository import (
+        PlatformSettingsRepository,
+    )
     from backend.infrastructure.repositories.review_repository import ReviewRepository
+
+# Unter dieser Grounding-Konfidenz wird priorisiert an einen Menschen eskaliert.
+_ESCALATE_FLOOR = 0.5
 
 
 def _intent_str(intent_val: object | None) -> str | None:
@@ -34,6 +41,26 @@ class PipelineReviewMixin:
     _notification_service: NotificationService | None
     _feedback_tracker: ReviewFeedbackTracker | None
     _langfuse_tracer: LangfuseTracer | None
+    _platform_settings_repo: PlatformSettingsRepository | None
+
+    def _decide_auto_approve(
+        self, account_id: str | None, intent: str | None, confidence: float
+    ) -> bool:
+        """Auto-Freigabe nur bei aktiviertem, passendem Mandanten-Setting."""
+        repo = self._platform_settings_repo
+        if repo is None or not account_id:
+            return False
+        settings = repo.get(account_id)
+        if settings is None:
+            return False
+        return should_auto_approve(confidence, intent, settings.auto_approve)
+
+    @staticmethod
+    def _should_escalate(intent: str | None, confidence: float) -> bool:
+        """Beschwerden und niedrige Konfidenz priorisiert an einen Menschen."""
+        if intent == "complaint":
+            return True
+        return confidence < _ESCALATE_FLOOR
 
     def human_review(self, state: EmailWorkflowState) -> EmailWorkflowState:
         email = state["email"]
@@ -41,6 +68,29 @@ class PipelineReviewMixin:
             correlation_id=email.correlation_id,
             status="pending",
         )
+        draft = state.get("draft")
+        intent = _intent_str(state.get("intent"))
+        auto_approve = False
+        if review.status == "pending":
+            confidence = draft.confidence if draft is not None else 1.0
+            auto_approve = self._decide_auto_approve(
+                email.account_id, intent, confidence
+            )
+            escalated = not auto_approve and self._should_escalate(intent, confidence)
+            review.escalated = escalated
+            if self._review_repo is not None:
+                self._review_repo.upsert_pending(
+                    correlation_id=email.correlation_id,
+                    message_id=email.message_id,
+                    draft_body=draft.body if draft is not None else "",
+                    grounding_flag=bool(state.get("grounding_flag")),
+                    intent=intent,
+                    account_id=email.account_id,
+                    confidence=confidence,
+                    signals=draft.grounding_signals if draft is not None else [],
+                    grounding_span=draft.grounding_span if draft is not None else None,
+                    escalated=escalated,
+                )
         if review.status == "approved":
             proc = ProcessingState.APPROVED
         elif review.status == "rejected":
@@ -50,18 +100,11 @@ class PipelineReviewMixin:
         self._email_repo.update_processing_state(
             email.message_id, proc, account_id=email.account_id
         )
-        if review.status == "pending" and self._review_repo is not None:
-            draft = state.get("draft")
-            draft_body = draft.body if draft is not None else ""
-            self._review_repo.upsert_pending(
-                correlation_id=email.correlation_id,
-                message_id=email.message_id,
-                draft_body=draft_body,
-                grounding_flag=bool(state.get("grounding_flag")),
-                intent=_intent_str(state.get("intent")),
-                account_id=email.account_id,
-            )
-        return {"review": review}
+        result: EmailWorkflowState = {"review": review}
+        if auto_approve:
+            result["auto_approve"] = True
+            result["auto_approve_body"] = draft.body if draft is not None else ""
+        return result
 
     def finalize(self, state: EmailWorkflowState) -> EmailWorkflowState:
         email = state["email"]

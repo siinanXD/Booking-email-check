@@ -23,13 +23,13 @@ export function CostsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">API-Kosten</h2>
-        <p className="mt-0.5 text-sm text-slate-500">LLM-Nutzung der letzten 30 Tage</p>
+        <h2 className="text-xl font-bold text-ink">API-Kosten</h2>
+        <p className="mt-0.5 text-sm text-muted">LLM-Nutzung der letzten 30 Tage</p>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 py-10 text-slate-500">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-500" />
+        <div className="flex items-center gap-2 py-10 text-muted">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-border2 border-t-brand" />
           <span className="text-sm">Lade…</span>
         </div>
       ) : (
@@ -53,8 +53,8 @@ export function CostsPage() {
           </div>
           <Card>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">Kostenverlauf</h3>
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-500">
+              <h3 className="text-sm font-semibold text-ink2">Kostenverlauf</h3>
+              <span className="rounded-full bg-surface2 px-2.5 py-0.5 text-xs text-muted">
                 30 Tage
               </span>
             </div>

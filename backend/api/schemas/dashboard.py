@@ -23,6 +23,7 @@ class DashboardStats(BaseModel):
     avg_cost_per_mail_usd: float = 0.0
     grounding_failures_today: int = 0
     pending_grounding_review: int = 0
+    escalated_open: int = 0
     reviewed_today: int = 0
     last_sync_at: str | None = None
     last_email_received_at: str | None = None

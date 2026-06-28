@@ -26,6 +26,8 @@ class EmailWorkflowState(TypedDict, total=False):
     draft: GeneratedResponse
     review: ReviewStatus
     grounding_flag: bool
+    auto_approve: bool
+    auto_approve_body: str
     error: str
     workflow_id: str
     workflow_slug: str

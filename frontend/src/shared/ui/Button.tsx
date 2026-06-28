@@ -10,21 +10,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 active:bg-indigo-700 disabled:bg-indigo-300 disabled:shadow-none focus-visible:ring-indigo-500",
+    "bg-brand-gradient text-white shadow-glow hover:opacity-95 active:opacity-90 disabled:opacity-50 disabled:shadow-none focus-visible:ring-brand",
   secondary:
-    "bg-white border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100 disabled:opacity-50 focus-visible:ring-slate-400",
+    "bg-surface border border-border2 text-ink2 hover:bg-app active:bg-app disabled:opacity-50 focus-visible:ring-brand",
   danger:
     "bg-red-600 text-white shadow-sm hover:bg-red-500 active:bg-red-700 disabled:opacity-50 focus-visible:ring-red-500",
   ghost:
-    "text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 disabled:opacity-40 focus-visible:ring-slate-400",
+    "text-muted hover:bg-app hover:text-ink active:bg-app disabled:opacity-40 focus-visible:ring-brand",
   outline:
-    "border border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-300 active:bg-indigo-100 disabled:opacity-50 focus-visible:ring-indigo-400",
+    "border border-brand/30 text-brandink bg-brandsoft hover:opacity-90 active:opacity-80 disabled:opacity-50 focus-visible:ring-brand",
 };
 
 const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "px-3 py-1.5 text-xs rounded-md",
-  md: "px-4 py-2 text-sm rounded-lg",
-  lg: "px-5 py-2.5 text-sm rounded-lg",
+  sm: "px-3 py-1.5 text-xs rounded-lg",
+  md: "px-4 py-2 text-sm rounded-xl",
+  lg: "px-5 py-2.5 text-sm rounded-xl",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

@@ -49,7 +49,7 @@ export function AdminAuditPage() {
 
       <Card className="overflow-x-auto">
         {isLoading ? (
-          <p className="text-sm text-slate-500">Lade Audit-Log…</p>
+          <p className="text-sm text-muted">Lade Audit-Log…</p>
         ) : isError ? (
           <ErrorState
             message="Audit-Log konnte nicht geladen werden."
@@ -64,7 +64,7 @@ export function AdminAuditPage() {
         ) : (
           <table className="min-w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-500">
+              <tr className="border-b border-border text-muted">
                 <th scope="col" className="pb-2 pr-4 font-medium">Zeitpunkt</th>
                 <th scope="col" className="pb-2 pr-4 font-medium">Aktion</th>
                 <th scope="col" className="pb-2 pr-4 font-medium">Admin</th>
@@ -73,17 +73,17 @@ export function AdminAuditPage() {
             </thead>
             <tbody>
               {items.map((entry) => (
-                <tr key={entry.id} className="border-b border-slate-100 align-top">
-                  <td className="py-2 pr-4 text-slate-600 whitespace-nowrap">
+                <tr key={entry.id} className="border-b border-border align-top">
+                  <td className="py-2 pr-4 text-muted whitespace-nowrap">
                     {formatTs(entry.created_at)}
                   </td>
-                  <td className="py-2 pr-4 font-medium text-slate-900">
+                  <td className="py-2 pr-4 font-medium text-ink">
                     {actionLabel(entry.action)}
                   </td>
-                  <td className="py-2 pr-4 text-xs text-slate-500">
+                  <td className="py-2 pr-4 text-xs text-muted">
                     {entry.user_id ?? "—"}
                   </td>
-                  <td className="py-2 text-xs text-slate-500">
+                  <td className="py-2 text-xs text-muted">
                     {formatDetails(entry.details)}
                   </td>
                 </tr>

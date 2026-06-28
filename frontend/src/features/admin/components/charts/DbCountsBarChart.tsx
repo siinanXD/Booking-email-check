@@ -32,21 +32,21 @@ export function DbCountsBarChart({ counts }: { counts: Record<string, number> })
   if (data.every((d) => d.count === 0)) {
     return (
       <Card>
-        <h3 className="mb-2 font-medium text-slate-900">Datenbestand</h3>
-        <p className="text-sm text-slate-500">Noch keine Domänendaten für diesen Mandanten.</p>
+        <h3 className="mb-2 font-medium text-ink">Datenbestand</h3>
+        <p className="text-sm text-muted">Noch keine Domänendaten für diesen Mandanten.</p>
       </Card>
     );
   }
 
   return (
     <Card>
-      <h3 className="mb-1 font-medium text-slate-900">Datenbestand im Mandanten</h3>
-      <p className="mb-4 text-xs text-slate-500">
+      <h3 className="mb-1 font-medium text-ink">Datenbestand im Mandanten</h3>
+      <p className="mb-4 text-xs text-muted">
         Dokumente pro MongoDB-Collection — zeigt Nutzungsintensität
       </p>
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
           <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
           <Tooltip formatter={(v: number) => [v.toLocaleString("de-DE"), "Einträge"]} />

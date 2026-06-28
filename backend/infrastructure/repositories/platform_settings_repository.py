@@ -12,11 +12,34 @@ from backend.infrastructure.repositories.mongo import Db
 
 LEGACY_PLATFORM_DOC_ID = "platform"
 
+# Intents, die einzeln für die Auto-Freigabe aktiviert werden können.
+AUTO_APPROVE_INTENTS = ("booking", "cancellation", "inquiry", "change")
+
+
+def _default_auto_approve_intents() -> dict[str, bool]:
+    return {intent: False for intent in AUTO_APPROVE_INTENTS}
+
+
+class AutoApproveSettings(BaseModel):
+    """Auto-Freigabe ab Konfidenz (pro Mandant)."""
+
+    enabled: bool = False
+    # Schwelle in Prozent (90–100), Standard 97 %.
+    threshold: int = Field(default=97, ge=90, le=100)
+    per_intent: dict[str, bool] = Field(default_factory=_default_auto_approve_intents)
+
+    def allows(self, intent: str | None) -> bool:
+        """True, wenn dieser Intent für die Auto-Freigabe aktiviert ist."""
+        if not self.enabled or not intent:
+            return False
+        return bool(self.per_intent.get(intent, False))
+
 
 class PlatformSettingsRecord(BaseModel):
     """Vom Benutzer konfigurierbare Einstellungen (überschreiben .env zur Laufzeit)."""
 
     id: str
+    auto_approve: AutoApproveSettings = Field(default_factory=AutoApproveSettings)
     whatsapp_enabled: bool = False
     whatsapp_access_token: str = ""
     whatsapp_phone_number_id: str = ""

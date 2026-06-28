@@ -7,9 +7,9 @@ const LABELS: Record<ActivityStatus, string> = {
 };
 
 const STYLES: Record<ActivityStatus, string> = {
-  active: "bg-green-100 text-green-800",
-  idle: "bg-amber-100 text-amber-800",
-  never: "bg-slate-100 text-slate-600",
+  active: "bg-okbg text-oktext",
+  idle: "bg-warnbg text-warntext",
+  never: "bg-surface2 text-muted",
 };
 
 export function ActivityBadge({ status }: { status: ActivityStatus }) {

@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api/client";
 import type {
+  BulkApproveResponse,
   ReviewQueueResponse,
   WhatsAppPreviewResponse,
 } from "@/lib/types/api";
@@ -83,4 +84,36 @@ export async function rejectReview(
     correlation_id: correlationId,
     reason,
   });
+}
+
+export async function undoAutoApproval(correlationId: string): Promise<void> {
+  await apiClient.post("/api/review/undo", {
+    correlation_id: correlationId,
+  });
+}
+
+export async function translateDraft(
+  correlationId: string,
+  target: "de" | "en",
+  draftBody?: string
+): Promise<{ translated_body: string; target_language: string }> {
+  const { data } = await apiClient.post<{
+    translated_body: string;
+    target_language: string;
+  }>("/api/review/translate", {
+    correlation_id: correlationId,
+    target_language: target,
+    ...(draftBody !== undefined ? { draft_body: draftBody } : {}),
+  });
+  return data;
+}
+
+export async function bulkApprove(
+  correlationIds: string[]
+): Promise<BulkApproveResponse> {
+  const { data } = await apiClient.post<BulkApproveResponse>(
+    "/api/review/bulk-approve",
+    { correlation_ids: correlationIds }
+  );
+  return data;
 }

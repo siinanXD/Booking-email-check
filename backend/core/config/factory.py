@@ -140,8 +140,6 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
     feedback_tracker = ReviewFeedbackTracker(alerts=alerts)
 
     llm_mode = cfg.llm_mode.strip().lower()
-    # Raw mail prompts must not be auto-captured by provider wrappers.
-    use_langfuse_openai = False
     llm: LLMClient
     embed_client: EmbeddingFn
     if llm_mode == "mock":
@@ -150,11 +148,11 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         llm = MockLLM()
         embed_client = MockEmbeddingClient()
     elif llm_mode == "live":
-        llm = OpenAIClient(cfg.openai_api_key, use_langfuse=use_langfuse_openai)
+        llm = OpenAIClient(cfg.openai_api_key, use_langfuse=False)
         embed_client = EmbeddingClient(
             cfg.openai_api_key,
             cfg.embedding_model,
-            use_langfuse=use_langfuse_openai,
+            use_langfuse=False,
             tracing=tracing,
         )
     else:
@@ -266,6 +264,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         workflow_router=workflow_router,
         tenant_workflow_executor=tenant_workflow_executor,
         tenant_workflow_repo=tenant_workflow_repo,
+        platform_settings_repo=platform_settings_repo,
         tracing=tracing,
     )
 
@@ -297,4 +296,5 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         notification_repo=notification_repo,
         indexing_service=indexing,
         gemini_client=gemini_client,
+        llm=llm,
     )

@@ -141,6 +141,29 @@ def sanitize_draft_guest_names(body: str, known_guest: str | None) -> str:
     return result
 
 
+def cited_span(body: str, booking_number: str | None) -> str | None:
+    """Kurze Belegstelle aus der Mail (Highlight in „Warum diese Einstufung?").
+
+    Bevorzugt den Kontext rund um die Buchungsnummer, sonst die erste
+    aussagekräftige Zeile.
+    """
+    text = (body or "").strip()
+    if not text:
+        return None
+    if booking_number:
+        idx = text.lower().find(booking_number.lower())
+        if idx >= 0:
+            start = max(0, idx - 40)
+            end = min(len(text), idx + len(booking_number) + 40)
+            snippet = text[start:end].strip()
+            return f"…{snippet}…" if start > 0 or end < len(text) else snippet
+    for line in text.splitlines():
+        cleaned = line.strip()
+        if len(cleaned) >= 12:
+            return cleaned[:160]
+    return text[:160]
+
+
 def _dates_in_text(body: str) -> list[str]:
     dates = list(_DATE_ISO.findall(body))
     for de_date in _DATE_DE.findall(body):

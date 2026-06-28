@@ -14,6 +14,7 @@ from backend.api.schemas.review import ReviewQueueItem
 from backend.api.services.date_range import parse_date_range
 from backend.core.config.factory import AppContext
 from backend.core.models.email import StoredEmail
+from backend.core.utils.language import detect_reply_language
 from backend.infrastructure.repositories.review_repository import ReviewRecord
 
 
@@ -237,6 +238,12 @@ def get_email_detail(
         approved_body=review.approved_body if review else None,
         mail_summary=summary.summary_text,
         mail_sentiment=summary.sentiment,
+        confidence=review.confidence if review else None,
+        signals=list(review.signals) if review else [],
+        grounding_span=review.grounding_span if review else None,
+        escalated=review.escalated if review else False,
+        auto_approved=review.auto_approved if review else False,
+        reply_language=detect_reply_language(email.body_text),
     )
 
 

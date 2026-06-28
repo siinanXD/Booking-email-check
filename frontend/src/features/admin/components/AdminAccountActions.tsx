@@ -126,7 +126,7 @@ export function AdminAccountActions({ accountId, isSuspended, expiresAt }: Props
               label: v === "remove" ? "Begrenzung entfernen" : opt?.label ?? "",
             });
           }}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink2 hover:bg-surface2"
         >
           <option value="" disabled>
             Zugang begrenzen…
@@ -140,7 +140,7 @@ export function AdminAccountActions({ accountId, isSuspended, expiresAt }: Props
         </select>
 
         {expiresAt && (
-          <span className="flex items-center rounded-lg bg-orange-50 px-3 py-1.5 text-xs text-orange-700">
+          <span className="flex items-center rounded-lg bg-warnbg px-3 py-1.5 text-xs text-warntext">
             Läuft ab: {formatTs(expiresAt)}
           </span>
         )}

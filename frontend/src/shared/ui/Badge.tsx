@@ -1,29 +1,31 @@
 const styles: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-200/80",
-  approved: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80",
-  rejected: "bg-red-50 text-red-700 ring-1 ring-red-200/80",
-  discarded: "bg-slate-100 text-slate-500 ring-1 ring-slate-200/80",
-  booking: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80",
-  cancellation: "bg-red-50 text-red-700 ring-1 ring-red-200/80",
-  change: "bg-sky-50 text-sky-700 ring-1 ring-sky-200/80",
-  inquiry: "bg-violet-50 text-violet-700 ring-1 ring-violet-200/80",
-  complaint: "bg-orange-50 text-orange-700 ring-1 ring-orange-200/80",
-  payment: "bg-amber-50 text-amber-800 ring-1 ring-amber-200/80",
-  default: "bg-slate-100 text-slate-600 ring-1 ring-slate-200/80",
+  pending: "bg-warnbg text-warntext",
+  approved: "bg-okbg text-oktext",
+  rejected: "bg-dangerbg text-dangertext",
+  discarded: "bg-app text-muted",
+  booking: "bg-okbg text-oktext",
+  cancellation: "bg-dangerbg text-dangertext",
+  change: "bg-infobg text-infotext",
+  inquiry: "bg-inquirybg text-inquirytext",
+  complaint: "bg-dangerbg text-dangertext",
+  payment: "bg-warnbg text-warntext",
+  escalated: "bg-dangerbg text-dangertext",
+  default: "bg-app text-muted",
 };
 
 const dots: Record<string, string> = {
-  pending: "bg-amber-400",
-  approved: "bg-emerald-500",
-  rejected: "bg-red-500",
-  discarded: "bg-slate-400",
-  booking: "bg-emerald-500",
-  cancellation: "bg-red-500",
-  change: "bg-sky-500",
-  inquiry: "bg-violet-500",
-  complaint: "bg-orange-500",
-  payment: "bg-amber-500",
-  default: "bg-slate-400",
+  pending: "bg-warntext",
+  approved: "bg-oktext",
+  rejected: "bg-dangertext",
+  discarded: "bg-muted",
+  booking: "bg-oktext",
+  cancellation: "bg-dangertext",
+  change: "bg-infotext",
+  inquiry: "bg-inquirytext",
+  complaint: "bg-dangertext",
+  payment: "bg-warntext",
+  escalated: "bg-dangertext",
+  default: "bg-muted",
 };
 
 export type BadgeTone =
@@ -37,6 +39,7 @@ export type BadgeTone =
   | "inquiry"
   | "complaint"
   | "payment"
+  | "escalated"
   | "default";
 
 export function Badge({

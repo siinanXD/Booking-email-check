@@ -71,13 +71,13 @@ export function DashboardPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Übersicht</h2>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-400">
-            <span>Aktualisiert: <span className="text-slate-600 font-medium">{loading ? dash : formatTimestamp(dataUpdatedAt)}</span></span>
+          <h2 className="text-2xl font-extrabold tracking-tight text-ink">Übersicht</h2>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-faint">
+            <span>Aktualisiert: <span className="text-muted font-medium">{loading ? dash : formatTimestamp(dataUpdatedAt)}</span></span>
             <span>·</span>
-            <span>Sync: <span className="text-slate-600 font-medium">{formatTimestamp(stats?.last_sync_at)}</span></span>
+            <span>Sync: <span className="text-muted font-medium">{formatTimestamp(stats?.last_sync_at)}</span></span>
             <span>·</span>
-            <span>Letzte Mail: <span className="text-slate-600 font-medium">{formatTimestamp(stats?.last_email_received_at)}</span></span>
+            <span>Letzte Mail: <span className="text-muted font-medium">{formatTimestamp(stats?.last_email_received_at)}</span></span>
           </div>
         </div>
 
@@ -92,37 +92,37 @@ export function DashboardPage() {
           </Button>
           {syncMut.data && (
             <div className="max-w-xs text-right">
-              <p className={`text-xs font-medium ${syncMut.data.success ? "text-emerald-700" : "text-amber-700"}`}>
+              <p className={`text-xs font-medium ${syncMut.data.success ? "text-oktext" : "text-warntext"}`}>
                 {syncMut.data.message}
               </p>
               {syncErrors.length > 0 && (
                 <button
                   type="button"
-                  className="mt-1 text-xs text-indigo-600 underline hover:text-indigo-500"
+                  className="mt-1 text-xs text-brandink underline hover:text-brand"
                   onClick={() => setShowSyncErrors((o) => !o)}
                 >
                   {showSyncErrors ? "Ausblenden" : "Fehlerdetails"}
                 </button>
               )}
               {showSyncErrors && (
-                <ul className="mt-1 space-y-0.5 text-left text-xs text-red-600">
+                <ul className="mt-1 space-y-0.5 text-left text-xs text-dangertext">
                   {visibleSyncErrors.map((e) => <li key={e}>· {e}</li>)}
                 </ul>
               )}
             </div>
           )}
           {syncMut.isError && (
-            <p className="text-xs text-red-600">Synchronisation fehlgeschlagen.</p>
+            <p className="text-xs text-dangertext">Synchronisation fehlgeschlagen.</p>
           )}
         </div>
       </div>
 
       {/* Notices */}
       {mailConnection && !mailConnection.onboarding_completed && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/30 bg-brandsoft px-4 py-3">
           <div className="flex items-start gap-3">
-            <Mail size={16} className="mt-0.5 flex-shrink-0 text-indigo-600" />
-            <p className="text-sm text-indigo-900">
+            <Mail size={16} className="mt-0.5 flex-shrink-0 text-brandink" />
+            <p className="text-sm text-brandink">
               <span className="font-semibold">Postfach noch nicht verbunden.</span>{" "}
               Verbinde dein Postfach, damit Buchungsmails automatisch gelesen und
               klassifiziert werden.
@@ -130,24 +130,42 @@ export function DashboardPage() {
           </div>
           <Link
             to="/onboarding"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white no-underline shadow-sm transition-colors hover:bg-indigo-500"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white no-underline shadow-sm transition-colors"
           >
             Postfach einrichten
           </Link>
         </div>
       )}
       {mailConnection?.last_error && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
-          <p className="text-sm text-amber-800">
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-warnbg px-4 py-3">
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-warntext" />
+          <p className="text-sm text-warntext">
             <span className="font-semibold">Postfach-Hinweis:</span> {mailConnection.last_error}
           </p>
         </div>
       )}
       {stats?.mail_fetch_unread_only && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <Info size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
-          <p className="text-sm text-amber-800">Nur ungelesene Mails werden abgerufen (OUTLOOK_FETCH_UNREAD_ONLY).</p>
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-warnbg px-4 py-3">
+          <Info size={16} className="mt-0.5 flex-shrink-0 text-warntext" />
+          <p className="text-sm text-warntext">Nur ungelesene Mails werden abgerufen (OUTLOOK_FETCH_UNREAD_ONLY).</p>
+        </div>
+      )}
+
+      {!loading && stats!.escalated_open > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dangertext/30 bg-dangerbg px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-dangertext" />
+            <p className="text-sm text-dangertext">
+              <span className="font-semibold font-numeric">{stats!.escalated_open}</span>{" "}
+              eskaliert — wartet auf deine Antwort
+            </p>
+          </div>
+          <Link
+            to="/review"
+            className="inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-dangertext no-underline hover:underline"
+          >
+            Ansehen →
+          </Link>
         </div>
       )}
 
@@ -160,7 +178,7 @@ export function DashboardPage() {
 
       {/* Primary KPIs */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Überblick</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-faint">Überblick</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Buchungs-Mails (7 Tage)"
@@ -197,7 +215,7 @@ export function DashboardPage() {
 
       {/* Secondary KPIs */}
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Weitere Metriken</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-faint">Weitere Metriken</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Stornos heute"
@@ -244,9 +262,9 @@ export function DashboardPage() {
 
       {/* Info banner */}
       {!loading && stats!.total_emails_week > 0 && stats!.booking_emails_total === 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-4">
-          <Info size={16} className="mt-0.5 flex-shrink-0 text-blue-600" />
-          <p className="text-sm text-blue-900">
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-infobg px-4 py-4">
+          <Info size={16} className="mt-0.5 flex-shrink-0 text-infotext" />
+          <p className="text-sm text-infotext">
             E-Mails eingegangen, aber keine als Buchungs-Mail erkannt. Die KI wertet Betreff und
             Inhalt aus — nach dem Sync müssen neue Mails die Pipeline durchlaufen.
           </p>

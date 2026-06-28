@@ -76,8 +76,8 @@ export function InboxPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-slate-900">Posteingang</h2>
-        <p className="mt-0.5 text-sm text-slate-500">
+        <h2 className="text-xl font-semibold text-ink">Posteingang</h2>
+        <p className="mt-0.5 text-sm text-muted">
           Eingegangene Mails nach Kategorie — die KI erkennt Buchungen auch aus
           normalem Gasttext.
         </p>
@@ -85,7 +85,7 @@ export function InboxPage() {
 
       {/* Intent tabs */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="flex max-w-full overflow-x-auto rounded-xl border border-border bg-surface p-1 shadow-card">
           {TABS.map((t) => {
             const count = t.countKey && stats ? stats[t.countKey] : undefined;
             return (
@@ -94,18 +94,18 @@ export function InboxPage() {
                 type="button"
                 className={`flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
                   intent === t.intent
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-brand-gradient text-white shadow-card"
+                    : "text-muted hover:text-ink2"
                 }`}
                 onClick={() => setIntent(t.intent)}
               >
                 {t.label}
                 {typeof count === "number" && count > 0 && (
                   <span
-                    className={`rounded-full px-1.5 text-[10px] font-bold ${
+                    className={`rounded-full px-1.5 text-[10px] font-bold font-numeric ${
                       intent === t.intent
                         ? "bg-white/25 text-white"
-                        : "bg-slate-100 text-slate-500"
+                        : "bg-surface2 text-muted"
                     }`}
                   >
                     {count}
@@ -123,7 +123,7 @@ export function InboxPage() {
         <div className="relative min-w-[220px] flex-1">
           <Search
             size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
           />
           <input
             type="text"
@@ -134,14 +134,14 @@ export function InboxPage() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 transition-all focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="w-full rounded-xl border border-border2 bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder:text-faint transition-all focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
           />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 py-10 text-slate-500">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-500" />
+        <div className="flex items-center gap-2 py-10 text-muted">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-brand" />
           <span className="text-sm">Lade…</span>
         </div>
       ) : isError ? (
@@ -180,8 +180,8 @@ export function InboxPage() {
               onRowClick={(item) => setSelected(item)}
             />
             {data.pages > 1 && (
-              <div className="flex items-center justify-between text-sm text-slate-600">
-                <span className="text-xs text-slate-500">
+              <div className="flex items-center justify-between text-sm text-ink2">
+                <span className="text-xs text-muted font-numeric">
                   Seite {data.page} von {data.pages} ({data.total} gesamt)
                 </span>
                 <div className="flex gap-2">

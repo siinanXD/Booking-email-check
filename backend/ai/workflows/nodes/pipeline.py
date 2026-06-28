@@ -32,6 +32,9 @@ from backend.infrastructure.repositories.email_repository import EmailRepository
 from backend.infrastructure.repositories.extraction_repository import (
     ExtractionRepository,
 )
+from backend.infrastructure.repositories.platform_settings_repository import (
+    PlatformSettingsRepository,
+)
 from backend.infrastructure.repositories.review_repository import ReviewRepository
 from backend.infrastructure.repositories.tenant_workflow_repository import (
     TenantWorkflowRepository,
@@ -71,6 +74,7 @@ class WorkflowNodes(PipelineReviewMixin):
         workflow_router: WorkflowRouter | None = None,
         tenant_workflow_executor: TenantWorkflowExecutor | None = None,
         tenant_workflow_repo: TenantWorkflowRepository | None = None,
+        platform_settings_repo: PlatformSettingsRepository | None = None,
     ) -> None:
         self._ingestion = ingestion
         self._classification = classification
@@ -89,6 +93,7 @@ class WorkflowNodes(PipelineReviewMixin):
         self._workflow_router = workflow_router
         self._tenant_executor = tenant_workflow_executor
         self._tenant_workflow_repo = tenant_workflow_repo
+        self._platform_settings_repo = platform_settings_repo
 
     def ingest(self, state: EmailWorkflowState) -> EmailWorkflowState:
         raw = state.get("email")
@@ -281,16 +286,8 @@ class WorkflowNodes(PipelineReviewMixin):
             ProcessingState.DRAFTED,
             account_id=email.account_id,
         )
-        intent_str = _intent_str(state.get("intent"))
-        if self._review_repo is not None:
-            self._review_repo.upsert_pending(
-                correlation_id=email.correlation_id,
-                message_id=email.message_id,
-                draft_body=draft.body,
-                grounding_flag=grounding_flag,
-                intent=intent_str,
-                account_id=email.account_id,
-            )
+        # Der Review-Datensatz wird im human_review-Node mit vollem Detail
+        # (Konfidenz, Signale, Eskalation) gespeichert.
         return {"draft": draft, "grounding_flag": grounding_flag}
 
 

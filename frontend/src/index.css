@@ -1,10 +1,96 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+/* ============================================================================
+   Design tokens — maßgeblich aus dem Redesign-Handoff (README).
+   Light = :root, Dark = [data-theme="dark"]. Alle Farben werden über
+   tailwind.config.ts als var(--token) auf Tailwind-Utilities gemappt.
+   ========================================================================== */
 @layer base {
   :root {
-    --sidebar-width: 14rem;
-    --topbar-height: 3.5rem;
+    /* surfaces */
+    --bg: #e9ebf3;
+    --app: #f6f7fb;
+    --surface: #ffffff;
+    --surface2: #fbfbfd;
+    --border: #edeff4;
+    --border2: #e3e6ef;
+
+    /* text */
+    --ink: #0f1729;
+    --ink2: #3a4257;
+    --muted: #646d80;
+    --faint: #6c7587;
+
+    /* sidebar rail */
+    --rail1: #0c1124;
+    --rail2: #0a0e1e;
+    --railtext: #9aa1bd;
+    --railfaint: #6b7290;
+
+    /* brand */
+    --brand: #6366f1;
+    --brand2: #7c3aed;
+    --brandsoft: #eef2ff;
+    --brandink: #4f46e5;
+
+    /* semantic status */
+    --okbg: #ecfdf5;
+    --oktext: #047857;
+    --warnbg: #fffbeb;
+    --warntext: #b45309;
+    --dangerbg: #fef2f2;
+    --dangertext: #b91c1c;
+    --infobg: #f0f9ff;
+    --infotext: #0369a1;
+    --inquirybg: #faf5ff;
+    --inquirytext: #7e22ce;
+    --whatsapp: #25d366;
+
+    /* elevation */
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    --shadowlg: 0 18px 40px -18px rgba(16, 24, 40, 0.22);
+
+    --sidebar-width: 14.375rem; /* 230px */
+    --topbar-height: 3.625rem; /* 58px */
+  }
+
+  [data-theme="dark"] {
+    --bg: #05070d;
+    --app: #0a0e1a;
+    --surface: #121a2e;
+    --surface2: #0e1626;
+    --border: #1f2840;
+    --border2: #2a3654;
+
+    --ink: #eef1f8;
+    --ink2: #c4cadb;
+    --muted: #9aa3bd;
+    --faint: #8b93ad;
+
+    --rail1: #0a0e1c;
+    --rail2: #070a14;
+    --railtext: #9aa1bd;
+    --railfaint: #5b6488;
+
+    --brand: #818cf8;
+    --brand2: #a78bfa;
+    --brandsoft: #1e2747;
+    --brandink: #a5b4fc;
+
+    --okbg: rgba(16, 185, 129, 0.16);
+    --oktext: #6ee7b7;
+    --warnbg: rgba(245, 158, 11, 0.16);
+    --warntext: #fcd34d;
+    --dangerbg: rgba(239, 68, 68, 0.16);
+    --dangertext: #fca5a5;
+    --infobg: rgba(14, 165, 233, 0.16);
+    --infotext: #7dd3fc;
+    --inquirybg: rgba(168, 85, 247, 0.16);
+    --inquirytext: #d8b4fe;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadowlg: 0 18px 40px -18px rgba(0, 0, 0, 0.6);
   }
 
   * {
@@ -20,32 +106,200 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: #f1f5f9;
-    color: #0f172a;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   /* Custom scrollbar */
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border2);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+  aside ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  aside ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
 
-  aside ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
-  aside ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 }
 
+/* ============================================================================
+   Keyframes & animation utilities (aus dem Prototyp übernommen).
+   ========================================================================== */
 @layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.18s ease-out both;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .font-numeric {
+    font-family: "Space Grotesk", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
   }
 
-  /* Subtle dot-grid background for main content */
-  .bg-dot-grid {
-    background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
-    background-size: 24px 24px;
+  .skel {
+    background: linear-gradient(
+      90deg,
+      var(--border) 25%,
+      var(--surface2) 37%,
+      var(--border) 63%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+    border-radius: 8px;
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 0.35s ease both;
+  }
+  .animate-slide-from-right {
+    animation: slideFromRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .animate-pop-in {
+    animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .animate-slide-in-right {
+    animation: slideInRight 0.25s ease both;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes slideFromRight {
+    from {
+      opacity: 0;
+      transform: translateX(28px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pulseDot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes growBar {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+  @keyframes growW {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes popIn {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.97);
+    }
+    60% {
+      transform: translateY(-2px) scale(1.01);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pingRing {
+    0% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    70%,
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+  @keyframes drawLine {
+    from {
+      stroke-dashoffset: 700;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes shrinkW {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
+  @keyframes ringFill {
+    from {
+      stroke-dashoffset: 151;
+    }
+    to {
+      stroke-dashoffset: 6;
+    }
+  }
+
+  .animate-ping-ring {
+    animation: pingRing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .animate-pulse-dot {
+    animation: pulseDot 1.6s infinite;
+  }
+  .animate-grow-bar {
+    animation: growBar 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .animate-grow-w {
+    animation: growW 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .animate-ring-fill {
+    animation: ringFill 1.1s ease both;
   }
 }

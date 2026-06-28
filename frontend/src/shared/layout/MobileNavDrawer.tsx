@@ -52,7 +52,7 @@ export function MobileNavDrawer({ open, onClose }: Props) {
     <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
       <button
         type="button"
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]"
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px]"
         aria-label="Menü schließen"
         onClick={onClose}
       />
@@ -61,19 +61,19 @@ export function MobileNavDrawer({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-full w-[min(100%,20rem)] max-w-[85vw] flex-col bg-slate-900 text-slate-200 shadow-xl transition-transform duration-200 ease-out"
+        className="relative flex h-full w-[min(100%,20rem)] max-w-[85vw] flex-col bg-rail-gradient text-railtext shadow-xl transition-transform duration-200 ease-out"
       >
         <p id={titleId} className="sr-only">
           Navigation
         </p>
-        <div className="flex items-center justify-between border-b border-slate-700">
+        <div className="flex items-center justify-between border-b border-white/[0.07]">
           <div className="min-w-0 flex-1">
             <SidebarBrand />
           </div>
           <button
             ref={closeButtonRef}
             type="button"
-            className="mr-2 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="mr-2 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-railtext hover:bg-white/[0.06]"
             aria-label="Menü schließen"
             onClick={onClose}
           >

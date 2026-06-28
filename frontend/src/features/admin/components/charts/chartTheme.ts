@@ -1,11 +1,11 @@
-/** Einheitliche Farben für Admin-Diagramme. */
+/** Einheitliche Farben für Admin-Diagramme (Design-Tokens als CSS-Variablen). */
 export const ADMIN_CHART = {
-  indigo: "#4f46e5",
-  emerald: "#10b981",
-  amber: "#f59e0b",
-  slate: "#94a3b8",
-  rose: "#f43f5e",
-  violet: "#8b5cf6",
+  indigo: "var(--brand)",
+  emerald: "var(--oktext)",
+  amber: "var(--warntext)",
+  slate: "var(--muted)",
+  rose: "var(--dangertext)",
+  violet: "var(--brand2)",
 } as const;
 
 export const ACTIVITY_COLORS: Record<string, string> = {

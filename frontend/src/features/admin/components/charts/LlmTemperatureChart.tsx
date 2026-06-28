@@ -28,13 +28,13 @@ export function LlmTemperatureChart({
 
   return (
     <Card>
-      <h3 className="mb-1 font-medium text-slate-900">Temperatur pro Pipeline-Schritt</h3>
-      <p className="mb-4 text-xs text-slate-500">
+      <h3 className="mb-1 font-medium text-ink">Temperatur pro Pipeline-Schritt</h3>
+      <p className="mb-4 text-xs text-muted">
         0 = deterministisch, höher = kreativer — gilt nach dem Speichern für alle neuen Mails
       </p>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis dataKey="step" tick={{ fontSize: 11 }} />
           <YAxis domain={[0, 1]} tick={{ fontSize: 11 }} tickCount={6} />
           <Tooltip formatter={(v: number) => [v.toFixed(1), "Temperatur"]} />

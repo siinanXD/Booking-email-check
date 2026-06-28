@@ -8,9 +8,9 @@ interface CardProps {
 }
 
 const variants = {
-  default: "border border-slate-200/80 bg-white shadow-card",
-  flat: "border border-slate-200/60 bg-white",
-  elevated: "border border-slate-200/60 bg-white shadow-card-lg",
+  default: "border border-border bg-surface shadow-card",
+  flat: "border border-border bg-surface",
+  elevated: "border border-border bg-surface shadow-card-lg",
 };
 
 export function Card({
@@ -21,10 +21,10 @@ export function Card({
 }: CardProps) {
   return (
     <div
-      className={`rounded-xl p-5 ${variants[variant]} ${
+      className={`rounded-2xl p-5 ${variants[variant]} ${
         hover
-          ? "cursor-pointer transition-shadow duration-200 hover:shadow-card-hover hover:-translate-y-px"
-          : "transition-shadow duration-200"
+          ? "cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-card-lg"
+          : ""
       } ${className}`}
     >
       {children}

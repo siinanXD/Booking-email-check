@@ -40,6 +40,10 @@ class ReviewRepository:
         grounding_flag: bool,
         intent: str | None,
         account_id: str | None = None,
+        confidence: float = 1.0,
+        signals: list[str] | None = None,
+        grounding_span: str | None = None,
+        escalated: bool = False,
     ) -> ReviewRecord:
         """Speichert ausstehenden Review-Entwurf."""
         now = datetime.now(UTC)
@@ -51,6 +55,10 @@ class ReviewRepository:
             "grounding_flag": grounding_flag,
             "review_status": "pending",
             "intent": intent,
+            "confidence": confidence,
+            "signals": signals or [],
+            "grounding_span": grounding_span,
+            "escalated": escalated,
             "updated_at": now.isoformat(),
         }
         if account_id:
@@ -68,6 +76,7 @@ class ReviewRepository:
         account_id: str | None = None,
         approved_body: str | None = None,
         reviewer_note: str | None = None,
+        extra_fields: dict[str, Any] | None = None,
     ) -> ReviewRecord | None:
         """Aktualisiert Review-Status nach Freigabe/Ablehnung."""
         update: dict[str, Any] = {
@@ -80,6 +89,8 @@ class ReviewRepository:
             update["reviewer_note"] = reviewer_note
         if status == "approved":
             update["grounding_flag"] = False
+        if extra_fields:
+            update.update(extra_fields)
         query = with_account_filter({"_id": correlation_id}, account_id)
         self._col.update_one(query, {"$set": update})
         return self.get(correlation_id, account_id=account_id)
@@ -169,6 +180,11 @@ class ReviewRepository:
         query = with_account_filter(match, account_id)
         cursor = self._col.find(query).sort("updated_at", -1).limit(limit)
         return [ReviewRecord.model_validate(doc) for doc in cursor]
+
+    def count_escalated(self, *, account_id: str | None = None) -> int:
+        """Offene, eskalierte Reviews (Beschwerde / niedrige Konfidenz)."""
+        match = {"review_status": "pending", "escalated": True}
+        return int(self._col.count_documents(with_account_filter(match, account_id)))
 
     def count_pending_grounding(self, *, account_id: str | None = None) -> int:
         """Ausstehende Reviews mit Grounding-Hinweis."""
