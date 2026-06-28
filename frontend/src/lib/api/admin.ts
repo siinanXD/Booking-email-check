@@ -19,6 +19,10 @@ import type {
   AdminWhatsAppTemplatesUpdate,
   AdminWhatsAppTestResponse,
   AdminWhatsAppTestTemplate,
+  AdminPipelineResponse,
+  AdminStatusResponse,
+  AdminStuckResponse,
+  EmailActivityResponse,
   MailConnectionResponse,
   MailTestResponse,
 } from "@/lib/types/api";
@@ -225,6 +229,46 @@ export async function previewAdminLlmConfig(
   const { data } = await apiClient.post<AdminLlmPreviewResponse>(
     "/api/admin/llm-config/preview",
     payload
+  );
+  return data;
+}
+
+// ── Datenfluss (pipeline / status / stuck / trace) ─────────────────────────
+
+export async function fetchAdminPipeline(
+  days = 30
+): Promise<AdminPipelineResponse> {
+  const { data } = await apiClient.get<AdminPipelineResponse>(
+    "/api/admin/pipeline",
+    { params: { days } }
+  );
+  return data;
+}
+
+export async function fetchAdminStatus(): Promise<AdminStatusResponse> {
+  const { data } = await apiClient.get<AdminStatusResponse>(
+    "/api/admin/status"
+  );
+  return data;
+}
+
+export async function fetchAdminStuckMails(
+  hours = 24,
+  kind: "processing" | "discarded" = "processing"
+): Promise<AdminStuckResponse> {
+  const { data } = await apiClient.get<AdminStuckResponse>(
+    "/api/admin/mails/stuck",
+    { params: { hours, kind } }
+  );
+  return data;
+}
+
+export async function fetchAdminMailTrace(
+  accountId: string,
+  correlationId: string
+): Promise<EmailActivityResponse> {
+  const { data } = await apiClient.get<EmailActivityResponse>(
+    `/api/admin/accounts/${accountId}/mails/${correlationId}/trace`
   );
   return data;
 }

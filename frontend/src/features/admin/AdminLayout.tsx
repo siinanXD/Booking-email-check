@@ -4,6 +4,7 @@ import { Shield } from "lucide-react";
 const adminTabs = [
   { to: "/admin/overview", label: "Übersicht" },
   { to: "/admin/activity", label: "Aktivität" },
+  { to: "/admin/pipeline", label: "Datenfluss" },
   { to: "/admin/accounts", label: "Mandanten" },
   { to: "/admin/audit", label: "Audit-Log" },
   { to: "/admin/diagnostics", label: "Diagnose" },

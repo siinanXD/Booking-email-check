@@ -36,6 +36,9 @@ const AdminObservabilityPage = lazy(() =>
 const AdminOverviewPage = lazy(() =>
   import("@/features/admin/AdminOverviewPage").then((m) => ({ default: m.AdminOverviewPage }))
 );
+const AdminPipelinePage = lazy(() =>
+  import("@/features/admin/AdminPipelinePage").then((m) => ({ default: m.AdminPipelinePage }))
+);
 const AdminTicketsPage = lazy(() =>
   import("@/features/admin/AdminTicketsPage").then((m) => ({ default: m.AdminTicketsPage }))
 );
@@ -102,6 +105,7 @@ export function App() {
                   <Route path="accounts" element={<AdminApprovalsPage />} />
                   <Route path="accounts/:accountId" element={<AdminAccountDetailPage />} />
                   <Route path="activity" element={<AdminActivityPage />} />
+                  <Route path="pipeline" element={<AdminPipelinePage />} />
                   <Route path="audit" element={<AdminAuditPage />} />
                   <Route path="diagnostics" element={<AdminDiagnosticsPage />} />
                   <Route path="observability" element={<AdminObservabilityPage />} />

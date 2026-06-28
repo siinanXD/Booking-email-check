@@ -207,6 +207,8 @@ export interface AdminLlmPromptHistoryResponse {
   entries: AdminLlmPromptHistoryEntry[];
 }
 
+export * from "./api-admin-pipeline";
+
 export interface AdminAuditLogEntry {
   id: string;
   action: string;

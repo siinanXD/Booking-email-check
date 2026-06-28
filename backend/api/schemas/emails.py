@@ -39,6 +39,13 @@ class EmailActivityEvent(BaseModel):
     kind: str
     label: str
     actor: str | None = None
+    # Optionale Entscheidungs-Details (vom Admin-Trace angereichert).
+    intent: str | None = None
+    confidence: float | None = None
+    auto_approved: bool | None = None
+    escalated: bool | None = None
+    notification_status: str | None = None
+    error: str | None = None
 
 
 class EmailActivityResponse(BaseModel):
