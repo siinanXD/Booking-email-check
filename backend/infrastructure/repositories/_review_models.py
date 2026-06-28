@@ -20,6 +20,14 @@ class ReviewRecord(BaseModel):
     reviewer_note: str | None = None
     approved_body: str | None = None
     intent: str | None = None
+    # Klassifizierungs-/Grounding-Detail für „Warum diese Einstufung?".
+    confidence: float = 1.0
+    signals: list[str] = Field(default_factory=list)
+    grounding_span: str | None = None
+    # Eskalation + Auto-Freigabe (inkl. Undo-Fenster).
+    escalated: bool = False
+    auto_approved: bool = False
+    auto_approved_at: str | None = None
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -29,4 +37,5 @@ def record_to_status(record: ReviewRecord) -> ReviewStatus:
         status=record.review_status,
         reviewer_note=record.reviewer_note,
         approved_body=record.approved_body,
+        escalated=record.escalated,
     )

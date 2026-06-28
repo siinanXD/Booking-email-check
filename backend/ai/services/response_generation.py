@@ -9,7 +9,11 @@ from langfuse.decorators import langfuse_context, observe
 
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.services.classification import LLMClient
-from backend.ai.services.grounding import GroundingService, sanitize_draft_guest_names
+from backend.ai.services.grounding import (
+    GroundingService,
+    cited_span,
+    sanitize_draft_guest_names,
+)
 from backend.ai.services.llm_errors import LLM_PIPELINE_ERRORS, notify_llm_failure
 from backend.ai.services.prompt_loader import format_resolved_prompt
 from backend.ai.services.retrieval import RetrievalHits, RetrievalService
@@ -125,12 +129,17 @@ class ResponseGenerationService:
                 body=fallback_draft_body(email, extraction),
                 model=self._model,
                 grounding_ok=False,
+                confidence=0.0,
                 langfuse_trace_id=trace_id,
             )
             return draft
         if hits.guest and hits.guest.name:
             draft.body = sanitize_draft_guest_names(draft.body, hits.guest.name)
-        draft.grounding_ok = self._grounding.check(draft, hits)
+        detail = self._grounding.check_with_detail(draft, hits)
+        draft.grounding_ok = detail.ok
+        draft.confidence = detail.confidence
+        draft.grounding_signals = detail.failed_fields
+        draft.grounding_span = cited_span(email.body_text, extraction.booking_number)
         return draft
 
     def _build_prompt(

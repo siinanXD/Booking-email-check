@@ -10,6 +10,7 @@ from backend.api.middleware.auth_guard import require_auth
 from backend.api.middleware.roles import is_account_admin
 from backend.api.middleware.tenant import get_request_account_id, require_account
 from backend.api.schemas.settings import (
+    AutoApproveConfig,
     PlatformSettingsResponse,
     PlatformSettingsUpdate,
     PropertyRecipientItem,
@@ -81,6 +82,11 @@ def _to_response() -> PlatformSettingsResponse:
         whatsapp_default_recipients=platform.whatsapp_default_recipients,
         whatsapp_test_recipient=platform.whatsapp_test_recipient,
         outlook_mailbox=platform.outlook_mailbox,
+        auto_approve=AutoApproveConfig(
+            enabled=platform.auto_approve.enabled,
+            threshold=platform.auto_approve.threshold,
+            per_intent=dict(platform.auto_approve.per_intent),
+        ),
         property_recipients=[
             PropertyRecipientItem(
                 property_name=p.property_name,
@@ -146,6 +152,21 @@ def update_settings() -> tuple[Any, int]:
         current.whatsapp_test_recipient = body.whatsapp_test_recipient.strip()
     if body.outlook_mailbox is not None:
         current.outlook_mailbox = body.outlook_mailbox.strip()
+    if body.auto_approve is not None:
+        from backend.infrastructure.repositories.platform_settings_repository import (
+            AUTO_APPROVE_INTENTS,
+            AutoApproveSettings,
+        )
+
+        per_intent = {
+            intent: bool(body.auto_approve.per_intent.get(intent, False))
+            for intent in AUTO_APPROVE_INTENTS
+        }
+        current.auto_approve = AutoApproveSettings(
+            enabled=body.auto_approve.enabled,
+            threshold=body.auto_approve.threshold,
+            per_intent=per_intent,
+        )
 
     ctx.platform_settings_repo.save(current)
 

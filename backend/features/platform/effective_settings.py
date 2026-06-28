@@ -111,6 +111,7 @@ def display_platform_settings(
         )
     return PlatformSettingsRecord(
         id=stored.id,
+        auto_approve=stored.auto_approve,
         whatsapp_enabled=stored.whatsapp_enabled,
         whatsapp_access_token=_pick_str(
             stored.whatsapp_access_token, env.whatsapp_access_token

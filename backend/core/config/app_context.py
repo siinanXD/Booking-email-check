@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from backend.ai.services.classification import LLMClient
     from backend.ai.services.gemini_client import GeminiClientProtocol
     from backend.ai.services.indexing import IndexingService
     from backend.ai.workflows.email_workflow import EmailWorkflow
@@ -98,3 +99,4 @@ class AppContext:
     notification_repo: NotificationRepository
     indexing_service: IndexingService | None = None
     gemini_client: GeminiClientProtocol | None = None
+    llm: LLMClient | None = None

@@ -47,6 +47,10 @@ def record_to_queue_item_from_maps(
         grounding_flag=record.grounding_flag,
         review_status=record.review_status,
         received_at=email.received_at.isoformat() if email.received_at else None,
+        confidence=record.confidence,
+        escalated=record.escalated,
+        signals=list(record.signals),
+        grounding_span=record.grounding_span,
     )
 
 

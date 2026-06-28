@@ -47,6 +47,14 @@ class PropertyRecipientItem(BaseModel):
         ).employees
 
 
+class AutoApproveConfig(BaseModel):
+    """Auto-Freigabe ab Konfidenz (UI-DTO)."""
+
+    enabled: bool = False
+    threshold: int = Field(default=97, ge=90, le=100)
+    per_intent: dict[str, bool] = Field(default_factory=dict)
+
+
 class UserProfileSettings(BaseModel):
     """Benutzerbezogene Benachrichtigungs-Einstellungen."""
 
@@ -68,6 +76,7 @@ class PlatformSettingsResponse(BaseModel):
     whatsapp_default_recipients: str = ""
     whatsapp_test_recipient: str = ""
     outlook_mailbox: str = ""
+    auto_approve: AutoApproveConfig = Field(default_factory=AutoApproveConfig)
     property_recipients: list[PropertyRecipientItem] = Field(default_factory=list)
     user_profile: UserProfileSettings = Field(default_factory=UserProfileSettings)
 
@@ -86,6 +95,7 @@ class PlatformSettingsUpdate(BaseModel):
     whatsapp_default_recipients: str | None = None
     whatsapp_test_recipient: str | None = None
     outlook_mailbox: str | None = None
+    auto_approve: AutoApproveConfig | None = None
     property_recipients: list[PropertyRecipientItem] | None = None
     user_profile: UserProfileSettings | None = None
 

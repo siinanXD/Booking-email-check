@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from typing import Any, cast
 
 from langfuse.decorators import langfuse_context, observe
@@ -38,12 +39,19 @@ from backend.infrastructure.repositories.email_repository import EmailRepository
 from backend.infrastructure.repositories.extraction_repository import (
     ExtractionRepository,
 )
+from backend.infrastructure.repositories.platform_settings_repository import (
+    PlatformSettingsRepository,
+)
 from backend.infrastructure.repositories.review_repository import ReviewRepository
 from backend.infrastructure.repositories.tenant_workflow_repository import (
     TenantWorkflowRepository,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat()
 
 
 def _is_stale_checkpoint_key_error(exc: BaseException) -> bool:
@@ -76,6 +84,7 @@ class EmailWorkflow:
         workflow_router: WorkflowRouter | None = None,
         tenant_workflow_executor: TenantWorkflowExecutor | None = None,
         tenant_workflow_repo: TenantWorkflowRepository | None = None,
+        platform_settings_repo: PlatformSettingsRepository | None = None,
         *,
         tracing: bool = False,
     ) -> None:
@@ -102,6 +111,7 @@ class EmailWorkflow:
             workflow_router=workflow_router,
             tenant_workflow_executor=tenant_workflow_executor,
             tenant_workflow_repo=tenant_workflow_repo,
+            platform_settings_repo=platform_settings_repo,
         )
         self._alerts = alerts
         self._graph = self._build()
@@ -152,8 +162,35 @@ class EmailWorkflow:
         return graph
 
     def run(self, email_input: Any, thread_id: str) -> dict[str, Any]:
-        """Startet Workflow; stoppt vor human_review wenn nicht discarded."""
-        return cast(dict[str, Any], self._run_observed(email_input, thread_id))
+        """Startet Workflow; stoppt vor human_review wenn nicht discarded.
+
+        Greift die Auto-Freigabe nur, wenn der human_review-Node sie pro Mandant
+        freigegeben hat: dann wird sofort bis ``finalize`` fortgesetzt (Versand)
+        und der Auto-Versand für Audit + Undo-Fenster protokolliert.
+        """
+        result = cast(dict[str, Any], self._run_observed(email_input, thread_id))
+        if result.get("auto_approve"):
+            result = self._auto_finalize(thread_id, result.get("auto_approve_body"))
+        return result
+
+    def _auto_finalize(
+        self, thread_id: str, approved_body: str | None
+    ) -> dict[str, Any]:
+        """Setzt nach Auto-Freigabe fort und markiert den Auto-Versand."""
+        resumed = self.resume_after_approval(thread_id, approved_body)
+        if self._review_repo is not None:
+            email = self._email_repo.get_by_correlation_id(thread_id)
+            self._review_repo.update_status(
+                thread_id,
+                "approved",
+                account_id=email.account_id if email else None,
+                approved_body=approved_body,
+                extra_fields={
+                    "auto_approved": True,
+                    "auto_approved_at": _now_iso(),
+                },
+            )
+        return resumed
 
     @observe(  # type: ignore[misc]
         name="mail_processed", capture_input=False, capture_output=False
