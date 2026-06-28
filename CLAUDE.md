@@ -16,6 +16,7 @@ pytest tests/web -q                # web API tests only
 pytest tests/test_workflow.py -q   # single file
 pytest -m integration              # requires MONGODB_URI
 pytest tests/eval/ -m live_eval    # requires OPENAI_API_KEY, costs money
+python scripts/eval_extraction.py  # Feld-Genauigkeit (Zimmer/Kanal), deterministisch, ohne LLM
 
 # Quality
 ruff check .

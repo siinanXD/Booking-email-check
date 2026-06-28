@@ -1,0 +1,62 @@
+[
+  {
+    "id": "yue_dai",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 3 - Mi 9 Sep 2026: 88902627 - Dai - Booking.com",
+    "received_at": "2026-09-09T05:18:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 3\nBuchungsnummer: 88902627\nPersonen 2\nPreis €345.46\n\nCheck-in Mi 9 Sep 2026\nLetzte Übernachtung Fr 11 Sep 2026\nCheck-out Sa 12 Sep 2026\n\nBooking.com 5628649148\n\nName Yue Dai\nEmail: ydai_543285@guest.booking.com\n",
+    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
+    "expected": { "room_number": "3", "channel": "Booking.com" }
+  },
+  {
+    "id": "anetta_banks",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 1 - 88738356 - Booking.com",
+    "received_at": "2026-07-09T18:05:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 1\nBuchungsnummer: 88738356\nPersonen 2\n\nCheck-in Do 9 Jul 2026\nCheck-out Fr 10 Jul 2026\n\nBooking.com 5611112222\n\nName Anetta Maria Kasperowicz Banks\nEmail: abanks_99@guest.booking.com\n",
+    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
+    "expected": { "room_number": "1", "channel": "Booking.com" }
+  },
+  {
+    "id": "tobias_haffke_storno",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Stornierung: Münzbach Ferienzimmer : Zimmer Nr. 1 - 86710654 - Booking.com",
+    "received_at": "2026-06-20T17:44:00Z",
+    "body_text": "Stornierungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 1\nBuchungsnummer: 86710654\nPersonen 2\n\nCheck-in Mo 22 Jun 2026\nCheck-out Mi 24 Jun 2026\n\nBooking.com 5283999999\n\nName Tobias Haffke\nEmail: thaffke_12@guest.booking.com\n",
+    "base": { "intent": "cancellation", "property_name": "Münzbach Ferienzimmer - Zimmer Nr. 3" },
+    "expected": { "room_number": "1", "channel": "Booking.com" }
+  },
+  {
+    "id": "rebenglueck",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Ferienwohnung RebenGlück - 88585174 - Booking.com",
+    "received_at": "2026-08-23T12:21:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung.\n\nFerienwohnung RebenGlück\n\nApartment mit 2 Schlafzimmern und Balkon\nBuchungsnummer: 88585174\nPersonen 2\n\nCheck-in So 23 Aug 2026\nCheck-out Fr 28 Aug 2026\n\nBooking.com 5283424454\n\nName Wolfgang Engelhardt\nEmail: wengel_77@guest.booking.com\n",
+    "base": { "intent": "new_booking", "property_name": "Ferienwohnung RebenGlück" },
+    "expected": { "room_number": null, "channel": "Booking.com" }
+  },
+  {
+    "id": "airbnb_example",
+    "channel_group": "airbnb",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 2 - 77001122 - Airbnb",
+    "received_at": "2026-05-12T09:30:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 2\nBuchungsnummer: 77001122\nPersonen 2\n\nCheck-in Di 12 Mai 2026\nCheck-out Do 14 Mai 2026\n\nAirbnb HMABCDEFGH\n\nName John Smith\nEmail: john-abcd@guest.airbnb.com\n",
+    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
+    "expected": { "room_number": "2", "channel": "Airbnb" }
+  },
+  {
+    "id": "direkt_example",
+    "channel_group": "direkt",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 4 - 90011 - Direkt",
+    "received_at": "2026-04-01T08:00:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 4\nBuchungsnummer: 90011\nPersonen 2\n\nCheck-in Mi 1 Apr 2026\nCheck-out Fr 3 Apr 2026\n\nDirektbuchung\n\nName Erika Mustermann\nEmail: erika.mustermann@gmx.de\n",
+    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
+    "expected": { "room_number": "4", "channel": null }
+  }
+]
