@@ -8,6 +8,10 @@ from typing import Any
 from pymongo.collection import Collection
 
 from backend.core.models.email import ProcessingState, StoredEmail
+from backend.infrastructure.repositories._email_aggregates import (
+    count_states,
+    list_stuck,
+)
 from backend.infrastructure.repositories._email_filters import (
     build_base_match,
     build_intent_pipeline,
@@ -249,14 +253,8 @@ class EmailRepository:
         account_id: str | None = None,
     ) -> int:
         """Zählt Mails mit Status seit Zeitstempel (ISO)."""
-        query = with_account_filter(
-            {
-                "processing_state": state.value,
-                "updated_at": {"$gte": since_iso},
-            },
-            account_id,
-        )
-        return int(self._col.count_documents(query))
+        match = {"processing_state": state.value, "updated_at": {"$gte": since_iso}}
+        return int(self._col.count_documents(with_account_filter(match, account_id)))
 
     def count_updated_since(
         self,
@@ -280,11 +278,23 @@ class EmailRepository:
 
     def max_received_at(self, *, account_id: str | None = None) -> str | None:
         """Neuestes received_at in der Inbox (ISO-String)."""
-        query = with_account_filter({}, account_id)
-        doc = self._col.find_one(query, sort=[("received_at", -1)])
-        if doc is None:
-            return None
-        received_at = doc.get("received_at")
-        if received_at is None:
-            return None
-        return str(received_at)
+        doc = self._col.find_one(
+            with_account_filter({}, account_id), sort=[("received_at", -1)]
+        )
+        received = doc.get("received_at") if doc else None
+        return str(received) if received else None
+
+    def count_by_all_states(
+        self, since_iso: str, *, account_id: str | None = None
+    ) -> dict[str, int]:
+        return count_states(self._col, since_iso, account_id)
+
+    def list_stuck(
+        self,
+        states: list[str],
+        older_than_iso: str,
+        *,
+        account_id: str | None = None,
+        limit: int = 100,
+    ) -> list[StoredEmail]:
+        return list_stuck(self._col, states, older_than_iso, account_id, limit)

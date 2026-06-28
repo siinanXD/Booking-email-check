@@ -8,6 +8,9 @@ from typing import Any
 from pymongo.collection import Collection
 
 from backend.core.models.response import ReviewStatus
+from backend.infrastructure.repositories._review_aggregates import (
+    decision_breakdown as _decision_breakdown,
+)
 from backend.infrastructure.repositories._review_models import (
     ReviewRecord as ReviewRecord,
 )
@@ -30,6 +33,13 @@ class ReviewRepository:
             [("review_status", 1), ("account_id", 1), ("updated_at", -1)],
             name="idx_review_status_account_updated",
         )
+        self._col.create_index([("updated_at", -1)], name="idx_review_updated")
+
+    def decision_breakdown(
+        self, since_iso: str, *, account_id: str | None = None
+    ) -> dict[str, Any]:
+        """Entscheidungs-Aggregation (auto/human/eskaliert, Konfidenz, Flags)."""
+        return _decision_breakdown(self._col, since_iso, account_id)
 
     def upsert_pending(
         self,
@@ -148,14 +158,8 @@ class ReviewRepository:
         account_id: str | None = None,
     ) -> int:
         """Reviews mit Status in statuses und updated_at seit since_iso."""
-        query = with_account_filter(
-            {
-                "review_status": {"$in": statuses},
-                "updated_at": {"$gte": since_iso},
-            },
-            account_id,
-        )
-        return int(self._col.count_documents(query))
+        match = {"review_status": {"$in": statuses}, "updated_at": {"$gte": since_iso}}
+        return int(self._col.count_documents(with_account_filter(match, account_id)))
 
     def list_pending(
         self,
@@ -195,14 +199,11 @@ class ReviewRepository:
 
     def count_open_grounding(self, *, account_id: str | None = None) -> int:
         """Grounding offen: ausstehend oder freigegeben, noch nicht abgeschlossen."""
-        query = with_account_filter(
-            {
-                "grounding_flag": True,
-                "review_status": {"$in": ["pending", "approved"]},
-            },
-            account_id,
-        )
-        return int(self._col.count_documents(query))
+        match = {
+            "grounding_flag": True,
+            "review_status": {"$in": ["pending", "approved"]},
+        }
+        return int(self._col.count_documents(with_account_filter(match, account_id)))
 
     def save(
         self,
