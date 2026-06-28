@@ -67,6 +67,7 @@ export function EmailDetailPanel({ detail, isLoading, showFullBody }: Props) {
         groundingSpan={detail.grounding_span}
         intent={detail.intent}
         escalated={detail.escalated}
+        sourceFlags={detail.source_flags}
       />
 
       {/* Body */}
