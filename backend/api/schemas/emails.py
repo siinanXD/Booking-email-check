@@ -75,5 +75,7 @@ class EmailDetail(BaseModel):
     grounding_span: str | None = None
     escalated: bool = False
     auto_approved: bool = False
+    # Quelldaten-Widersprüche (z. B. Zimmer Betreff≠Body).
+    source_flags: list[str] = Field(default_factory=list)
     # Erkannte Antwortsprache (de/en) für den DE/EN-Umschalter.
     reply_language: str = "de"
