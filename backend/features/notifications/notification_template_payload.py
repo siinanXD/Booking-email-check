@@ -71,7 +71,7 @@ def build_template_payload(
         return (
             template_name,
             [
-                _text(extraction.property_name, unknown_property_label(lang)),
+                _property_display(extraction, lang),
                 _format_date(extraction.check_in),
                 _format_date(extraction.check_out),
                 _cleaning_label(extraction, lang),
@@ -84,7 +84,7 @@ def build_template_payload(
             template_name,
             [
                 _inquiry_label(extraction, lang),
-                _text(extraction.property_name, unknown_property_label(lang)),
+                _property_display(extraction, lang),
                 _text(extraction.booking_number, "—"),
                 _format_date(extraction.check_in),
                 _format_date(extraction.check_out),
@@ -121,6 +121,21 @@ def _text(value: str | None, fallback: str) -> str:
     if value and value.strip():
         return value.strip()
     return fallback
+
+
+def _property_display(extraction: BookingExtraction, locale: str) -> str:
+    """Anzeige-Unterkunft: Objekt + Zimmer + Kanal (nur fürs Template).
+
+    Reutilisiert den bestehenden Property-Parameter — keine Meta-Template-
+    Änderung nötig. Zimmer wird nur bei Multi-Zimmer-Objekten ergänzt
+    (Ganz-Apartments wie RebenGlück bleiben ohne Zimmer).
+    """
+    label = _text(extraction.property_name, unknown_property_label(locale))
+    if extraction.room_number and extraction.room_number.strip():
+        label = f"{label} - Zimmer Nr. {extraction.room_number.strip()}"
+    if extraction.channel and extraction.channel.strip():
+        label = f"{label} ({extraction.channel.strip()})"
+    return label
 
 
 def _format_date(value: date | None) -> str:

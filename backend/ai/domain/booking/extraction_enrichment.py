@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
+from backend.ai.domain.booking.beds24_fields import (
+    detect_channel,
+    expects_room,
+    parse_room_number,
+)
 from backend.ai.domain.booking.booking_relevance import has_reservation_request_signals
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.property_match import match_known_property_name
 from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.core.models.email import StoredEmail
+
+logger = logging.getLogger(__name__)
 
 _GUEST_PLACEHOLDERS = frozenset(
     {"gast", "guest", "unbekannt", "unknown", "n/a", "—", "-"}
@@ -65,7 +73,35 @@ def enrich_extraction(
         )
         if matched:
             data["property_name"] = matched
+
+    _enrich_room_and_channel(email, data)
     return BookingExtraction.model_validate(data)
+
+
+def _enrich_room_and_channel(email: StoredEmail, data: dict[str, object]) -> None:
+    """Setzt Zimmer + Kanal deterministisch aus genau dieser Mail.
+
+    Bewusst nach dem Property-Matching: Zimmer wird NICHT in property_name
+    gefaltet (Objekt-Aggregation bleibt sauber), sondern als eigenes Feld
+    geführt. Bei Multi-Zimmer-Objekten ohne erkennbare Zimmernummer wird
+    fail-loud geloggt statt still ein falsches/leeres Zimmer zu senden.
+    """
+    body = email.body_text or ""
+    subject = email.subject or ""
+    room = parse_room_number(body, subject)
+    if room:
+        data["room_number"] = room
+    elif expects_room(str(data.get("property_name") or ""), subject):
+        logger.warning(
+            "Zimmernummer fehlt bei Multi-Zimmer-Objekt (correlation_id=%s, "
+            "property=%r) — Mailquelle prüfen.",
+            email.correlation_id,
+            data.get("property_name"),
+        )
+    guest_email = str(data.get("email") or "") or (email.from_address or "")
+    channel = detect_channel(guest_email, body, subject)
+    if channel:
+        data["channel"] = channel
 
 
 def _guest_from_subject(subject: str) -> str | None:

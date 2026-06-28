@@ -16,6 +16,9 @@ class BookingExtraction(BaseModel):
     guest_name: str | None = None
     booking_number: str | None = None
     property_name: str | None = None
+    # Zimmernummer bei Multi-Zimmer-Objekten (z. B. "3" aus "Zimmer Nr. 3").
+    # Bleibt separat vom property_name, damit Objekt-Aggregation sauber bleibt.
+    room_number: str | None = None
     check_in: date | None = None
     check_out: date | None = None
     price: float | None = None
@@ -23,6 +26,8 @@ class BookingExtraction(BaseModel):
     phone: str | None = None
     email: str | None = None
     platform: str | None = None
+    # Buchungskanal (Booking.com/Airbnb/…), deterministisch aus Mail abgeleitet.
+    channel: str | None = None
     status: str | None = None
     timestamp: datetime | None = None
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
