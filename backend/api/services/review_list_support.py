@@ -51,6 +51,7 @@ def record_to_queue_item_from_maps(
         escalated=record.escalated,
         signals=list(record.signals),
         grounding_span=record.grounding_span,
+        source_flags=list(record.source_flags),
     )
 
 

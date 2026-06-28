@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from backend.ai.domain.booking.source_consistency import detect_source_conflicts
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.email import ProcessingState
 from backend.core.models.response import ReviewStatus
@@ -73,10 +74,21 @@ class PipelineReviewMixin:
         auto_approve = False
         if review.status == "pending":
             confidence = draft.confidence if draft is not None else 1.0
-            auto_approve = self._decide_auto_approve(
+            extraction = state.get("extraction")
+            conflicts = (
+                detect_source_conflicts(email, extraction)
+                if extraction is not None
+                else []
+            )
+            source_flags = [c.message for c in conflicts]
+            source_escalate = any(c.escalate for c in conflicts)
+            # Widersprüchliche Quelle nie automatisch versenden.
+            auto_approve = not source_escalate and self._decide_auto_approve(
                 email.account_id, intent, confidence
             )
-            escalated = not auto_approve and self._should_escalate(intent, confidence)
+            escalated = not auto_approve and (
+                self._should_escalate(intent, confidence) or source_escalate
+            )
             review.escalated = escalated
             if self._review_repo is not None:
                 self._review_repo.upsert_pending(
@@ -90,6 +102,7 @@ class PipelineReviewMixin:
                     signals=draft.grounding_signals if draft is not None else [],
                     grounding_span=draft.grounding_span if draft is not None else None,
                     escalated=escalated,
+                    source_flags=source_flags,
                 )
         if review.status == "approved":
             proc = ProcessingState.APPROVED

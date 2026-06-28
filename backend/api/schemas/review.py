@@ -85,6 +85,7 @@ class ReviewQueueItem(BaseModel):
     escalated: bool = False
     signals: list[str] = Field(default_factory=list)
     grounding_span: str | None = None
+    source_flags: list[str] = Field(default_factory=list)
 
 
 class ReviewQueueResponse(BaseModel):

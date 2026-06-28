@@ -144,6 +144,7 @@ export interface EmailDetail extends EmailListItem {
   grounding_span: string | null;
   escalated: boolean;
   auto_approved: boolean;
+  source_flags: string[];
   reply_language: "de" | "en";
 }
 
@@ -191,6 +192,7 @@ export interface ReviewQueueItem {
   confidence: number | null;
   signals: string[];
   grounding_span: string | null;
+  source_flags: string[];
 }
 
 export interface ReviewQueueResponse {

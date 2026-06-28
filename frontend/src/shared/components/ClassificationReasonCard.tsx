@@ -6,6 +6,8 @@ type Props = {
   groundingSpan: string | null;
   intent?: string | null;
   escalated?: boolean;
+  /** Quelldaten-Widersprüche (z. B. Zimmer Betreff≠Body). */
+  sourceFlags?: string[];
 };
 
 const SIGNAL_LABELS: Record<string, string> = {
@@ -28,6 +30,7 @@ export function ClassificationReasonCard({
   groundingSpan,
   intent,
   escalated,
+  sourceFlags = [],
 }: Props) {
   const pct = confidence != null ? Math.round(confidence * 100) : null;
   const offset =
@@ -100,6 +103,22 @@ export function ClassificationReasonCard({
           </div>
         </div>
       </div>
+
+      {/* Quelldaten-Widersprüche — brauchen menschliche Prüfung. */}
+      {sourceFlags.length > 0 && (
+        <div className="space-y-1.5 rounded-xl border border-dangertext/30 bg-dangerbg px-3 py-2.5">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-dangertext">
+            Quelldaten prüfen
+          </p>
+          <ul className="space-y-1">
+            {sourceFlags.map((flag) => (
+              <li key={flag} className="text-xs leading-relaxed text-dangertext">
+                {flag}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Cited belegstelle */}
       {groundingSpan && (

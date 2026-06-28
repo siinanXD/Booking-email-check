@@ -43,6 +43,46 @@ _BODY_CHANNEL: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"expedia", re.IGNORECASE), "Expedia"),
 ]
 
+# beds24-Kanalzeile: "<Kanal> <Referenz>" (z. B. "Booking.com 5628649148").
+_CHANNEL_LINE_RE = re.compile(r"(?im)^\s*(booking\.com|airbnb|vrbo|expedia)\b[ \t]+\S+")
+_CHANNEL_CANON = {
+    "booking.com": "Booking.com",
+    "airbnb": "Airbnb",
+    "vrbo": "Vrbo",
+    "expedia": "Expedia",
+}
+
+
+def channel_from_email(guest_email: str | None) -> str | None:
+    """Kanal allein aus der Mail-Domain (verlässlichstes Signal)."""
+    domain = ((guest_email or "").rsplit("@", 1)[-1]).strip().lower()
+    if not domain:
+        return None
+    for needle, channel in _DOMAIN_CHANNEL:
+        if domain.endswith(needle):
+            return channel
+    return None
+
+
+def channel_from_domains_in_text(*texts: str | None) -> str | None:
+    """Kanal aus einer OTA-Domain im Text (z. B. "@guest.booking.com")."""
+    blob = " ".join(t.lower() for t in texts if t)
+    for needle, channel in _DOMAIN_CHANNEL:
+        if needle in blob:
+            return channel
+    return None
+
+
+def channel_from_line(*texts: str | None) -> str | None:
+    """Kanal aus der expliziten beds24-Kanalzeile (nicht aus dem Unit-Namen)."""
+    for text in texts:
+        if not text:
+            continue
+        match = _CHANNEL_LINE_RE.search(text)
+        if match:
+            return _CHANNEL_CANON[match.group(1).lower()]
+    return None
+
 
 def parse_room_number(*texts: str | None) -> str | None:
     """Erste Zimmernummer aus den übergebenen Texten (Body/Betreff dieser Mail)."""
@@ -67,19 +107,16 @@ def detect_channel(guest_email: str | None, *texts: str | None) -> str | None:
     Niemals aus dem Unit-/Objektnamen — der trägt im Bestand teils irreführende
     Bezeichnungen (z. B. Unit "Rebenglück Air BNB" bei Kanal Booking.com).
     """
-    domain = ((guest_email or "").rsplit("@", 1)[-1]).strip().lower()
-    if domain:
-        for needle, channel in _DOMAIN_CHANNEL:
-            if domain.endswith(needle):
-                return channel
+    by_email = channel_from_email(guest_email)
+    if by_email:
+        return by_email
     # Eindeutige OTA-Domain im Body (z. B. "@guest.booking.com") schlägt eine
     # evtl. falsche beds24-Kanalbezeichnung ("AirBNB") — Domains zuerst prüfen.
+    by_domain = channel_from_domains_in_text(*texts)
+    if by_domain:
+        return by_domain
     blob = " ".join(t.lower() for t in texts if t)
-    if blob:
-        for needle, channel in _DOMAIN_CHANNEL:
-            if needle in blob:
-                return channel
-        for pattern, channel in _BODY_CHANNEL:
-            if pattern.search(blob):
-                return channel
+    for pattern, channel in _BODY_CHANNEL:
+        if blob and pattern.search(blob):
+            return channel
     return None

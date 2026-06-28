@@ -44,6 +44,7 @@ class ReviewRepository:
         signals: list[str] | None = None,
         grounding_span: str | None = None,
         escalated: bool = False,
+        source_flags: list[str] | None = None,
     ) -> ReviewRecord:
         """Speichert ausstehenden Review-Entwurf."""
         now = datetime.now(UTC)
@@ -59,6 +60,7 @@ class ReviewRepository:
             "signals": signals or [],
             "grounding_span": grounding_span,
             "escalated": escalated,
+            "source_flags": source_flags or [],
             "updated_at": now.isoformat(),
         }
         if account_id:
@@ -188,11 +190,8 @@ class ReviewRepository:
 
     def count_pending_grounding(self, *, account_id: str | None = None) -> int:
         """Ausstehende Reviews mit Grounding-Hinweis."""
-        query = with_account_filter(
-            {"review_status": "pending", "grounding_flag": True},
-            account_id,
-        )
-        return int(self._col.count_documents(query))
+        match = {"review_status": "pending", "grounding_flag": True}
+        return int(self._col.count_documents(with_account_filter(match, account_id)))
 
     def count_open_grounding(self, *, account_id: str | None = None) -> int:
         """Grounding offen: ausstehend oder freigegeben, noch nicht abgeschlossen."""

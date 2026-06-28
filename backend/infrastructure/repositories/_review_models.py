@@ -28,6 +28,8 @@ class ReviewRecord(BaseModel):
     escalated: bool = False
     auto_approved: bool = False
     auto_approved_at: str | None = None
+    # Quelldaten-Widersprüche (z. B. Zimmer Betreff≠Body) für Review-Hinweis.
+    source_flags: list[str] = Field(default_factory=list)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 

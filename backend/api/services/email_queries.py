@@ -243,6 +243,7 @@ def get_email_detail(
         grounding_span=review.grounding_span if review else None,
         escalated=review.escalated if review else False,
         auto_approved=review.auto_approved if review else False,
+        source_flags=list(review.source_flags) if review else [],
         reply_language=detect_reply_language(email.body_text),
     )
 
