@@ -23,10 +23,10 @@ export function LoginPage() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-bg">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
-          <p className="text-sm text-slate-500">Lade…</p>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+          <p className="text-sm text-muted">Lade…</p>
         </div>
       </div>
     );
@@ -65,34 +65,34 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bg p-4">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-violet-600/10 blur-3xl" />
-        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/5 blur-3xl" />
+        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-inquirytext/10 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/5 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-sm animate-fade-in">
         {/* Brand header */}
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 ring-1 ring-indigo-500/30">
-            <Zap size={22} className="text-indigo-400" />
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brandsoft ring-1 ring-brand/30">
+            <Zap size={22} className="text-brandink" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            AI Mail Platform
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
+            Mail Assistant AI
           </h1>
-          <p className="mt-1.5 text-sm text-slate-400">
+          <p className="mt-1.5 text-sm text-muted">
             Melde dich mit deinem Konto an
           </p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+        <div className="rounded-2xl border border-border bg-surface p-8 shadow-card-lg backdrop-blur-sm">
           <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
             <div className="space-y-1.5">
               <label
-                className="block text-xs font-medium text-slate-300"
+                className="block text-xs font-medium text-ink2"
                 htmlFor="login-email"
               >
                 E-Mail-Adresse
@@ -100,7 +100,7 @@ export function LoginPage() {
               <div className="relative">
                 <Mail
                   size={15}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
                 />
                 <input
                   id="login-email"
@@ -112,14 +112,14 @@ export function LoginPage() {
                   disabled={loading}
                   autoComplete="off"
                   placeholder="ihre@email.de"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-600 transition-all focus:border-indigo-500/50 focus:bg-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full rounded-xl border border-border2 bg-surface2 py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-faint transition-all focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <label
-                className="block text-xs font-medium text-slate-300"
+                className="block text-xs font-medium text-ink2"
                 htmlFor="login-password"
               >
                 Passwort
@@ -127,7 +127,7 @@ export function LoginPage() {
               <div className="relative">
                 <Lock
                   size={15}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
                 />
                 <input
                   id="login-password"
@@ -139,7 +139,7 @@ export function LoginPage() {
                   disabled={loading}
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-600 transition-all focus:border-indigo-500/50 focus:bg-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full rounded-xl border border-border2 bg-surface2 py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-faint transition-all focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                 />
               </div>
             </div>
@@ -147,10 +147,10 @@ export function LoginPage() {
             {error && (
               <div
                 role="alert"
-                className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3"
+                className="flex items-start gap-2 rounded-xl border border-border bg-dangerbg p-3"
               >
-                <AlertCircle size={14} className="mt-0.5 flex-shrink-0 text-red-400" />
-                <p className="text-xs text-red-300">{error}</p>
+                <AlertCircle size={14} className="mt-0.5 flex-shrink-0 text-dangertext" />
+                <p className="text-xs text-dangertext">{error}</p>
               </div>
             )}
 
@@ -158,11 +158,11 @@ export function LoginPage() {
               {loading ? "Wird angemeldet…" : "Anmelden"}
             </Button>
 
-            <p className="text-center text-xs text-slate-500">
+            <p className="text-center text-xs text-muted">
               Noch kein Konto?{" "}
               <Link
                 to="/register"
-                className="font-medium text-indigo-400 transition-colors hover:text-indigo-300"
+                className="font-medium text-brandink transition-colors hover:text-brand"
               >
                 Registrieren
               </Link>

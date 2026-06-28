@@ -10,6 +10,7 @@ describe("Badge", () => {
 
   it("falls back to default tone for unknown values", () => {
     const { container } = render(<Badge label="x" tone="unknown" />);
-    expect(container.firstChild).toHaveClass("bg-slate-100");
+    // Default-Tone nutzt jetzt Token-Klassen (app/muted) statt hartem Slate.
+    expect(container.firstChild).toHaveClass("bg-app");
   });
 });

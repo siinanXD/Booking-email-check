@@ -5,6 +5,8 @@ import { Save, Shield } from "lucide-react";
 import { useAuthStore } from "@/features/auth/authStore";
 import { fetchMailConnection, testMailConnection } from "@/lib/api/mail";
 import { fetchSettings, saveSettings, testWhatsApp, wipeAllData } from "@/lib/api/settings";
+import { AutoApproveCard } from "@/features/settings/AutoApproveCard";
+import { GdprGuestCard } from "@/features/settings/GdprGuestCard";
 import { SettingsDangerZone } from "@/features/settings/SettingsDangerZone";
 import { SettingsMailCard } from "@/features/settings/SettingsMailCard";
 import { SettingsWhatsAppCard } from "@/features/settings/SettingsWhatsAppCard";
@@ -20,6 +22,7 @@ function SectionHeader({ title }: { title: string }) {
 
 export function SettingsPage() {
   const isPlatformAdmin = useAuthStore((s) => s.isPlatformAdmin());
+  const isAccountAdmin = useAuthStore((s) => s.isAccountAdmin());
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -200,12 +203,18 @@ export function SettingsPage() {
         testMessage={testMessage}
       />
 
+      {/* Auto-approve */}
+      <AutoApproveCard value={data?.auto_approve} />
+
       {/* Mail connection */}
       <SettingsMailCard
         mailData={mailData}
         testPending={mailTestMut.isPending}
         onTest={() => mailTestMut.mutate()}
       />
+
+      {/* GDPR guests (account-admin only) */}
+      {isAccountAdmin && <GdprGuestCard />}
 
       {/* Save */}
       <div className="flex flex-wrap items-center gap-3">

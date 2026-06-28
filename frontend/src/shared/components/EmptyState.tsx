@@ -33,25 +33,25 @@ export function EmptyState({
 }: EmptyStateProps) {
   const chrome = bare
     ? "px-6 py-12"
-    : "rounded-xl border border-slate-200/80 bg-white px-6 py-12";
+    : "rounded-2xl border border-border bg-surface px-6 py-12";
   return (
     <div
       className={`flex flex-col items-center gap-3 text-center ${chrome} ${className}`}
     >
-      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-        {icon ?? <Inbox size={20} aria-hidden />}
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brandsoft text-brandink">
+        {icon ?? <Inbox size={22} aria-hidden />}
       </div>
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-slate-700">{title}</p>
+        <p className="text-sm font-extrabold text-ink">{title}</p>
         {message && (
-          <p className="mx-auto max-w-md text-sm text-slate-500">{message}</p>
+          <p className="mx-auto max-w-md text-sm text-muted">{message}</p>
         )}
       </div>
       {action &&
         (action.to ? (
           <Link
             to={action.to}
-            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 no-underline shadow-sm transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-1"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border2 bg-surface px-3 py-1.5 text-xs font-semibold text-ink2 no-underline transition-colors hover:bg-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             {action.label}
           </Link>

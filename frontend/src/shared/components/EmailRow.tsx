@@ -18,15 +18,15 @@ export function EmailListCard({
   selected?: boolean;
 }) {
   const tone = toneForItem(item);
-  const className = `w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition ${
-    onClick ? "cursor-pointer hover:border-indigo-200 hover:bg-slate-50" : ""
-  } ${selected ? "border-indigo-300 bg-indigo-50 ring-2 ring-indigo-200" : ""}`;
+  const className = `w-full rounded-xl border border-border bg-surface p-4 text-left shadow-card transition ${
+    onClick ? "cursor-pointer hover:border-brand/30 hover:bg-surface2" : ""
+  } ${selected ? "border-brand/30 bg-brandsoft ring-2 ring-brand/20" : ""}`;
   const body = (
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-slate-900">{item.subject}</p>
-          <p className="mt-1 truncate text-xs text-slate-500">{item.from_address}</p>
+          <p className="truncate text-sm font-medium text-ink">{item.subject}</p>
+          <p className="mt-1 truncate text-xs text-muted">{item.from_address}</p>
         </div>
         {item.intent ? (
           <IntentBadge intent={item.intent} />
@@ -34,21 +34,21 @@ export function EmailListCard({
           <Badge label={item.processing_state} tone={tone} />
         )}
       </div>
-      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
+      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-ink2">
         <div>
-          <dt className="text-slate-400">Datum</dt>
-          <dd>
+          <dt className="text-faint">Datum</dt>
+          <dd className="font-numeric">
             {item.received_at
               ? new Date(item.received_at).toLocaleString("de-DE")
               : "—"}
           </dd>
         </div>
         <div>
-          <dt className="text-slate-400">Buchung</dt>
-          <dd className="font-medium text-slate-800">{item.booking_number ?? "—"}</dd>
+          <dt className="text-faint">Buchung</dt>
+          <dd className="font-medium text-ink2 font-numeric">{item.booking_number ?? "—"}</dd>
         </div>
         <div>
-          <dt className="text-slate-400">Plattform</dt>
+          <dt className="text-faint">Plattform</dt>
           <dd>{item.platform ?? "—"}</dd>
         </div>
       </dl>
@@ -79,9 +79,9 @@ export function EmailRow({
 
   return (
     <tr
-      className={`transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-400 ${
-        onClick ? "cursor-pointer hover:bg-indigo-50/40" : ""
-      } ${isSelected ? "bg-indigo-50" : ""}`}
+      className={`transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
+        onClick ? "cursor-pointer hover:bg-brandsoft/40" : ""
+      } ${isSelected ? "bg-brandsoft" : ""}`}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       aria-selected={onClick ? isSelected : undefined}
@@ -97,18 +97,18 @@ export function EmailRow({
           : undefined
       }
     >
-      <td className="px-4 py-3 text-xs tabular-nums text-slate-500">
+      <td className="px-4 py-3 text-xs tabular-nums font-numeric text-muted">
         {item.received_at
           ? new Date(item.received_at).toLocaleString("de-DE")
           : "—"}
       </td>
-      <td className="px-4 py-3 text-sm font-medium text-slate-700">
+      <td className="px-4 py-3 text-sm font-medium text-ink2">
         {item.from_address}
       </td>
-      <td className="px-4 py-3 text-sm font-semibold text-slate-900">
+      <td className="px-4 py-3 text-sm font-semibold text-ink font-numeric">
         {item.booking_number ?? "—"}
       </td>
-      <td className="px-4 py-3 text-sm text-slate-500">{item.platform ?? "—"}</td>
+      <td className="px-4 py-3 text-sm text-muted">{item.platform ?? "—"}</td>
       <td className="px-4 py-3">
         {item.intent ? (
           <IntentBadge intent={item.intent} />
@@ -116,7 +116,7 @@ export function EmailRow({
           <Badge label={item.processing_state} tone={tone} dot />
         )}
       </td>
-      <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-600">
+      <td className="max-w-xs truncate px-4 py-3 text-sm text-ink2">
         {item.subject}
       </td>
     </tr>

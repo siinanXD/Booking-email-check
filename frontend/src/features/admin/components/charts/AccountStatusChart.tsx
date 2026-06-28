@@ -36,8 +36,8 @@ export function AccountStatusChart({ accounts }: { accounts: AccountListItem[] }
 
   return (
     <Card>
-      <h3 className="mb-1 font-medium text-slate-900">Account-Status</h3>
-      <p className="mb-4 text-xs text-slate-500">Verteilung aller registrierten Mandanten</p>
+      <h3 className="mb-1 font-medium text-ink">Account-Status</h3>
+      <p className="mb-4 text-xs text-muted">Verteilung aller registrierten Mandanten</p>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
           <Pie
@@ -50,7 +50,7 @@ export function AccountStatusChart({ accounts }: { accounts: AccountListItem[] }
             outerRadius={75}
           >
             {data.map((entry) => (
-              <Cell key={entry.key} fill={STATUS_COLORS[entry.key] ?? "#94a3b8"} />
+              <Cell key={entry.key} fill={STATUS_COLORS[entry.key] ?? "var(--muted)"} />
             ))}
           </Pie>
           <Tooltip formatter={(v: number) => [`${v} Account(s)`, "Anzahl"]} />

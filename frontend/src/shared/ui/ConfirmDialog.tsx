@@ -52,37 +52,37 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/40 px-4"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
       onClick={() => !loading && onCancel()}
     >
       <div
-        className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-card-lg"
+        className="w-full max-w-md animate-pop-in rounded-2xl border border-border bg-surface p-6 shadow-card-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="confirm-dialog-title" className="text-lg font-bold text-slate-900">
+        <h2 id="confirm-dialog-title" className="text-lg font-extrabold text-ink">
           {title}
         </h2>
         {message && (
-          <div className="mt-2 text-sm text-slate-600">{message}</div>
+          <div className="mt-2 text-sm text-muted">{message}</div>
         )}
         {requirePhrase && (
           <div className="mt-4 space-y-1">
             <label
               htmlFor="confirm-phrase"
-              className="block text-xs font-medium text-slate-500"
+              className="block text-xs font-medium text-faint"
             >
               Tippe zur Bestätigung{" "}
-              <span className="font-mono text-slate-700">{requirePhrase}</span>
+              <span className="font-numeric text-ink2">{requirePhrase}</span>
             </label>
             <input
               id="confirm-phrase"
               value={phrase}
               onChange={(e) => setPhrase(e.target.value)}
               autoComplete="off"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-border2 bg-surface2 px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
             />
           </div>
         )}

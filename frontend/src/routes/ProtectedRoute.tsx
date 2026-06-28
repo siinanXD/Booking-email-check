@@ -19,14 +19,15 @@ export function ProtectedRoute() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-500">
+      <div className="flex min-h-screen items-center justify-center bg-bg text-muted">
         Lade…
       </div>
     );
   }
 
   if (!accessToken) {
-    return <Navigate to="/login" replace />;
+    // Gäste am Wurzelpfad sehen die öffentliche Landingpage, sonst Login.
+    return <Navigate to={location.pathname === "/" ? "/welcome" : "/login"} replace />;
   }
 
   if (needsMailOnboarding(user) && location.pathname !== "/onboarding") {

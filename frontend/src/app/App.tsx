@@ -45,6 +45,9 @@ const InboxPage = lazy(() =>
 const DashboardPage = lazy(() =>
   import("@/features/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage }))
 );
+const LandingPage = lazy(() =>
+  import("@/features/marketing/LandingPage").then((m) => ({ default: m.LandingPage }))
+);
 const LoginPage = lazy(() =>
   import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage }))
 );
@@ -75,7 +78,7 @@ const WorkflowRubrikPage = lazy(() =>
 
 function RouteFallback() {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-faint">
       Lade…
     </div>
   );
@@ -86,6 +89,7 @@ export function App() {
     <BrowserRouter>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
+          <Route path="/welcome" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route element={<ProtectedRoute />}>

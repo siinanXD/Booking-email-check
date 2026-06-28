@@ -37,16 +37,16 @@ export function ActivityStatusChart({
   if (data.length === 0) {
     return (
       <Card>
-        <h3 className="mb-2 font-medium text-slate-900">Mandanten-Aktivität</h3>
-        <p className="text-sm text-slate-500">Noch keine aktiven Mandanten.</p>
+        <h3 className="mb-2 font-medium text-ink">Mandanten-Aktivität</h3>
+        <p className="text-sm text-muted">Noch keine aktiven Mandanten.</p>
       </Card>
     );
   }
 
   return (
     <Card>
-      <h3 className="mb-1 font-medium text-slate-900">Mandanten-Aktivität</h3>
-      <p className="mb-4 text-xs text-slate-500">
+      <h3 className="mb-1 font-medium text-ink">Mandanten-Aktivität</h3>
+      <p className="mb-4 text-xs text-muted">
         Aktiv = Sync, Mail, Review oder API-Nutzung in den letzten 7 Tagen
       </p>
       <ResponsiveContainer width="100%" height={240}>

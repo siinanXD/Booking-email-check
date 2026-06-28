@@ -1,60 +1,78 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Token-basiertes Theme. Alle Farben referenzieren CSS-Variablen aus
+ * `src/index.css` (`:root` hell, `[data-theme="dark"]` dunkel), damit der
+ * Dark-Mode rein über das `data-theme`-Attribut umschaltet.
+ */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        numeric: ["Space Grotesk", "ui-monospace", "monospace"],
       },
       colors: {
-        brand: {
-          sidebar: "#0b1120",
-          "sidebar-hover": "#161f35",
-          "sidebar-active": "#1e2d50",
-          accent: "#4f46e5",
-          "accent-light": "#6366f1",
-          "accent-muted": "#eef2ff",
-        },
+        // surfaces
+        bg: "var(--bg)",
+        app: "var(--app)",
+        surface: "var(--surface)",
+        surface2: "var(--surface2)",
+        // borders
+        border: "var(--border)",
+        border2: "var(--border2)",
+        // text
+        ink: "var(--ink)",
+        ink2: "var(--ink2)",
+        muted: "var(--muted)",
+        faint: "var(--faint)",
+        // brand
+        brand: "var(--brand)",
+        brand2: "var(--brand2)",
+        brandsoft: "var(--brandsoft)",
+        brandink: "var(--brandink)",
+        // semantic status
+        okbg: "var(--okbg)",
+        oktext: "var(--oktext)",
+        warnbg: "var(--warnbg)",
+        warntext: "var(--warntext)",
+        dangerbg: "var(--dangerbg)",
+        dangertext: "var(--dangertext)",
+        infobg: "var(--infobg)",
+        infotext: "var(--infotext)",
+        inquirybg: "var(--inquirybg)",
+        inquirytext: "var(--inquirytext)",
+        whatsapp: "var(--whatsapp)",
+        // sidebar rail
+        rail1: "var(--rail1)",
+        rail2: "var(--rail2)",
+        railtext: "var(--railtext)",
+        railfaint: "var(--railfaint)",
       },
       boxShadow: {
-        card: "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
-        "card-hover": "0 4px 12px 0 rgb(0 0 0 / 0.08), 0 2px 4px -1px rgb(0 0 0 / 0.04)",
-        "card-lg": "0 8px 24px 0 rgb(0 0 0 / 0.08), 0 4px 8px -2px rgb(0 0 0 / 0.06)",
-        topbar: "0 1px 0 0 rgb(0 0 0 / 0.06)",
-        sidebar: "1px 0 0 0 rgb(0 0 0 / 0.15)",
+        card: "var(--shadow)",
+        "card-lg": "var(--shadowlg)",
+        glow: "0 10px 22px -8px rgba(99,102,241,.55)",
       },
       borderRadius: {
-        xl: "0.75rem",
-        "2xl": "1rem",
-        lg: "0.5rem",
+        lg: "0.6875rem", // 11px innere Felder
+        xl: "0.75rem", // 12px Buttons
+        "2xl": "1rem", // 16px Karten
       },
       backgroundImage: {
-        "sidebar-gradient": "linear-gradient(180deg, #0b1120 0%, #111827 100%)",
-        "accent-gradient": "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
-        "card-gradient": "linear-gradient(135deg, #f8faff 0%, #ffffff 100%)",
+        "rail-gradient": "linear-gradient(180deg, var(--rail1), var(--rail2))",
+        "brand-gradient": "linear-gradient(120deg, #6366f1, #7c3aed)",
+        "brand-gradient-140": "linear-gradient(140deg, #6366f1, #7c3aed)",
       },
       animation: {
-        "fade-in": "fadeIn 0.15s ease-out",
-        "slide-in": "slideIn 0.2s ease-out",
-        "pulse-soft": "pulseSoft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-      },
-      keyframes: {
-        fadeIn: {
-          "0%": { opacity: "0", transform: "translateY(4px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-        slideIn: {
-          "0%": { opacity: "0", transform: "translateX(-8px)" },
-          "100%": { opacity: "1", transform: "translateX(0)" },
-        },
-        pulseSoft: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.6" },
-        },
+        "fade-up": "fadeUp 0.35s ease both",
+        "slide-from-right": "slideFromRight 0.4s cubic-bezier(.2,.8,.2,1) both",
+        "pop-in": "popIn 0.3s cubic-bezier(.2,.8,.2,1) both",
       },
       transitionTimingFunction: {
         smooth: "cubic-bezier(0.4, 0, 0.2, 1)",
+        spring: "cubic-bezier(0.2, 0.8, 0.2, 1)",
       },
     },
   },

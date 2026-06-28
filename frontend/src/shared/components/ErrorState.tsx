@@ -16,10 +16,10 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className={`flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-6 py-10 text-center ${className}`}
+      className={`flex flex-col items-center gap-3 rounded-2xl border border-dangertext/30 bg-dangerbg px-6 py-10 text-center ${className}`}
     >
-      <AlertTriangle className="h-6 w-6 text-red-500" aria-hidden />
-      <p className="text-sm font-medium text-red-800">{message}</p>
+      <AlertTriangle className="h-6 w-6 text-dangertext" aria-hidden />
+      <p className="text-sm font-medium text-dangertext">{message}</p>
       {onRetry && (
         <Button variant="secondary" size="sm" onClick={onRetry}>
           Erneut versuchen

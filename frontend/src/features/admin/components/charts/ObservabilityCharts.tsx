@@ -31,13 +31,13 @@ export function TenantCostRankingChart({
 
   return (
     <Card>
-      <h3 className="mb-1 font-medium text-slate-900">Kosten-Ranking</h3>
-      <p className="mb-4 text-xs text-slate-500">
+      <h3 className="mb-1 font-medium text-ink">Kosten-Ranking</h3>
+      <p className="mb-4 text-xs text-muted">
         Mandanten mit den höchsten API-Kosten — Klick in der Tabelle für Details
       </p>
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} />
           <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
           <Tooltip formatter={(v: number) => [`$${v.toFixed(4)}`, "Kosten"]} />
@@ -65,13 +65,13 @@ export function TopCostMailsChart({
 
   return (
     <Card>
-      <h3 className="mb-1 font-medium text-slate-900">Teuerste Mails</h3>
-      <p className="mb-4 text-xs text-slate-500">
+      <h3 className="mb-1 font-medium text-ink">Teuerste Mails</h3>
+      <p className="mb-4 text-xs text-muted">
         Einzelne Mail-Läufe mit den höchsten LLM-Kosten
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} />
           <Tooltip

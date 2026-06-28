@@ -94,6 +94,7 @@ export interface DashboardStats {
   cost_week_usd: number;
   avg_cost_per_mail_usd: number;
   grounding_failures_today: number;
+  escalated_open: number;
   /** Ausstehende Reviews mit Grounding-Hinweis (für Review-Filter). */
   pending_grounding_review?: number;
   reviewed_today: number;
@@ -138,6 +139,12 @@ export interface EmailDetail extends EmailListItem {
   approved_body: string | null;
   mail_summary?: string | null;
   mail_sentiment?: string | null;
+  confidence: number | null;
+  signals: string[];
+  grounding_span: string | null;
+  escalated: boolean;
+  auto_approved: boolean;
+  reply_language: "de" | "en";
 }
 
 export interface EmailActivityEvent {
@@ -180,6 +187,10 @@ export interface ReviewQueueItem {
   grounding_flag: boolean;
   review_status: string;
   received_at: string | null;
+  escalated: boolean;
+  confidence: number | null;
+  signals: string[];
+  grounding_span: string | null;
 }
 
 export interface ReviewQueueResponse {
@@ -204,6 +215,20 @@ export interface UserProfileSettings {
   whatsapp_enabled: boolean;
 }
 
+export interface AutoApprovePerIntent {
+  booking: boolean;
+  cancellation: boolean;
+  inquiry: boolean;
+  change: boolean;
+}
+
+export interface AutoApprove {
+  enabled: boolean;
+  /** Confidence threshold (90-100). */
+  threshold: number;
+  per_intent: AutoApprovePerIntent;
+}
+
 export interface PlatformSettingsResponse {
   whatsapp_enabled: boolean;
   whatsapp_access_token_set: boolean;
@@ -218,6 +243,7 @@ export interface PlatformSettingsResponse {
   outlook_mailbox: string;
   property_recipients: PropertyRecipientItem[];
   user_profile: UserProfileSettings;
+  auto_approve: AutoApprove;
 }
 
 export interface PlatformSettingsUpdate {
@@ -234,6 +260,7 @@ export interface PlatformSettingsUpdate {
   outlook_mailbox?: string;
   property_recipients?: PropertyRecipientItem[];
   user_profile?: UserProfileSettings;
+  auto_approve?: Partial<AutoApprove>;
 }
 
 export interface WhatsAppTestResponse {
@@ -254,3 +281,4 @@ export interface ApiError {
 export * from "./api-admin";
 export * from "./api-cost";
 export * from "./api-workflows";
+export * from "./api-features";

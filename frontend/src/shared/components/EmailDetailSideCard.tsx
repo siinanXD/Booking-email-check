@@ -20,7 +20,7 @@ export function EmailDetailSideCard({
   return (
     <Card className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
       {!selected ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           Zeile in der Liste anklicken, um die volle E-Mail zu lesen.
         </p>
       ) : (

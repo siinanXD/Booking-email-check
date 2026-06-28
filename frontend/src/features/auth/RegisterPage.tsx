@@ -26,8 +26,8 @@ export function RegisterPage() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
       </div>
     );
   }
@@ -68,38 +68,38 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bg p-4">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-violet-600/10 blur-3xl" />
+        <div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-inquirytext/10 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-lg animate-fade-in">
         {/* Brand header */}
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 ring-1 ring-indigo-500/30">
-            <Zap size={22} className="text-indigo-400" />
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brandsoft ring-1 ring-brand/30">
+            <Zap size={22} className="text-brandink" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
             Konto anlegen
           </h1>
-          <p className="mt-1.5 text-sm text-slate-400">
+          <p className="mt-1.5 text-sm text-muted">
             Nach der Registrierung prüfen wir dein Konto manuell.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+        <div className="rounded-2xl border border-border bg-surface p-8 shadow-card-lg backdrop-blur-sm">
           {success ? (
             <div className="space-y-5 text-center">
               <div className="flex justify-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/30">
-                  <CheckCircle2 size={26} className="text-emerald-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-okbg ring-1 ring-oktext/30">
+                  <CheckCircle2 size={26} className="text-oktext" />
                 </div>
               </div>
               <div>
-                <p className="font-semibold text-white">Registrierung erfolgreich!</p>
-                <p className="mt-1 text-sm text-slate-400">{success}</p>
+                <p className="font-semibold text-ink">Registrierung erfolgreich!</p>
+                <p className="mt-1 text-sm text-muted">{success}</p>
               </div>
               <Link to="/login">
                 <Button className="w-full py-2.5">Zur Anmeldung</Button>
@@ -109,13 +109,13 @@ export function RegisterPage() {
             <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-ink2">
                     Vorname
                   </label>
                   <div className="relative">
-                    <User size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <User size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                     <Input
-                      className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                      className="pl-9 border-border2 bg-surface2 text-ink placeholder:text-faint focus:border-brand focus:ring-brand/20"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
@@ -124,13 +124,13 @@ export function RegisterPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-ink2">
                     Nachname
                   </label>
                   <div className="relative">
-                    <User size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <User size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                     <Input
-                      className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                      className="pl-9 border-border2 bg-surface2 text-ink placeholder:text-faint focus:border-brand focus:ring-brand/20"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
@@ -141,16 +141,16 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-300">
+                <label className="block text-xs font-medium text-ink2">
                   E-Mail-Adresse
                 </label>
                 <div className="relative">
-                  <Mail size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <Mail size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                   <Input
                     id="register-email"
                     name="platform-register-email"
                     type="email"
-                    className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                    className="pl-9 border-border2 bg-surface2 text-ink placeholder:text-faint focus:border-brand focus:ring-brand/20"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -161,14 +161,14 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-300">
+                <label className="block text-xs font-medium text-ink2">
                   Telefon
                 </label>
                 <div className="relative">
-                  <Phone size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <Phone size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                   <Input
                     type="tel"
-                    className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                    className="pl-9 border-border2 bg-surface2 text-ink placeholder:text-faint focus:border-brand focus:ring-brand/20"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+49 170 1234567"
@@ -179,21 +179,21 @@ export function RegisterPage() {
 
               {/* Account type */}
               <div className="space-y-2">
-                <span className="block text-xs font-medium text-slate-300">Nutzungsart</span>
+                <span className="block text-xs font-medium text-ink2">Nutzungsart</span>
                 <div className="grid grid-cols-2 gap-2">
                   {(["private", "business"] as const).map((type) => (
                     <label
                       key={type}
                       className={`flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 transition-all ${
                         accountType === type
-                          ? "border-indigo-500/50 bg-indigo-500/10 text-white"
-                          : "border-white/10 bg-white/5 text-slate-400 hover:border-white/20 hover:text-slate-300"
+                          ? "border-brand/50 bg-brandsoft text-ink"
+                          : "border-border2 bg-surface2 text-muted hover:border-border hover:text-ink2"
                       }`}
                     >
                       <input
                         type="radio"
                         name="accountType"
-                        className="accent-indigo-500"
+                        className="accent-brand"
                         checked={accountType === type}
                         onChange={() => setAccountType(type)}
                       />
@@ -207,13 +207,13 @@ export function RegisterPage() {
 
               {accountType === "business" && (
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-ink2">
                     Firmenname
                   </label>
                   <div className="relative">
-                    <Building2 size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <Building2 size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                     <Input
-                      className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                      className="pl-9 border-border2 bg-surface2 text-ink placeholder:text-faint focus:border-brand focus:ring-brand/20"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       required
@@ -225,14 +225,14 @@ export function RegisterPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-ink2">
                     Passwort
                   </label>
                   <div className="relative">
-                    <Lock size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <Lock size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                     <Input
                       type="password"
-                      className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                      className="pl-9 border-border2 bg-surface2 text-ink placeholder:text-faint focus:border-brand focus:ring-brand/20"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -243,14 +243,14 @@ export function RegisterPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-ink2">
                     Passwort bestätigen
                   </label>
                   <div className="relative">
-                    <Lock size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <Lock size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                     <Input
                       type="password"
-                      className="pl-9 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                      className="pl-9 border-border2 bg-surface2 text-ink placeholder:text-faint focus:border-brand focus:ring-brand/20"
                       value={passwordConfirm}
                       onChange={(e) => setPasswordConfirm(e.target.value)}
                       required
