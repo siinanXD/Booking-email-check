@@ -65,7 +65,7 @@ export function ActivityStatusChart({
               <Cell key={entry.key} fill={ACTIVITY_COLORS[entry.key]} />
             ))}
           </Pie>
-          <Tooltip formatter={(v: number) => [`${v} Mandant(en)`, "Anzahl"]} />
+          <Tooltip formatter={(v) => [`${v} Mandant(en)`, "Anzahl"]} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

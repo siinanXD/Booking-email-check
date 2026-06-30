@@ -52,7 +52,7 @@ export function TokenSplitChart({
             ))}
           </Pie>
           <Tooltip
-            formatter={(v: number) => [v.toLocaleString("de-DE"), "Tokens"]}
+            formatter={(v) => [Number(v).toLocaleString("de-DE"), "Tokens"]}
           />
           <Legend />
         </PieChart>

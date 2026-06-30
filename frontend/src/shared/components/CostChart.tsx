@@ -47,9 +47,9 @@ export function CostChart({
         />
         <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => `$${v}`} />
         <Tooltip
-          formatter={(value: number) => [`$${value.toFixed(4)}`, "Kosten"]}
-          labelFormatter={(label: string) =>
-            new Date(label).toLocaleDateString("de-DE")
+          formatter={(value) => [`$${Number(value).toFixed(4)}`, "Kosten"]}
+          labelFormatter={(label) =>
+            new Date(label as string).toLocaleDateString("de-DE")
           }
         />
         <Area

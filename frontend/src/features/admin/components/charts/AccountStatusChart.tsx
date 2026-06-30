@@ -53,7 +53,7 @@ export function AccountStatusChart({ accounts }: { accounts: AccountListItem[] }
               <Cell key={entry.key} fill={STATUS_COLORS[entry.key] ?? "var(--muted)"} />
             ))}
           </Pie>
-          <Tooltip formatter={(v: number) => [`${v} Account(s)`, "Anzahl"]} />
+          <Tooltip formatter={(v) => [`${v} Account(s)`, "Anzahl"]} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

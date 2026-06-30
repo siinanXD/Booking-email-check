@@ -49,7 +49,7 @@ export function DbCountsBarChart({ counts }: { counts: Record<string, number> })
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
           <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(v: number) => [v.toLocaleString("de-DE"), "Einträge"]} />
+          <Tooltip formatter={(v) => [Number(v).toLocaleString("de-DE"), "Einträge"]} />
           <Bar dataKey="count" fill={ADMIN_CHART.violet} radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>

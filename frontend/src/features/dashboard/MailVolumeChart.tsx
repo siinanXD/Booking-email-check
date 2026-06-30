@@ -79,9 +79,9 @@ export function MailVolumeChart() {
             <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={formatDay} />
             <YAxis tick={{ fontSize: 12 }} allowDecimals={false} width={32} />
             <Tooltip
-              formatter={(value: number) => [`${value}`, "Mails"]}
-              labelFormatter={(label: string) =>
-                new Date(label).toLocaleDateString("de-DE")
+              formatter={(value) => [`${value}`, "Mails"]}
+              labelFormatter={(label) =>
+                new Date(label as string).toLocaleDateString("de-DE")
               }
             />
             <Area
