@@ -49,6 +49,20 @@ def test_feed_lists_pending_review_and_marks_read(
     assert all(item["read"] for item in after["items"])
 
 
+def test_read_state_is_per_user(
+    app: object, tenant_account_id: str, email_repo: Any
+) -> None:
+    from backend.api.services.notification_feed import build_feed, mark_all_read
+
+    ctx = app.extensions["ctx"]  # type: ignore[union-attr]
+    _seed_pending_review(email_repo, tenant_account_id, "corr-peruser")
+    mark_all_read(ctx.db, "user-a")
+    feed_a = build_feed(ctx, tenant_account_id, "user-a")
+    feed_b = build_feed(ctx, tenant_account_id, "user-b")
+    assert feed_a.unread == 0  # user-a hat als gelesen markiert
+    assert feed_b.unread >= 1  # user-b unabhängig davon
+
+
 def test_feed_lists_escalations(
     app: object,
     client: Any,
