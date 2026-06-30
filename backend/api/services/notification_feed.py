@@ -1,9 +1,9 @@
 """Leitet das Glocken-Feed aus aktuellen Mails ab (kein eigener Schreibpfad).
 
-Der Lesestatus wird je Account in der Collection ``notification_state`` als
-Zeitstempel gehalten: alles, was nach ``read_at`` eingegangen ist, gilt als
-ungelesen. So bleibt das Feed konsistent mit den realen Daten, ohne eine
-zusätzliche, fehleranfällige Outbox pflegen zu müssen.
+Der Lesestatus wird **je Benutzer** in der Collection ``notification_state`` als
+Zeitstempel gehalten (Schlüssel = user_id): alles, was nach ``read_at``
+eingegangen ist, gilt als ungelesen. So markiert nicht ein Team-Mitglied alles
+für alle gelesen. Das Feed selbst bleibt account-scoped.
 """
 
 from __future__ import annotations
@@ -18,8 +18,8 @@ _STATE_COLLECTION = "notification_state"
 _FEED_LIMIT = 20
 
 
-def _read_at(db: Any, account_id: str) -> str:
-    doc = db[_STATE_COLLECTION].find_one({"_id": account_id})
+def _read_at(db: Any, user_id: str) -> str:
+    doc = db[_STATE_COLLECTION].find_one({"_id": user_id})
     if doc:
         value = doc.get("read_at")
         if isinstance(value, str):
@@ -27,12 +27,12 @@ def _read_at(db: Any, account_id: str) -> str:
     return ""
 
 
-def mark_all_read(db: Any, account_id: str) -> None:
-    """Setzt den Lese-Zeitstempel des Accounts auf jetzt."""
+def mark_all_read(db: Any, user_id: str) -> None:
+    """Setzt den Lese-Zeitstempel des Benutzers auf jetzt."""
     now = datetime.now(UTC).isoformat()
     db[_STATE_COLLECTION].update_one(
-        {"_id": account_id},
-        {"$set": {"read_at": now, "account_id": account_id}},
+        {"_id": user_id},
+        {"$set": {"read_at": now, "user_id": user_id}},
         upsert=True,
     )
 
@@ -97,11 +97,11 @@ def _escalation_items(
     return items
 
 
-def build_feed(ctx: Any, account_id: str) -> NotificationsResponse:
-    """Erzeugt das Glocken-Feed für einen Account (inkl. Eskalationen)."""
+def build_feed(ctx: Any, account_id: str, user_id: str) -> NotificationsResponse:
+    """Erzeugt das Glocken-Feed für einen Account (Lesestatus je Benutzer)."""
     emails, _ = ctx.email_repo.list_filtered(account_id=account_id, limit=_FEED_LIMIT)
     subjects = {e.correlation_id: (e.subject or "Mail").strip() for e in emails}
-    read_at = _read_at(ctx.db, account_id)
+    read_at = _read_at(ctx.db, user_id)
 
     escalations = _escalation_items(ctx, account_id, subjects)
     escalated_cids = {e.id.split(":", 1)[1] for e in escalations}
