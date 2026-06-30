@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from datetime import date
 
+from backend.ai.domain.booking.beds24_fields import expects_room
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.core.config.settings import Settings
@@ -127,14 +128,19 @@ def _property_display(extraction: BookingExtraction, locale: str) -> str:
     """Anzeige-Unterkunft: Objekt + Zimmer + Kanal (nur fürs Template).
 
     Reutilisiert den bestehenden Property-Parameter — keine Meta-Template-
-    Änderung nötig. Zimmer wird nur bei Multi-Zimmer-Objekten ergänzt
-    (Ganz-Apartments wie RebenGlück bleiben ohne Zimmer).
+    Änderung nötig. Bei Multi-Zimmer-Objekten steht IMMER ein Zimmer-Feld: mit
+    Nummer wenn erkannt, sonst sichtbar „unbekannt" (statt still wegzulassen).
+    Ganz-Apartments (z. B. RebenGlück) bleiben ohne Zimmer.
     """
     label = _text(extraction.property_name, unknown_property_label(locale))
-    if extraction.room_number and extraction.room_number.strip():
-        label = f"{label} - Zimmer Nr. {extraction.room_number.strip()}"
-    if extraction.channel and extraction.channel.strip():
-        label = f"{label} ({extraction.channel.strip()})"
+    room = (extraction.room_number or "").strip()
+    if room:
+        label = f"{label} - Zimmer Nr. {room}"
+    elif expects_room(extraction.property_name):
+        label = f"{label} - Zimmer Nr.: unbekannt"
+    channel = (extraction.channel or "").strip()
+    if channel:
+        label = f"{label} ({channel})"
     return label
 
 

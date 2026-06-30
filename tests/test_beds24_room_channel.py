@@ -73,6 +73,9 @@ def _email(subject: str, body: str) -> StoredEmail:
         ("Zimmer Nr.1", "1"),
         ("zimmer nr 12", "12"),
         ("Zimmer Nummer 2", "2"),
+        ("Zimmer Nr: 3", "3"),  # Doppelpunkt
+        ("Zimmer-Nr. 4", "4"),  # Bindestrich
+        ("Zimmer Nr.3", "3"),  # ohne Leerzeichen
         ("Münzbach Ferienzimmer", None),  # 'Ferienzimmer' ohne 'Nr' → kein Treffer
         ("Apartment mit 2 Schlafzimmern und Balkon", None),
     ],
@@ -171,3 +174,36 @@ def test_property_display_whole_apartment_omits_room() -> None:
         property_name="Ferienwohnung RebenGlück", channel="Booking.com"
     )
     assert _property_display(ext, "de") == "Ferienwohnung RebenGlück (Booking.com)"
+
+
+def test_property_display_marks_unknown_room() -> None:
+    # Multi-Zimmer-Objekt ohne erkannte Nummer → sichtbar "unbekannt".
+    ext = BookingExtraction(
+        property_name="Münzbach Ferienzimmer", channel="Booking.com"
+    )
+    assert (
+        _property_display(ext, "de")
+        == "Münzbach Ferienzimmer - Zimmer Nr.: unbekannt (Booking.com)"
+    )
+
+
+def test_enrich_reads_room_from_html_body() -> None:
+    email = StoredEmail(
+        message_id="h@t",
+        from_address="bookings@beds24.com",
+        subject="Buchung Münzbach Ferienzimmer",
+        body_text="Neue Buchungsbenachrichtigung.",  # Text-Teil ohne Zimmerzeile
+        body_html="<table><tr><td>Münzbach Ferienzimmer</td></tr>"
+        "<tr><td>Zimmer Nr. 5</td></tr></table>",
+        received_at=datetime.now(UTC),
+        correlation_id="h",
+        processing_state=ProcessingState.CLASSIFIED,
+        account_id="acc",
+    )
+    ext = enrich_extraction(
+        email,
+        BookingExtraction(
+            intent=BookingIntent.NEW_BOOKING, property_name="Münzbach Ferienzimmer"
+        ),
+    )
+    assert ext.room_number == "5"

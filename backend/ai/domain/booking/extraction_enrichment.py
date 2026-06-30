@@ -88,7 +88,9 @@ def _enrich_room_and_channel(email: StoredEmail, data: dict[str, object]) -> Non
     """
     body = email.body_text or ""
     subject = email.subject or ""
-    room = parse_room_number(body, subject)
+    # beds24-Mails sind oft HTML; der Text-Teil kann die Zeile verlieren.
+    html = _strip_html(getattr(email, "body_html", "") or "")
+    room = parse_room_number(body, subject, html)
     if room:
         data["room_number"] = room
     elif expects_room(str(data.get("property_name") or ""), subject):
@@ -99,9 +101,14 @@ def _enrich_room_and_channel(email: StoredEmail, data: dict[str, object]) -> Non
             data.get("property_name"),
         )
     guest_email = str(data.get("email") or "") or (email.from_address or "")
-    channel = detect_channel(guest_email, body, subject)
+    channel = detect_channel(guest_email, body, subject, html)
     if channel:
         data["channel"] = channel
+
+
+def _strip_html(html: str) -> str:
+    """Entfernt HTML-Tags, damit die Regex auf den Text greifen kann."""
+    return re.sub(r"<[^>]+>", " ", html) if html else ""
 
 
 def _guest_from_subject(subject: str) -> str | None:

@@ -15,8 +15,11 @@ from __future__ import annotations
 
 import re
 
-# "Zimmer Nr. 3", "Zimmer Nr.1", "Zimmer Nummer 2" — case-insensitive.
-_ROOM_RE = re.compile(r"zimmer\s*(?:nr\.?|nummer)\s*(\d{1,4})", re.IGNORECASE)
+# "Zimmer Nr. 3", "Zimmer Nr.1", "Zimmer Nr: 3", "Zimmer-Nr 3",
+# "Zimmer Nummer 2" — toleriert Trenner/Bindestrich, case-insensitive.
+_ROOM_RE = re.compile(
+    r"zimmer[\s\-]*(?:nr|nummer)\.?\s*[:.\-]?\s*(\d{1,4})", re.IGNORECASE
+)
 
 # Objektnamen mit Zimmern (Multi-Zimmer-Objekt) → Zimmer wird erwartet.
 _MULTI_ROOM_HINT = re.compile(r"ferienzimmer|\bzimmer\b", re.IGNORECASE)
