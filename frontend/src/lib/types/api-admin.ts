@@ -109,6 +109,7 @@ export interface AdminAccountDetailResponse {
   last_mail_received_at: string | null;
   latest_correlation_id: string | null;
   langfuse_session_url: string | null;
+  features?: Record<string, boolean>;
 }
 
 export interface AdminAccountCostRow {

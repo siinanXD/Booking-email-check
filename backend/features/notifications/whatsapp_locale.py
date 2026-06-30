@@ -120,6 +120,10 @@ def template_name_for_kind(
     """
     if kind == NotificationKind.BOOKING_CLEANING_TASK:
         return localized_template_name(settings.whatsapp_template_cleaning_task, locale)
+    if kind == NotificationKind.CLEANING_CANCELLED:
+        return localized_template_name(
+            settings.whatsapp_template_cleaning_cancelled, locale
+        )
     if kind == NotificationKind.BOOKING_GUEST_INQUIRY:
         return localized_template_name(settings.whatsapp_template_guest_inquiry, locale)
     return localized_template_name(settings.whatsapp_template_status_notice, locale)

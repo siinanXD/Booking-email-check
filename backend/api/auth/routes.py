@@ -42,6 +42,11 @@ def _user_response(user: object) -> UserResponse:
         if mail_conn is not None:
             mail_status = mail_conn.status
             mail_onboarding_done = mail_conn.onboarding_completed
+    features: dict[str, bool] = {}
+    if user.account_id:
+        settings = g.ctx.platform_settings_repo.get(user.account_id)
+        if settings is not None:
+            features = dict(settings.features)
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -53,6 +58,7 @@ def _user_response(user: object) -> UserResponse:
         account_display_name=account.display_name if account else None,
         mail_connection_status=mail_status,
         mail_onboarding_completed=mail_onboarding_done,
+        features=features,
     )
 
 

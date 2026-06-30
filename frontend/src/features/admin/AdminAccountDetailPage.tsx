@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   fetchAdminAccountDetail,
   lockUser, resetUserPassword, deleteUser,
+  setAccountFeature,
 } from "@/lib/api/admin";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
 import { ActivityBadge } from "@/features/admin/components/ActivityBadge";
@@ -11,6 +12,7 @@ import { AdminAccountActions } from "@/features/admin/components/AdminAccountAct
 import { DbCountsBarChart } from "@/features/admin/components/charts/DbCountsBarChart";
 import { Card } from "@/shared/ui/Card";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { toast } from "@/shared/feedback/toastStore";
 import { formatTs } from "@/lib/format";
 
 function formatUsd(value: number): string {
@@ -43,8 +45,21 @@ export function AdminAccountDetailPage() {
       setConfirmDelUser(null);
     },
   });
+  const featureMut = useMutation({
+    mutationFn: (enabled: boolean) =>
+      setAccountFeature(accountId!, "cleaning_schedule", enabled),
+    onSuccess: (res) => {
+      invalidate();
+      toast.success(
+        res.backfilled > 0
+          ? `Putzplan aktiviert · ${res.backfilled} bestehende Buchungen übernommen.`
+          : "Putzplan-Einstellung gespeichert."
+      );
+    },
+  });
 
   const isSuspended = data?.account.status === "suspended";
+  const cleaningEnabled = Boolean(data?.features?.cleaning_schedule);
 
   if (!accountId) {
     return <p className="text-sm text-red-600">Keine Mandanten-ID.</p>;
@@ -124,6 +139,31 @@ export function AdminAccountDetailPage() {
               : undefined
           }
         />
+      </Card>
+
+      <Card className="space-y-3">
+        <h3 className="font-medium text-slate-900">Zusatz-Features</h3>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-800">Putzplan</p>
+            <p className="text-xs text-slate-500">
+              Automatische Putzaufträge aus Buchungen, Status-Tracking und
+              WhatsApp an den Putzpartner (inkl. Storno-Hinweis). Beim Aktivieren
+              werden bestehende, zukünftige Buchungen übernommen.
+            </p>
+          </div>
+          <button
+            onClick={() => featureMut.mutate(!cleaningEnabled)}
+            disabled={featureMut.isPending}
+            className={`shrink-0 rounded px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${
+              cleaningEnabled
+                ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            {cleaningEnabled ? "Aktiv — deaktivieren" : "Aktivieren"}
+          </button>
+        </div>
       </Card>
 
       <Card className="space-y-3">

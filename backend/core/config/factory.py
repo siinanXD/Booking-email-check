@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from backend.ai.services.classification import ClassificationService, LLMClient
+from backend.ai.services.classification import ClassificationService
 from backend.ai.services.entity_resolution import EntityResolutionService
 from backend.ai.services.extraction import ExtractionService
 from backend.ai.services.gemini_factory import build_gemini_client
 from backend.ai.services.grounding import GroundingService
-from backend.ai.services.indexing import EmbeddingClient, EmbeddingFn, IndexingService
+from backend.ai.services.indexing import IndexingService
 from backend.ai.services.ingestion import IngestionService
-from backend.ai.services.openai_client import OpenAIClient
 from backend.ai.services.reranking import RerankService
 from backend.ai.services.response_generation import ResponseGenerationService
 from backend.ai.services.retrieval import RetrievalService
@@ -25,7 +24,9 @@ from backend.ai.workflows.email_workflow import EmailWorkflow
 from backend.application.ingestion import IngestionRouter
 from backend.application.review import ReviewRouter
 from backend.core.config.app_context import AppContext as AppContext
+from backend.core.config.llm_clients import build_llm_and_embeddings
 from backend.core.config.settings import Settings, get_settings
+from backend.features.cleaning.wiring import build_cleaning_service
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
 from backend.infrastructure.observability.langfuse_client import LangfuseTracer
@@ -128,6 +129,9 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         property_recipient_repo,
         platform_settings_repo,
     )
+    cleaning_partner_repo, cleaning_task_repo, cleaning_service = (
+        build_cleaning_service(db, platform_settings_repo, notification_service)
+    )
 
     alerts = AlertService(webhook_url=cfg.webhook_alert_url)
     tracing = configure_langfuse_env(cfg) and tracing_enabled(cfg)
@@ -139,25 +143,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
     )
     feedback_tracker = ReviewFeedbackTracker(alerts=alerts)
 
-    llm_mode = cfg.llm_mode.strip().lower()
-    llm: LLMClient
-    embed_client: EmbeddingFn
-    if llm_mode == "mock":
-        from backend.ai.testing.mock_llm import MockEmbeddingClient, MockLLM
-
-        llm = MockLLM()
-        embed_client = MockEmbeddingClient()
-    elif llm_mode == "live":
-        llm = OpenAIClient(cfg.openai_api_key, use_langfuse=False)
-        embed_client = EmbeddingClient(
-            cfg.openai_api_key,
-            cfg.embedding_model,
-            use_langfuse=False,
-            tracing=tracing,
-        )
-    else:
-        msg = f"Unsupported LLM_MODE: {cfg.llm_mode!r} (use live or mock)"
-        raise ValueError(msg)
+    llm, embed_client = build_llm_and_embeddings(cfg, tracing=tracing)
     mail_cost = MailCostTracker(
         alerts=alerts,
         tracing=tracing,
@@ -258,6 +244,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         mail_cost=mail_cost,
         review_repo=review_repo,
         notification_service=notification_service,
+        cleaning_service=cleaning_service,
         checkpointer=checkpointer,
         feedback_tracker=feedback_tracker,
         langfuse_tracer=langfuse_tracer,
@@ -294,6 +281,9 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         support_ticket_repo=support_ticket_repo,
         platform_admin_config_repo=platform_admin_config_repo,
         notification_repo=notification_repo,
+        cleaning_partner_repo=cleaning_partner_repo,
+        cleaning_task_repo=cleaning_task_repo,
+        cleaning_service=cleaning_service,
         indexing_service=indexing,
         gemini_client=gemini_client,
         llm=llm,

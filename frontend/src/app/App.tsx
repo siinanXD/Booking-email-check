@@ -75,6 +75,9 @@ const SettingsPage = lazy(() =>
 const SupportPage = lazy(() =>
   import("@/features/support/SupportPage").then((m) => ({ default: m.SupportPage }))
 );
+const PutzplanPage = lazy(() =>
+  import("@/features/cleaning/PutzplanPage").then((m) => ({ default: m.PutzplanPage }))
+);
 const WorkflowRubrikPage = lazy(() =>
   import("@/features/workflows/WorkflowRubrikPage").then((m) => ({ default: m.WorkflowRubrikPage }))
 );
@@ -139,6 +142,7 @@ export function App() {
                 />
                 <Route path="properties" element={<PropertiesPage />} />
                 <Route path="properties/:propertyId" element={<PropertyProfilePage />} />
+                <Route path="cleaning" element={<PutzplanPage />} />
                 <Route path="review" element={<ReviewQueuePage />} />
                 <Route
                   path="ground-zero"

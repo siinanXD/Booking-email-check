@@ -161,6 +161,10 @@ class Settings(BaseSettings):
         default="booking_guest_inquiry_de",
         alias="WHATSAPP_TEMPLATE_GUEST_INQUIRY",
     )
+    whatsapp_template_cleaning_cancelled: str = Field(
+        default="booking_cleaning_cancelled_de",
+        alias="WHATSAPP_TEMPLATE_CLEANING_CANCELLED",
+    )
     whatsapp_default_recipients: str = Field(
         default="",
         alias="WHATSAPP_DEFAULT_RECIPIENTS",

@@ -179,6 +179,18 @@ export async function fetchAdminAccountDetail(
   return data;
 }
 
+export async function setAccountFeature(
+  accountId: string,
+  feature: string,
+  enabled: boolean
+): Promise<{ features: Record<string, boolean>; backfilled: number }> {
+  const { data } = await apiClient.put(
+    `/api/admin/accounts/${accountId}/features`,
+    { feature, enabled }
+  );
+  return data;
+}
+
 export async function fetchAdminCostsMetrics(
   days = 30
 ): Promise<AdminCostsMetricsResponse> {

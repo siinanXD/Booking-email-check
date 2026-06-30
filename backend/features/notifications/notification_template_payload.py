@@ -63,7 +63,12 @@ def build_template_payload(
     account_lang = (
         settings.whatsapp_template_language.strip() or DEFAULT_EMPLOYEE_LOCALE
     )
-    if kind == NotificationKind.BOOKING_CLEANING_TASK:
+    # Putzpartner-Templates folgen der Empfänger-Sprache, sonst Account-Sprache.
+    partner_kinds = (
+        NotificationKind.BOOKING_CLEANING_TASK,
+        NotificationKind.CLEANING_CANCELLED,
+    )
+    if kind in partner_kinds:
         lang = normalize_employee_locale(locale or account_lang)
     else:
         lang = normalize_employee_locale(account_lang)
@@ -76,6 +81,18 @@ def build_template_payload(
                 _format_date(extraction.check_in),
                 _format_date(extraction.check_out),
                 _cleaning_label(extraction, lang),
+                _text(extraction.booking_number, "—"),
+            ],
+            lang,
+        )
+    if kind == NotificationKind.CLEANING_CANCELLED:
+        return (
+            template_name,
+            [
+                _property_display(extraction, lang),
+                _format_date(extraction.check_in),
+                _format_date(extraction.check_out),
+                _text(extraction.guest_name, "—"),
                 _text(extraction.booking_number, "—"),
             ],
             lang,

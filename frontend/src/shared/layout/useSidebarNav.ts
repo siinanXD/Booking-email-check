@@ -15,6 +15,7 @@ import {
   ScrollText,
   Activity,
   Workflow,
+  Sparkles,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardStats } from "@/lib/api/dashboard";
@@ -94,9 +95,15 @@ export function useSidebarNav(): SidebarNavData {
     label: wf.label,
     icon: Tag,
   }));
+  const cleaningEnabled = useAuthStore(
+    (s) => Boolean(s.user?.features?.cleaning_schedule)
+  );
+  const cleaningLinks: SidebarLink[] = cleaningEnabled
+    ? [{ to: "/cleaning", label: "Putzplan", icon: Sparkles }]
+    : [];
   const links = isPlatformAdmin
     ? adminLinks
-    : [...tenantLinks, ...workflowRubrics];
+    : [...tenantLinks, ...cleaningLinks, ...workflowRubrics];
 
   return {
     links,

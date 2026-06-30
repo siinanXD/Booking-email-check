@@ -121,6 +121,8 @@ def admin_account_detail(
     tokens = account_tokens(ctx, account_id, start, end)
     latest = ctx.metrics_repo.latest_for_account(account_id)
     correlation_id = latest.correlation_id if latest else None
+    platform = ctx.platform_settings_repo.get(account_id)
+    features = dict(platform.features) if platform else {}
 
     return AdminAccountDetailResponse(
         account=to_list_item(account),
@@ -134,6 +136,7 @@ def admin_account_detail(
         last_mail_received_at=ctx.email_repo.max_received_at(account_id=account_id),
         latest_correlation_id=correlation_id,
         langfuse_session_url=langfuse_session_url(settings, correlation_id),
+        features=features,
     )
 
 

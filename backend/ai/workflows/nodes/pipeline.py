@@ -24,6 +24,7 @@ from backend.ai.services.validation import ValidationService
 from backend.ai.workflows.nodes.pipeline_review import PipelineReviewMixin
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.email import IncomingEmail, ProcessingState, StoredEmail
+from backend.features.cleaning.service import CleaningScheduleService
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
 from backend.infrastructure.observability.langfuse_client import LangfuseTracer
@@ -69,6 +70,7 @@ class WorkflowNodes(PipelineReviewMixin):
         alerts: AlertService | None,
         review_repo: ReviewRepository | None,
         notification_service: NotificationService | None,
+        cleaning_service: CleaningScheduleService | None = None,
         feedback_tracker: ReviewFeedbackTracker | None = None,
         langfuse_tracer: LangfuseTracer | None = None,
         workflow_router: WorkflowRouter | None = None,
@@ -88,6 +90,7 @@ class WorkflowNodes(PipelineReviewMixin):
         self._alerts = alerts
         self._review_repo = review_repo
         self._notification_service = notification_service
+        self._cleaning_service = cleaning_service
         self._feedback_tracker = feedback_tracker
         self._langfuse_tracer = langfuse_tracer
         self._workflow_router = workflow_router
