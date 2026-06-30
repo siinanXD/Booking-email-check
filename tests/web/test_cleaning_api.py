@@ -204,6 +204,32 @@ def test_admin_toggle_enables_and_unblocks_api(
     assert ok.status_code == 200
 
 
+def test_admin_cleaning_diagnostics_shows_tasks(
+    app: object, client: object, auth_headers: dict[str, str], tenant_account_id: str
+) -> None:
+    """Plattform-Admin sieht den Putzplan eines Mandanten zur Diagnose."""
+    _enable(app, tenant_account_id)
+    _seed_task(app, tenant_account_id)
+    resp = client.get(  # type: ignore[attr-defined]
+        f"/api/admin/accounts/{tenant_account_id}/cleaning", headers=auth_headers
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["enabled"] is True
+    assert len(body["tasks"]) >= 1
+
+
+def test_admin_cleaning_diagnostics_disabled(
+    client: object, auth_headers: dict[str, str], tenant_account_id: str
+) -> None:
+    """Ohne Freischaltung meldet die Diagnose 'nicht aktiviert'."""
+    resp = client.get(  # type: ignore[attr-defined]
+        f"/api/admin/accounts/{tenant_account_id}/cleaning", headers=auth_headers
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["enabled"] is False
+
+
 def test_admin_unknown_feature_rejected(
     client: object, auth_headers: dict[str, str], tenant_account_id: str
 ) -> None:
