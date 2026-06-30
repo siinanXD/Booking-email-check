@@ -47,3 +47,31 @@ def test_feed_lists_pending_review_and_marks_read(
     after = client.get("/api/notifications", headers=auth_headers).get_json()
     assert after["unread"] == 0
     assert all(item["read"] for item in after["items"])
+
+
+def test_feed_lists_escalations(
+    app: object,
+    client: Any,
+    auth_headers: dict,
+    tenant_account_id: str,
+    email_repo: Any,
+) -> None:
+    ctx = app.extensions["ctx"]  # type: ignore[union-attr]
+    _seed_pending_review(email_repo, tenant_account_id, "corr-esc-n")
+    ctx.review_repo.upsert_pending(
+        correlation_id="corr-esc-n",
+        message_id="corr-esc-n@test",
+        draft_body="d",
+        grounding_flag=False,
+        intent="complaint",
+        account_id=tenant_account_id,
+        confidence=0.3,
+        escalated=True,
+    )
+    data = client.get("/api/notifications", headers=auth_headers).get_json()
+    kinds = [i["kind"] for i in data["items"]]
+    assert "escalation" in kinds
+    # Eskalierte Mail erscheint NICHT zusätzlich als review_waiting (kein Doppel).
+    esc = [i for i in data["items"] if i["id"] == "esc:corr-esc-n"]
+    assert esc and "Eskaliert" in esc[0]["title"]
+    assert not any(i["id"] == "rev:corr-esc-n" for i in data["items"])
