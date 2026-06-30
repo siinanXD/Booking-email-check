@@ -98,6 +98,18 @@ def normalize_employee_locale(locale: str | None) -> str:
     return DEFAULT_EMPLOYEE_LOCALE
 
 
+# Abweichend benannte Meta-Templates, die nicht dem `<base>_<lang>`-Schema folgen
+# (Bestandsvorlagen — Meta erlaubt kein Umbenennen). (Kind, Sprache) -> Meta-Name.
+_ES_CLEANING_TASK = (
+    "has_recibido_una_nueva_tarea_de_limpieza_alojamiento_1_entrada_2_"
+    "salida_3_tipo_de_tarea_4_referencia_de_reserva_5_completa_la_"
+    "limpieza_antes_de_la_llegada_del_prximo_husped_gracias"
+)
+_TEMPLATE_NAME_OVERRIDES: dict[tuple[NotificationKind, str], str] = {
+    (NotificationKind.BOOKING_CLEANING_TASK, "es"): _ES_CLEANING_TASK,
+}
+
+
 def localized_template_name(base_name: str, locale: str) -> str:
     """Leitet Meta-Template-Namen aus dem deutschen Basis-Namen ab."""
     locale = normalize_employee_locale(locale)
@@ -116,8 +128,12 @@ def template_name_for_kind(
     """Template-Name für Intent + Sprache (alle Typen mehrsprachig).
 
     `_de`-Basisname bleibt bei Sprache `de` unverändert; sonst wird der
-    Sprach-Suffix getauscht (z. B. `booking_status_notice_en`).
+    Sprach-Suffix getauscht (z. B. `booking_status_notice_en`). Für abweichend
+    benannte Bestands-Templates greift `_TEMPLATE_NAME_OVERRIDES`.
     """
+    override = _TEMPLATE_NAME_OVERRIDES.get((kind, normalize_employee_locale(locale)))
+    if override:
+        return override
     if kind == NotificationKind.BOOKING_CLEANING_TASK:
         return localized_template_name(settings.whatsapp_template_cleaning_task, locale)
     if kind == NotificationKind.CLEANING_CANCELLED:

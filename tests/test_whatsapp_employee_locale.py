@@ -147,7 +147,29 @@ def test_host_keeps_account_language_when_employee_also_present(mock_db) -> None
     assert host_msg.template_name == "booking_status_notice_de"
     assert host_msg.template_params[0] == "Neue Buchung"
     assert employee_msg.template_language == "es"
-    assert employee_msg.template_name == "booking_cleaning_task_es"
+    # ES-Putzauftrag nutzt den abweichend benannten Bestands-Template-Namen.
+    assert employee_msg.template_name.startswith(
+        "has_recibido_una_nueva_tarea_de_limpieza"
+    )
+
+
+def test_es_cleaning_task_uses_named_override() -> None:
+    """Spanischer Putzauftrag nutzt den abweichenden Bestands-Template-Namen."""
+    settings = _settings()
+    name = template_name_for_kind(
+        NotificationKind.BOOKING_CLEANING_TASK, settings, "es"
+    )
+    assert name.startswith("has_recibido_una_nueva_tarea_de_limpieza")
+    assert name.endswith("_gracias")
+    # Andere Sprachen/Typen bleiben beim Standard-Schema.
+    assert (
+        template_name_for_kind(NotificationKind.BOOKING_CLEANING_TASK, settings, "it")
+        == "booking_cleaning_task_it"
+    )
+    assert (
+        template_name_for_kind(NotificationKind.CLEANING_CANCELLED, settings, "es")
+        == "booking_cleaning_cancelled_es"
+    )
 
 
 def test_legacy_phones_default_to_german(mock_db) -> None:
