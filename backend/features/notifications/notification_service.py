@@ -156,6 +156,36 @@ class NotificationService:
                 results.append(record)
         return results
 
+    def dispatch_to_partner(
+        self,
+        correlation_id: str,
+        extraction: BookingExtraction,
+        *,
+        kind: NotificationKind,
+        recipient_e164: str,
+        locale: str | None = None,
+        account_id: str | None = None,
+    ) -> NotificationOutboxRecord | None:
+        """Versendet eine Putzpartner-Nachricht an genau eine Nummer (idempotent)."""
+        if not recipient_e164 or not recipient_e164.strip():
+            return None
+        settings = self._effective_settings(account_id)
+        if not settings.whatsapp_enabled:
+            return None
+        template_name, params, lang = build_template_payload(
+            kind, extraction, settings, locale=locale
+        )
+        return self._dispatch_one(
+            correlation_id=correlation_id,
+            kind=kind,
+            recipient=recipient_e164.strip(),
+            template_name=template_name,
+            template_params=params,
+            template_language=lang,
+            settings=settings,
+            client=self._client(settings),
+        )
+
     def _dispatch_one(
         self,
         *,

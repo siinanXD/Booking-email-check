@@ -72,6 +72,7 @@ class AdminAccountDetailResponse(BaseModel):
     last_mail_received_at: str | None = None
     latest_correlation_id: str | None = None
     langfuse_session_url: str | None = None
+    features: dict[str, bool] = Field(default_factory=dict)
 
 
 class AdminAccountCostRow(BaseModel):

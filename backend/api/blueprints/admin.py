@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 from flask import Blueprint, g, jsonify, request
@@ -10,6 +11,8 @@ from backend.api.middleware.auth_guard import require_auth
 from backend.api.middleware.roles import require_platform_admin
 from backend.api.schemas.accounts import (
     AccountActionResponse,
+    AccountFeatureRequest,
+    AccountFeatureResponse,
     AccountListItem,
     AccountListResponse,
     AccountRejectRequest,
@@ -21,6 +24,12 @@ from backend.api.services.admin_overview_queries import (
     admin_overview,
     admin_public_config,
     admin_tokens_metrics,
+)
+from backend.features.cleaning.backfill import backfill_account
+from backend.features.platform.effective_settings import platform_from_env
+from backend.infrastructure.repositories.platform_settings_repository import (
+    FEATURE_CLEANING_SCHEDULE,
+    PLATFORM_FEATURES,
 )
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -201,6 +210,50 @@ def admin_account_detail_route(account_id: str) -> tuple[Any, int]:
     if detail is None:
         return jsonify({"error": "Account not found", "code": 404}), 404
     return jsonify(detail.model_dump()), 200
+
+
+@admin_bp.put("/accounts/<account_id>/features")
+@require_auth
+@require_platform_admin
+def set_account_feature(account_id: str) -> tuple[Any, int]:
+    """Schaltet ein Zusatz-Feature (z. B. Putzplan) für einen Account."""
+    account = g.ctx.account_repo.get_by_id(account_id)
+    if account is None:
+        return jsonify({"error": "Account not found", "code": 404}), 404
+    body = AccountFeatureRequest.model_validate(request.get_json(silent=True) or {})
+    if body.feature not in PLATFORM_FEATURES:
+        return jsonify({"error": "Unknown feature", "code": 422}), 422
+    record = g.ctx.platform_settings_repo.get(account_id) or platform_from_env(
+        g.settings, account_id
+    )
+    record.features = {**record.features, body.feature: body.enabled}
+    g.ctx.platform_settings_repo.save(record)
+    _append_audit(
+        "account.feature",
+        account_id=account_id,
+        feature=body.feature,
+        enabled=body.enabled,
+    )
+    backfilled = 0
+    if (
+        body.enabled
+        and body.feature == FEATURE_CLEANING_SCHEDULE
+        and g.ctx.cleaning_service is not None
+    ):
+        backfilled = backfill_account(
+            g.ctx.cleaning_service,
+            account_id,
+            today=datetime.now(UTC).date(),
+            extraction_repo=g.ctx.extraction_repo,
+        )
+    return (
+        jsonify(
+            AccountFeatureResponse(
+                features=record.features, backfilled=backfilled
+            ).model_dump()
+        ),
+        200,
+    )
 
 
 @admin_bp.get("/metrics/costs")

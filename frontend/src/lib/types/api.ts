@@ -15,6 +15,7 @@ export interface UserResponse {
   account_display_name?: string | null;
   mail_connection_status?: string | null;
   mail_onboarding_completed?: boolean | null;
+  features?: Record<string, boolean> | null;
 }
 
 export interface ImapPresetItem {

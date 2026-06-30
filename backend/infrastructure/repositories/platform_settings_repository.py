@@ -15,6 +15,10 @@ LEGACY_PLATFORM_DOC_ID = "platform"
 # Intents, die einzeln für die Auto-Freigabe aktiviert werden können.
 AUTO_APPROVE_INTENTS = ("booking", "cancellation", "inquiry", "change")
 
+# Vom Plattform-Admin pro Account schaltbare Zusatz-Features.
+FEATURE_CLEANING_SCHEDULE = "cleaning_schedule"
+PLATFORM_FEATURES = (FEATURE_CLEANING_SCHEDULE,)
+
 
 def _default_auto_approve_intents() -> dict[str, bool]:
     return {intent: False for intent in AUTO_APPROVE_INTENTS}
@@ -40,6 +44,10 @@ class PlatformSettingsRecord(BaseModel):
 
     id: str
     auto_approve: AutoApproveSettings = Field(default_factory=AutoApproveSettings)
+    # Generische Feature-Schalter (Plattform-Admin pro Account).
+    features: dict[str, bool] = Field(default_factory=dict)
+    # Putztermin = Check-out + Offset in Tagen (0 = Abreisetag).
+    cleaning_checkout_offset_days: int = Field(default=0, ge=0, le=7)
     whatsapp_enabled: bool = False
     whatsapp_access_token: str = ""
     whatsapp_phone_number_id: str = ""
@@ -48,10 +56,15 @@ class PlatformSettingsRecord(BaseModel):
     whatsapp_template_cleaning_task: str = "booking_cleaning_task_de"
     whatsapp_template_status_notice: str = "booking_status_notice_de"
     whatsapp_template_guest_inquiry: str = "booking_guest_inquiry_de"
+    whatsapp_template_cleaning_cancelled: str = "booking_cleaning_cancelled_de"
     whatsapp_default_recipients: str = ""
     whatsapp_test_recipient: str = ""
     outlook_mailbox: str = ""
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    def feature_enabled(self, name: str) -> bool:
+        """True, wenn das benannte Zusatz-Feature für den Account aktiv ist."""
+        return bool(self.features.get(name, False))
 
 
 class PlatformSettingsRepository:

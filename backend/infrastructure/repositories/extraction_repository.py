@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from pymongo.collection import Collection
@@ -114,6 +114,29 @@ class ExtractionRepository:
             result[cid] = ExtractionSnapshot(
                 extraction=BookingExtraction.model_validate(doc["extraction"]),
                 workflow_id=workflow_id,
+            )
+        return result
+
+    def list_future_bookings(
+        self,
+        *,
+        account_id: str | None = None,
+        checkout_from: date,
+    ) -> list[tuple[str, BookingExtraction]]:
+        """Neubuchungen/Änderungen mit Check-out ab einem Datum (für Backfill)."""
+        base: dict[str, Any] = {
+            "extraction.check_out": {"$gte": checkout_from.isoformat()},
+            "extraction.intent": {"$in": ["new_booking", "change"]},
+        }
+        query = with_account_filter(base, account_id)
+        result: list[tuple[str, BookingExtraction]] = []
+        for doc in self._col.find(query):
+            if account_id and doc.get("account_id") not in (None, account_id):
+                continue
+            if "extraction" not in doc:
+                continue
+            result.append(
+                (str(doc["_id"]), BookingExtraction.model_validate(doc["extraction"]))
             )
         return result
 

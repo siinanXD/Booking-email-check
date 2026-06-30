@@ -6,6 +6,7 @@ from flask import Flask
 
 from backend.api.blueprints.admin import admin_bp
 from backend.api.blueprints.bookings import bookings_bp
+from backend.api.blueprints.cleaning import cleaning_bp
 from backend.api.blueprints.costs import costs_bp
 from backend.api.blueprints.dashboard import dashboard_bp
 from backend.api.blueprints.emails import emails_bp
@@ -37,5 +38,6 @@ def register_api_blueprints(app: Flask) -> None:
     app.register_blueprint(costs_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(properties_bp)
+    app.register_blueprint(cleaning_bp)
     app.register_blueprint(workflows_bp)
     app.register_blueprint(whatsapp_webhook_bp)

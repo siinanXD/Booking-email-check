@@ -66,3 +66,17 @@ class UserResetPasswordRequest(BaseModel):
     """Neues Passwort vom Admin."""
 
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class AccountFeatureRequest(BaseModel):
+    """Schaltet ein Zusatz-Feature für einen Account (Plattform-Admin)."""
+
+    feature: str = Field(min_length=1)
+    enabled: bool
+
+
+class AccountFeatureResponse(BaseModel):
+    """Neuer Feature-Stand inkl. ggf. erzeugter Backfill-Aufträge."""
+
+    features: dict[str, bool] = Field(default_factory=dict)
+    backfilled: int = 0

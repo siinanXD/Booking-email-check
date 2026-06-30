@@ -7,6 +7,10 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 
+def _empty_features() -> dict[str, bool]:
+    return {}
+
+
 class LoginRequest(BaseModel):
     """Login-Body."""
 
@@ -66,3 +70,5 @@ class UserResponse(BaseModel):
     account_display_name: str | None = None
     mail_connection_status: str | None = None
     mail_onboarding_completed: bool | None = None
+    # Pro Account freigeschaltete Zusatz-Features (z. B. cleaning_schedule).
+    features: dict[str, bool] = Field(default_factory=_empty_features)

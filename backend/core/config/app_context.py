@@ -13,9 +13,16 @@ if TYPE_CHECKING:
     from backend.application.ingestion import IngestionRouter
     from backend.application.review import ReviewRouter
     from backend.core.config.settings import Settings
+    from backend.features.cleaning.service import CleaningScheduleService
     from backend.infrastructure.repositories.account_repository import AccountRepository
     from backend.infrastructure.repositories.admin_audit_log_repository import (
         AdminAuditLogRepository,
+    )
+    from backend.infrastructure.repositories.cleaning_partner_repository import (
+        CleaningPartnerRepository,
+    )
+    from backend.infrastructure.repositories.cleaning_task_repository import (
+        CleaningTaskRepository,
     )
     from backend.infrastructure.repositories.email_repository import EmailRepository
     from backend.infrastructure.repositories.extraction_repository import (
@@ -100,3 +107,6 @@ class AppContext:
     indexing_service: IndexingService | None = None
     gemini_client: GeminiClientProtocol | None = None
     llm: LLMClient | None = None
+    cleaning_partner_repo: CleaningPartnerRepository | None = None
+    cleaning_task_repo: CleaningTaskRepository | None = None
+    cleaning_service: CleaningScheduleService | None = None

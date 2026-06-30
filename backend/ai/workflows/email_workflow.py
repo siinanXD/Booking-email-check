@@ -30,6 +30,7 @@ from backend.ai.workflows.routing import (
 )
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.response import ReviewStatus
+from backend.features.cleaning.service import CleaningScheduleService
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
 from backend.infrastructure.observability.langfuse_client import LangfuseTracer
@@ -78,6 +79,7 @@ class EmailWorkflow:
         mail_cost: MailCostTracker | None = None,
         review_repo: ReviewRepository | None = None,
         notification_service: NotificationService | None = None,
+        cleaning_service: CleaningScheduleService | None = None,
         checkpointer: object | None = None,
         feedback_tracker: ReviewFeedbackTracker | None = None,
         langfuse_tracer: LangfuseTracer | None = None,
@@ -106,6 +108,7 @@ class EmailWorkflow:
             alerts=alerts,
             review_repo=review_repo,
             notification_service=notification_service,
+            cleaning_service=cleaning_service,
             feedback_tracker=feedback_tracker,
             langfuse_tracer=langfuse_tracer,
             workflow_router=workflow_router,

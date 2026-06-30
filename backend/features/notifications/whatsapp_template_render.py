@@ -56,6 +56,53 @@ _TEMPLATE_BODIES: dict[NotificationKind, dict[str, str]] = {
             "Completa la limpieza antes de la llegada del próximo huésped. ¡Gracias!"
         ),
     },
+    NotificationKind.CLEANING_CANCELLED: {
+        "de": (
+            "Stornierung – dieser Reinigungsauftrag entfällt.\n\n"
+            "Unterkunft: {{1}}\n"
+            "Check-in: {{2}}\n"
+            "Check-out: {{3}}\n"
+            "Gast: {{4}}\n"
+            "Buchungsnummer: {{5}}\n\n"
+            "Bitte für diese Wohnung keine Reinigung mehr einplanen. Danke!"
+        ),
+        "en": (
+            "Cancellation – this cleaning assignment is no longer needed.\n\n"
+            "Property: {{1}}\n"
+            "Check-in: {{2}}\n"
+            "Check-out: {{3}}\n"
+            "Guest: {{4}}\n"
+            "Booking reference: {{5}}\n\n"
+            "Please do not schedule a cleaning for this unit. Thank you!"
+        ),
+        "pl": (
+            "Anulowanie – to zlecenie sprzątania jest nieaktualne.\n\n"
+            "Obiekt: {{1}}\n"
+            "Zameldowanie: {{2}}\n"
+            "Wymeldowanie: {{3}}\n"
+            "Gość: {{4}}\n"
+            "Numer rezerwacji: {{5}}\n\n"
+            "Prosimy nie planować sprzątania tego lokalu. Dziękujemy!"
+        ),
+        "it": (
+            "Cancellazione – questo incarico di pulizia non è più necessario.\n\n"
+            "Struttura: {{1}}\n"
+            "Check-in: {{2}}\n"
+            "Check-out: {{3}}\n"
+            "Ospite: {{4}}\n"
+            "Riferimento prenotazione: {{5}}\n\n"
+            "Non programmare pulizie per questa unità. Grazie!"
+        ),
+        "es": (
+            "Cancelación – esta tarea de limpieza ya no es necesaria.\n\n"
+            "Alojamiento: {{1}}\n"
+            "Entrada: {{2}}\n"
+            "Salida: {{3}}\n"
+            "Huésped: {{4}}\n"
+            "Referencia de reserva: {{5}}\n\n"
+            "Por favor, no programe limpieza para esta unidad. ¡Gracias!"
+        ),
+    },
     NotificationKind.BOOKING_STATUS_NOTICE: {
         "de": (
             "Buchungsupdate: {{1}}\n\nUnterkunft: {{2}}\nCheck-in: {{3}}\n"

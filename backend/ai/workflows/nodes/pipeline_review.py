@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from backend.ai.domain.booking.source_consistency import detect_source_conflicts
@@ -11,6 +12,7 @@ from backend.core.models.response import ReviewStatus
 from backend.features.review.auto_approve import should_auto_approve
 
 if TYPE_CHECKING:
+    from backend.features.cleaning.service import CleaningScheduleService
     from backend.features.notifications.notification_service import (
         NotificationService,
     )
@@ -23,6 +25,8 @@ if TYPE_CHECKING:
         PlatformSettingsRepository,
     )
     from backend.infrastructure.repositories.review_repository import ReviewRepository
+
+logger = logging.getLogger(__name__)
 
 # Unter dieser Grounding-Konfidenz wird priorisiert an einen Menschen eskaliert.
 _ESCALATE_FLOOR = 0.5
@@ -40,6 +44,7 @@ class PipelineReviewMixin:
     _email_repo: EmailRepository
     _review_repo: ReviewRepository | None
     _notification_service: NotificationService | None
+    _cleaning_service: CleaningScheduleService | None
     _feedback_tracker: ReviewFeedbackTracker | None
     _langfuse_tracer: LangfuseTracer | None
     _platform_settings_repo: PlatformSettingsRepository | None
@@ -132,14 +137,27 @@ class PipelineReviewMixin:
         self._email_repo.update_processing_state(
             email.message_id, proc, account_id=email.account_id
         )
-        if status == "approved" and self._notification_service is not None:
+        if status == "approved":
             extraction = state.get("extraction")
-            if extraction is not None:
+            if extraction is not None and self._notification_service is not None:
                 self._notification_service.dispatch_after_approval(
                     email.correlation_id,
                     extraction,
                     account_id=email.account_id,
                 )
+            if extraction is not None and self._cleaning_service is not None:
+                # Putzplan-Pflege darf den Mail-Workflow nie unterbrechen.
+                try:
+                    self._cleaning_service.process_booking_event(
+                        email.correlation_id,
+                        extraction,
+                        account_id=email.account_id,
+                    )
+                except Exception:  # noqa: BLE001
+                    logger.exception(
+                        "Putzplan-Verarbeitung fehlgeschlagen für %s",
+                        email.correlation_id,
+                    )
         approved_body = review.approved_body if review else None
         if self._feedback_tracker is not None and self._langfuse_tracer is not None:
             draft = state.get("draft")
