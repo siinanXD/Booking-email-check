@@ -58,22 +58,46 @@ _TEMPLATE_BODIES: dict[NotificationKind, dict[str, str]] = {
     },
     NotificationKind.BOOKING_STATUS_NOTICE: {
         "de": (
-            "Buchungsupdate: {{1}}\n\n"
-            "Unterkunft: {{2}}\n"
-            "Check-in: {{3}}\n"
-            "Check-out: {{4}}\n"
-            "Gast: {{5}}\n"
-            "Buchung: {{6}}"
+            "Buchungsupdate: {{1}}\n\nUnterkunft: {{2}}\nCheck-in: {{3}}\n"
+            "Check-out: {{4}}\nGast: {{5}}\nBuchung: {{6}}"
+        ),
+        "en": (
+            "Booking update: {{1}}\n\nProperty: {{2}}\nCheck-in: {{3}}\n"
+            "Check-out: {{4}}\nGuest: {{5}}\nBooking: {{6}}"
+        ),
+        "pl": (
+            "Aktualizacja rezerwacji: {{1}}\n\nObiekt: {{2}}\nZameldowanie: {{3}}\n"
+            "Wymeldowanie: {{4}}\nGość: {{5}}\nRezerwacja: {{6}}"
+        ),
+        "it": (
+            "Aggiornamento prenotazione: {{1}}\n\nStruttura: {{2}}\nCheck-in: {{3}}\n"
+            "Check-out: {{4}}\nOspite: {{5}}\nPrenotazione: {{6}}"
+        ),
+        "es": (
+            "Actualización de reserva: {{1}}\n\nAlojamiento: {{2}}\nEntrada: {{3}}\n"
+            "Salida: {{4}}\nHuésped: {{5}}\nReserva: {{6}}"
         ),
     },
     NotificationKind.BOOKING_GUEST_INQUIRY: {
         "de": (
-            "{{1}}\n\n"
-            "Unterkunft: {{2}}\n"
-            "Buchung: {{3}}\n"
-            "Check-in: {{4}}\n"
-            "Check-out: {{5}}\n"
-            "Gast: {{6}}"
+            "{{1}}\n\nUnterkunft: {{2}}\nBuchung: {{3}}\nCheck-in: {{4}}\n"
+            "Check-out: {{5}}\nGast: {{6}}"
+        ),
+        "en": (
+            "{{1}}\n\nProperty: {{2}}\nBooking: {{3}}\nCheck-in: {{4}}\n"
+            "Check-out: {{5}}\nGuest: {{6}}"
+        ),
+        "pl": (
+            "{{1}}\n\nObiekt: {{2}}\nRezerwacja: {{3}}\nZameldowanie: {{4}}\n"
+            "Wymeldowanie: {{5}}\nGość: {{6}}"
+        ),
+        "it": (
+            "{{1}}\n\nStruttura: {{2}}\nPrenotazione: {{3}}\nCheck-in: {{4}}\n"
+            "Check-out: {{5}}\nOspite: {{6}}"
+        ),
+        "es": (
+            "{{1}}\n\nAlojamiento: {{2}}\nReserva: {{3}}\nEntrada: {{4}}\n"
+            "Salida: {{5}}\nHuésped: {{6}}"
         ),
     },
 }

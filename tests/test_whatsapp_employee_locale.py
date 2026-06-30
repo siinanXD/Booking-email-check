@@ -53,31 +53,25 @@ def test_localized_template_name_derives_from_de_base() -> None:
     )
 
 
-def test_template_name_for_kind_uses_locale_only_for_cleaning() -> None:
+def test_template_name_for_kind_localizes_all_kinds() -> None:
     settings = _settings()
     assert (
-        template_name_for_kind(
-            NotificationKind.BOOKING_CLEANING_TASK,
-            settings,
-            "it",
-        )
+        template_name_for_kind(NotificationKind.BOOKING_CLEANING_TASK, settings, "it")
         == "booking_cleaning_task_it"
     )
+    # Status + Anfrage werden jetzt ebenfalls lokalisiert (Meta-Templates da).
     assert (
-        template_name_for_kind(
-            NotificationKind.BOOKING_STATUS_NOTICE,
-            settings,
-            "pl",
-        )
-        == "booking_status_notice_de"
+        template_name_for_kind(NotificationKind.BOOKING_STATUS_NOTICE, settings, "pl")
+        == "booking_status_notice_pl"
     )
     assert (
-        template_name_for_kind(
-            NotificationKind.BOOKING_GUEST_INQUIRY,
-            settings,
-            "es",
-        )
-        == "booking_guest_inquiry_de"
+        template_name_for_kind(NotificationKind.BOOKING_GUEST_INQUIRY, settings, "es")
+        == "booking_guest_inquiry_es"
+    )
+    # Default-Sprache "de" bleibt unverändert (kein Suffix-Tausch).
+    assert (
+        template_name_for_kind(NotificationKind.BOOKING_STATUS_NOTICE, settings, "de")
+        == "booking_status_notice_de"
     )
 
 

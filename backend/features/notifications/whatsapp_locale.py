@@ -113,12 +113,16 @@ def template_name_for_kind(
     settings: Settings,
     locale: str,
 ) -> str:
-    """Template-Name für Intent + Sprache (Mehrsprachig nur Reinigung/Mitarbeiter)."""
+    """Template-Name für Intent + Sprache (alle Typen mehrsprachig).
+
+    `_de`-Basisname bleibt bei Sprache `de` unverändert; sonst wird der
+    Sprach-Suffix getauscht (z. B. `booking_status_notice_en`).
+    """
     if kind == NotificationKind.BOOKING_CLEANING_TASK:
         return localized_template_name(settings.whatsapp_template_cleaning_task, locale)
     if kind == NotificationKind.BOOKING_GUEST_INQUIRY:
-        return settings.whatsapp_template_guest_inquiry
-    return settings.whatsapp_template_status_notice
+        return localized_template_name(settings.whatsapp_template_guest_inquiry, locale)
+    return localized_template_name(settings.whatsapp_template_status_notice, locale)
 
 
 def unknown_property_label(locale: str) -> str:
