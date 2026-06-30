@@ -139,6 +139,54 @@ def test_tasks_export_xlsx(
     assert resp.data[:2] == b"PK"  # xlsx = zip
 
 
+def test_tasks_export_ics(
+    app: object,
+    client: object,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+) -> None:
+    """iCal-Export liefert eine .ics-Datei."""
+    _enable(app, tenant_account_id)
+    _seed_task(app, tenant_account_id)
+    resp = client.get("/api/cleaning/tasks/export.ics", headers=auth_headers)  # type: ignore[attr-defined]
+    assert resp.status_code == 200
+    assert "text/calendar" in resp.headers["Content-Type"]
+    assert resp.data.startswith(b"BEGIN:VCALENDAR")
+
+
+def test_status_history_exposed(
+    app: object,
+    client: object,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+) -> None:
+    """Statusänderungen erscheinen im status_history der Auftragsliste."""
+    _enable(app, tenant_account_id)
+    task_id = _seed_task(app, tenant_account_id)
+    client.patch(  # type: ignore[attr-defined]
+        f"/api/cleaning/tasks/{task_id}",
+        headers=auth_headers,
+        json={"status": "done"},
+    )
+    listed = client.get("/api/cleaning/tasks", headers=auth_headers)  # type: ignore[attr-defined]
+    history = listed.get_json()["items"][0]["status_history"]
+    assert any(ev["status"] == "done" for ev in history)
+
+
+def test_dashboard_counts_open_cleaning_tasks(
+    app: object,
+    client: object,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+) -> None:
+    """Offene Putzaufträge erscheinen im Dashboard-Zähler."""
+    _enable(app, tenant_account_id)
+    _seed_task(app, tenant_account_id)
+    stats = client.get("/api/dashboard/stats", headers=auth_headers)  # type: ignore[attr-defined]
+    assert stats.status_code == 200
+    assert stats.get_json()["nav_cleaning_tasks"] >= 1
+
+
 def test_admin_toggle_enables_and_unblocks_api(
     client: object, auth_headers: dict[str, str], tenant_account_id: str
 ) -> None:

@@ -11,11 +11,16 @@ from backend.api.schemas.cleaning import (
     PartnerItem,
     PartnersResponse,
     PartnerUpdateRequest,
+    StatusEventItem,
     TaskItem,
     TasksResponse,
     TaskUpdateRequest,
 )
-from backend.features.cleaning.export import build_cleaning_xlsx, status_label
+from backend.features.cleaning.export import (
+    build_cleaning_ics,
+    build_cleaning_xlsx,
+    status_label,
+)
 from backend.features.cleaning.models import (
     SOURCE_MANUAL,
     CleaningPartner,
@@ -89,6 +94,15 @@ def _task_item(task: CleaningTask, partner_name: str | None) -> TaskItem:
         last_notification_status=task.last_notification_status,
         last_notification_error=task.last_notification_error,
         updated_at=_iso(task.updated_at),
+        status_history=[
+            StatusEventItem(
+                status=ev.status.value,
+                at=_iso(ev.at),
+                source=ev.source,
+                note=ev.note,
+            )
+            for ev in task.status_history
+        ],
     )
 
 
@@ -230,3 +244,25 @@ def export_tasks_xlsx(
         date_to=date_to,
     )
     return build_cleaning_xlsx(tasks, partners)
+
+
+def export_tasks_ics(
+    ctx: AppContext,
+    account_id: str,
+    *,
+    now: datetime,
+    status: str | None = None,
+    property_name: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> bytes:
+    """Erzeugt die gefilterte Putzplan-Liste als iCal (.ics)."""
+    tasks, partners = _load_tasks(
+        ctx,
+        account_id,
+        status=status,
+        property_name=property_name,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    return build_cleaning_ics(tasks, partners, now=now)

@@ -165,6 +165,10 @@ class Settings(BaseSettings):
         default="booking_cleaning_cancelled_de",
         alias="WHATSAPP_TEMPLATE_CLEANING_CANCELLED",
     )
+    whatsapp_template_cleaning_reminder: str = Field(
+        default="booking_cleaning_reminder_de",
+        alias="WHATSAPP_TEMPLATE_CLEANING_REMINDER",
+    )
     whatsapp_default_recipients: str = Field(
         default="",
         alias="WHATSAPP_DEFAULT_RECIPIENTS",
@@ -208,6 +212,12 @@ class Settings(BaseSettings):
     # separaten Worker-Prozess (scripts/run_mail_poll_loop.py) laufen lassen —
     # sonst pollt JEDER Worker und jeder Account wird mehrfach gepollt.
     mail_poll_in_web: bool = Field(default=True, alias="MAIL_POLL_IN_WEB")
+    cleaning_reminder_interval_seconds: int = Field(
+        default=3600, alias="CLEANING_REMINDER_INTERVAL_SECONDS"
+    )
+    cleaning_reminders_in_web: bool = Field(
+        default=True, alias="CLEANING_REMINDERS_IN_WEB"
+    )
     poll_heartbeat_stale_seconds: int = Field(
         default=900, alias="POLL_HEARTBEAT_STALE_SECONDS"
     )

@@ -3,21 +3,21 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
-from backend.core.models.notification import NotificationKind, NotificationStatus
+from backend.core.models.notification import NotificationKind
 from backend.features.cleaning.identity import cleaning_date_for, cleaning_task_id
 from backend.features.cleaning.models import (
     SOURCE_BOOKING_EMAIL,
     SOURCE_CANCELLATION_EMAIL,
-    SOURCE_SYSTEM,
     CleaningPartner,
     CleaningTask,
     CleaningTaskStatus,
 )
+from backend.features.cleaning.notifier import CleaningNotifier
 from backend.infrastructure.repositories.cleaning_partner_repository import (
     CleaningPartnerRepository,
 )
@@ -34,8 +34,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Versand-Status, die als "Nachricht raus" gelten (SENT oder Dry-Run-SKIPPED).
-_DELIVERED = (NotificationStatus.SENT, NotificationStatus.SKIPPED)
 # Intents, die einen Putzauftrag anlegen/aktualisieren (None = wie Neubuchung).
 _SCHEDULING_INTENTS = (BookingIntent.NEW_BOOKING, BookingIntent.CHANGE, None)
 
@@ -54,7 +52,7 @@ class CleaningScheduleService:
         self._partner_repo = partner_repo
         self._task_repo = task_repo
         self._platform_settings_repo = platform_settings_repo
-        self._notifier = notifier
+        self._notifier = CleaningNotifier(notifier, partner_repo)
 
     def is_enabled(self, account_id: str | None) -> bool:
         """True, wenn der Putzplan für den Account freigeschaltet ist."""
@@ -105,14 +103,6 @@ class CleaningScheduleService:
             guest_name=extraction.guest_name,
         )
 
-    def _first_partner(
-        self, property_name: str | None, account_id: str
-    ) -> CleaningPartner | None:
-        partners = self._partner_repo.find_for_property(
-            property_name, account_id=account_id
-        )
-        return partners[0] if partners else None
-
     def _upsert_task(
         self,
         correlation_id: str,
@@ -127,12 +117,19 @@ class CleaningScheduleService:
         """Legt einen Putzauftrag an oder aktualisiert einen bestehenden."""
         task_id = self._identity(extraction, account_id)
         cleaning_date = cleaning_date_for(extraction.check_out, offset)
-        partner = self._first_partner(extraction.property_name, account_id)
+        partners = self._notifier.partners_for(extraction.property_name, account_id)
         existing = self._task_repo.get(task_id, account_id=account_id)
         if existing is not None:
             return self._update_existing(
-                existing, extraction, account_id, cleaning_date, partner, intent
+                existing,
+                extraction,
+                account_id,
+                cleaning_date,
+                partners,
+                intent,
+                correlation_id=correlation_id,
             )
+        primary = partners[0] if partners else None
         task = CleaningTask(
             task_id=task_id,
             account_id=account_id,
@@ -144,20 +141,21 @@ class CleaningScheduleService:
             check_in=extraction.check_in,
             check_out=extraction.check_out,
             cleaning_date=cleaning_date,
-            partner_id=partner.partner_id if partner else None,
+            partner_id=primary.partner_id if primary else None,
             source_intent=intent.value if intent else None,
         )
         initial = (
-            CleaningTaskStatus.SCHEDULED if partner else CleaningTaskStatus.UNASSIGNED
+            CleaningTaskStatus.SCHEDULED if primary else CleaningTaskStatus.UNASSIGNED
         )
         task.record_status(initial, source=source)
         if notify:
-            self._notify_partner(
+            self._notifier.notify(
                 task,
                 extraction,
-                partner,
+                partners,
                 NotificationKind.BOOKING_CLEANING_TASK,
                 account_id,
+                correlation_id=correlation_id,
             )
         self._task_repo.upsert(task, account_id=account_id)
         logger.info("Putzauftrag angelegt (%s) Status=%s", task_id, task.status.value)
@@ -168,23 +166,28 @@ class CleaningScheduleService:
         task: CleaningTask,
         extraction: BookingExtraction,
         account_id: str,
-        cleaning_date: object,
-        partner: CleaningPartner | None,
+        cleaning_date: date | None,
+        partners: list[CleaningPartner],
         intent: BookingIntent | None,
+        *,
+        correlation_id: str,
     ) -> CleaningTask:
         """Aktualisiert einen bestehenden Auftrag ohne manuelle Edits zu kippen."""
+        primary = partners[0] if partners else None
+        prev_cleaning = task.cleaning_date
         if extraction.check_in is not None:
             task.check_in = extraction.check_in
         if extraction.check_out is not None:
             task.check_out = extraction.check_out
         if cleaning_date is not None:
-            task.cleaning_date = cleaning_date  # type: ignore[assignment]
+            task.cleaning_date = cleaning_date
+        date_changed = cleaning_date is not None and cleaning_date != prev_cleaning
 
         if task.status == CleaningTaskStatus.CANCELLED:
             # Re-Buchung nach Storno: Auftrag wieder aktivieren.
             task.cancelled_at = None
-            if partner and not task.partner_id:
-                task.partner_id = partner.partner_id
+            if primary and not task.partner_id:
+                task.partner_id = primary.partner_id
             reopened = (
                 CleaningTaskStatus.SCHEDULED
                 if task.partner_id
@@ -194,13 +197,31 @@ class CleaningScheduleService:
                 reopened, source=SOURCE_BOOKING_EMAIL, note="reopened_after_cancel"
             )
         elif not task.manually_edited:
-            # Partner nachtragen, falls inzwischen einer hinterlegt wurde.
-            if partner and not task.partner_id:
-                task.partner_id = partner.partner_id
+            if primary and not task.partner_id:
+                task.partner_id = primary.partner_id
                 if task.status == CleaningTaskStatus.UNASSIGNED:
                     task.record_status(
                         CleaningTaskStatus.SCHEDULED, source=SOURCE_BOOKING_EMAIL
                     )
+            if (
+                intent == BookingIntent.CHANGE
+                and date_changed
+                and task.status == CleaningTaskStatus.NOTIFIED
+            ):
+                # Putztermin verschoben → Partner erneut informieren.
+                task.record_status(
+                    CleaningTaskStatus.NOTIFIED,
+                    source=SOURCE_BOOKING_EMAIL,
+                    note="date_changed",
+                )
+                self._notifier.notify(
+                    task,
+                    extraction,
+                    partners,
+                    NotificationKind.BOOKING_CLEANING_TASK,
+                    account_id,
+                    correlation_id=correlation_id,
+                )
         task.updated_at = datetime.now(UTC)
         self._task_repo.upsert(task, account_id=account_id)
         return task
@@ -235,56 +256,19 @@ class CleaningScheduleService:
         task.record_status(
             CleaningTaskStatus.CANCELLED, source=SOURCE_CANCELLATION_EMAIL
         )
-        # WhatsApp an den zugeordneten Putzpartner: "Auftrag entfällt".
         if notify:
-            partner = self._load_partner(task, account_id)
-            self._notify_partner(
+            partners = self._notifier.partners_for(task.property_name, account_id)
+            self._notifier.notify(
                 task,
                 extraction,
-                partner,
+                partners,
                 NotificationKind.CLEANING_CANCELLED,
                 account_id,
+                correlation_id=correlation_id,
             )
         self._task_repo.upsert(task, account_id=account_id)
         logger.info("Putzauftrag storniert (%s)", task.task_id)
         return task
-
-    def _load_partner(
-        self, task: CleaningTask, account_id: str
-    ) -> CleaningPartner | None:
-        if not task.partner_id:
-            return None
-        return self._partner_repo.get(task.partner_id, account_id=account_id)
-
-    def _notify_partner(
-        self,
-        task: CleaningTask,
-        extraction: BookingExtraction,
-        partner: CleaningPartner | None,
-        kind: NotificationKind,
-        account_id: str,
-    ) -> None:
-        """Versendet die Partner-WhatsApp und spiegelt das Ergebnis am Auftrag."""
-        if self._notifier is None or partner is None or not partner.phone:
-            return
-        record = self._notifier.dispatch_to_partner(
-            task.correlation_id or "",
-            extraction,
-            kind=kind,
-            recipient_e164=partner.phone,
-            locale=partner.locale,
-            account_id=account_id,
-        )
-        if record is None:
-            return
-        task.last_notification_status = record.status.value
-        task.last_notification_error = record.error
-        if (
-            kind == NotificationKind.BOOKING_CLEANING_TASK
-            and record.status in _DELIVERED
-            and task.status == CleaningTaskStatus.SCHEDULED
-        ):
-            task.record_status(CleaningTaskStatus.NOTIFIED, source=SOURCE_SYSTEM)
 
     def _find_for_cancellation(
         self, extraction: BookingExtraction, account_id: str

@@ -109,6 +109,7 @@ export interface DashboardStats {
   nav_messages?: number;
   nav_ground_zero?: number;
   nav_completed?: number;
+  nav_cleaning_tasks?: number;
 }
 
 export interface EmailListItem {

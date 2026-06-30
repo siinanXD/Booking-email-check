@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { CalendarDays, Download } from "lucide-react";
 import {
+  downloadTasksIcs,
   downloadTasksXlsx,
   fetchPartners,
   fetchTasks,
@@ -29,6 +30,7 @@ export function PutzplanPage() {
   const [tab, setTab] = useState<Tab>("tasks");
   const [filters, setFilters] = useState<TaskFilters>({});
   const [downloading, setDownloading] = useState(false);
+  const [openHistory, setOpenHistory] = useState<string | null>(null);
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["cleaning-tasks", filters],
@@ -51,10 +53,12 @@ export function PutzplanPage() {
     },
   });
 
-  const handleExport = async () => {
+  const handleExport = async (kind: "xlsx" | "ics") => {
     setDownloading(true);
     try {
-      await downloadTasksXlsx(filters);
+      await (kind === "ics"
+        ? downloadTasksIcs(filters)
+        : downloadTasksXlsx(filters));
     } catch {
       toast.error("Export fehlgeschlagen.");
     } finally {
@@ -136,10 +140,17 @@ export function PutzplanPage() {
               />
               <Button
                 variant="outline"
-                onClick={handleExport}
+                onClick={() => handleExport("xlsx")}
                 loading={downloading}
               >
                 <Download className="mr-1 h-4 w-4" /> Als Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleExport("ics")}
+                loading={downloading}
+              >
+                <CalendarDays className="mr-1 h-4 w-4" /> Als Kalender
               </Button>
             </div>
           </Card>
@@ -199,8 +210,36 @@ export function PutzplanPage() {
                           Erledigt
                         </Button>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setOpenHistory(
+                            openHistory === t.task_id ? null : t.task_id
+                          )
+                        }
+                      >
+                        Verlauf
+                      </Button>
                     </div>
                   </div>
+                  {openHistory === t.task_id && (
+                    <ul className="mt-3 space-y-1 border-t border-oktext/10 pt-3 text-xs text-oktext/70">
+                      {(t.status_history ?? []).map((ev, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="tabular-nums">
+                            {ev.at?.slice(0, 16).replace("T", " ") ?? ""}
+                          </span>
+                          <span className="font-medium">{ev.status}</span>
+                          <span>· {ev.source}</span>
+                          {ev.note ? <span>· {ev.note}</span> : null}
+                        </li>
+                      ))}
+                      {(t.status_history ?? []).length === 0 && (
+                        <li>Kein Verlauf.</li>
+                      )}
+                    </ul>
+                  )}
                 </Card>
               ))}
             </div>

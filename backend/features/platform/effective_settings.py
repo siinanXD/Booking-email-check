@@ -46,6 +46,10 @@ def merge_platform_settings(
         overrides["WHATSAPP_TEMPLATE_CLEANING_CANCELLED"] = (
             platform.whatsapp_template_cleaning_cancelled.strip()
         )
+    if platform.whatsapp_template_cleaning_reminder.strip():
+        overrides["WHATSAPP_TEMPLATE_CLEANING_REMINDER"] = (
+            platform.whatsapp_template_cleaning_reminder.strip()
+        )
     if platform.whatsapp_default_recipients.strip():
         overrides["WHATSAPP_DEFAULT_RECIPIENTS"] = (
             platform.whatsapp_default_recipients.strip()
@@ -80,6 +84,7 @@ def platform_from_env(env: Settings, account_id: str) -> PlatformSettingsRecord:
         whatsapp_template_status_notice=env.whatsapp_template_status_notice,
         whatsapp_template_guest_inquiry=env.whatsapp_template_guest_inquiry,
         whatsapp_template_cleaning_cancelled=env.whatsapp_template_cleaning_cancelled,
+        whatsapp_template_cleaning_reminder=env.whatsapp_template_cleaning_reminder,
         whatsapp_default_recipients=env.whatsapp_default_recipients,
         whatsapp_test_recipient=env.whatsapp_test_recipient,
         outlook_mailbox=env.outlook_mailbox or "",
@@ -112,6 +117,9 @@ def display_platform_settings(
             whatsapp_template_guest_inquiry=defaults.whatsapp_template_guest_inquiry,
             whatsapp_template_cleaning_cancelled=(
                 defaults.whatsapp_template_cleaning_cancelled
+            ),
+            whatsapp_template_cleaning_reminder=(
+                defaults.whatsapp_template_cleaning_reminder
             ),
             whatsapp_default_recipients=defaults.whatsapp_default_recipients,
             whatsapp_test_recipient=defaults.whatsapp_test_recipient,
@@ -151,6 +159,12 @@ def display_platform_settings(
             stored.whatsapp_template_cleaning_cancelled,
             defaults.whatsapp_template_cleaning_cancelled,
         ),
+        whatsapp_template_cleaning_reminder=_pick_str(
+            stored.whatsapp_template_cleaning_reminder,
+            defaults.whatsapp_template_cleaning_reminder,
+        ),
+        cleaning_quiet_hours_start=stored.cleaning_quiet_hours_start,
+        cleaning_quiet_hours_end=stored.cleaning_quiet_hours_end,
         whatsapp_default_recipients=_pick_str(
             stored.whatsapp_default_recipients,
             defaults.whatsapp_default_recipients,

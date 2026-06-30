@@ -67,6 +67,7 @@ def build_template_payload(
     partner_kinds = (
         NotificationKind.BOOKING_CLEANING_TASK,
         NotificationKind.CLEANING_CANCELLED,
+        NotificationKind.CLEANING_REMINDER,
     )
     if kind in partner_kinds:
         lang = normalize_employee_locale(locale or account_lang)
@@ -85,7 +86,10 @@ def build_template_payload(
             ],
             lang,
         )
-    if kind == NotificationKind.CLEANING_CANCELLED:
+    if kind in (
+        NotificationKind.CLEANING_CANCELLED,
+        NotificationKind.CLEANING_REMINDER,
+    ):
         return (
             template_name,
             [

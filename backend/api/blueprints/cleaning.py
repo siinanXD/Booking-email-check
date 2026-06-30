@@ -17,6 +17,7 @@ from backend.api.schemas.cleaning import (
 from backend.api.services.cleaning_queries import (
     create_partner,
     deactivate_partner,
+    export_tasks_ics,
     export_tasks_xlsx,
     feature_enabled,
     list_partners,
@@ -146,4 +147,21 @@ def tasks_export() -> Response | tuple[Any, int]:
         headers={
             "Content-Disposition": f'attachment; filename="Putzplan_{stamp}.xlsx"'
         },
+    )
+
+
+@cleaning_bp.get("/tasks/export.ics")
+@require_auth
+@require_account
+def tasks_export_ics() -> Response | tuple[Any, int]:
+    gate = _gate()
+    if gate is not None:
+        return gate
+    now = datetime.now(UTC)
+    data = export_tasks_ics(g.ctx, _account_id(), now=now, **_filters())
+    stamp = now.strftime("%Y-%m-%d")
+    return Response(
+        data,
+        mimetype="text/calendar",
+        headers={"Content-Disposition": f'attachment; filename="Putzplan_{stamp}.ics"'},
     )

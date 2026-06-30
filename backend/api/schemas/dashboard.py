@@ -35,3 +35,4 @@ class DashboardStats(BaseModel):
     nav_messages: int = 0
     nav_ground_zero: int = 0
     nav_completed: int = 0
+    nav_cleaning_tasks: int = 0

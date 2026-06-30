@@ -284,6 +284,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         cleaning_partner_repo=cleaning_partner_repo,
         cleaning_task_repo=cleaning_task_repo,
         cleaning_service=cleaning_service,
+        notification_service=notification_service,
         indexing_service=indexing,
         gemini_client=gemini_client,
         llm=llm,

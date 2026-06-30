@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   Inbox,
   TrendingDown,
+  Sparkles,
 } from "lucide-react";
+import { useAuthStore } from "@/features/auth/authStore";
 import { fetchDashboardStats } from "@/lib/api/dashboard";
 import { fetchMailConnection, syncMailConnection } from "@/lib/api/mail";
 import { MailVolumeChart } from "@/features/dashboard/MailVolumeChart";
@@ -35,6 +37,9 @@ function formatTimestamp(value: string | number | null | undefined): string {
 export function DashboardPage() {
   const queryClient = useQueryClient();
   const [showSyncErrors, setShowSyncErrors] = useState(false);
+  const cleaningEnabled = useAuthStore(
+    (s) => Boolean(s.user?.features?.cleaning_schedule)
+  );
 
   const { data: stats, isLoading, isError, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -244,6 +249,16 @@ export function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Putzplan */}
+      {cleaningEnabled && (
+        <StatCard
+          title="Putzaufträge offen"
+          value={loading ? dash : (stats!.nav_cleaning_tasks ?? 0)}
+          icon={<Sparkles size={20} />}
+          to="/cleaning"
+        />
+      )}
 
       {/* Trend */}
       <MailVolumeChart />

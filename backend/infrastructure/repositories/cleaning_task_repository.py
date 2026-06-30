@@ -53,6 +53,14 @@ class CleaningTaskRepository:
         doc = self._col.find_one(query)
         return None if doc is None else CleaningTask.from_mongo(doc)
 
+    def count_open_tasks(self, *, account_id: str) -> int:
+        """Offene Aufträge (unassigned/scheduled/notified) eines Accounts."""
+        query = with_account_filter(
+            {"status": {"$in": ["unassigned", "scheduled", "notified"]}},
+            account_id,
+        )
+        return int(self._col.count_documents(query))
+
     def find_by_booking_number(
         self,
         booking_number: str,

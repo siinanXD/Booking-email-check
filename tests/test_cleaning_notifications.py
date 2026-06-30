@@ -115,14 +115,32 @@ def _partner(repo: CleaningPartnerRepository) -> None:
     )
 
 
-def _booking(intent: BookingIntent = BookingIntent.NEW_BOOKING) -> BookingExtraction:
+def _partner2(repo: CleaningPartnerRepository) -> None:
+    repo.upsert(
+        CleaningPartner(
+            partner_id="p-2",
+            account_id=ACCOUNT,
+            name="CleanCo 2",
+            phone="+491700000002",
+            locale="de",
+            property_names=["Loft A"],
+        ),
+        account_id=ACCOUNT,
+    )
+
+
+def _booking(
+    intent: BookingIntent = BookingIntent.NEW_BOOKING,
+    *,
+    check_out: date = date(2026, 7, 10),
+) -> BookingExtraction:
     return BookingExtraction(
         intent=intent,
         guest_name="Max Muster",
         booking_number="BN-100",
         property_name="Loft A",
         check_in=date(2026, 7, 5),
-        check_out=date(2026, 7, 10),
+        check_out=check_out,
     )
 
 
@@ -177,6 +195,65 @@ def test_cancellation_without_partner_sends_nothing(
     assert task is not None
     assert task.status == CleaningTaskStatus.CANCELLED
     assert client.sent == []
+
+
+def test_new_booking_fans_out_to_all_partners(
+    service: CleaningScheduleService,
+    partner_repo: CleaningPartnerRepository,
+    settings_repo: PlatformSettingsRepository,
+    client: MockWhatsAppClient,
+) -> None:
+    """Neubuchung benachrichtigt alle aktiven Partner der Wohnung."""
+    _enable(settings_repo)
+    _partner(partner_repo)
+    _partner2(partner_repo)
+    task = service.process_booking_event("c1", _booking(), account_id=ACCOUNT)
+    assert task is not None
+    assert task.status == CleaningTaskStatus.NOTIFIED
+    assert {m.recipient_e164 for m in client.sent} == {
+        "+491700000000",
+        "+491700000002",
+    }
+
+
+def test_change_with_new_date_renotifies(
+    service: CleaningScheduleService,
+    partner_repo: CleaningPartnerRepository,
+    settings_repo: PlatformSettingsRepository,
+    client: MockWhatsAppClient,
+) -> None:
+    """Verschobener Putztermin (CHANGE) informiert den Partner erneut."""
+    _enable(settings_repo)
+    _partner(partner_repo)
+    service.process_booking_event("c1", _booking(), account_id=ACCOUNT)
+    changed = service.process_booking_event(
+        "c2",
+        _booking(BookingIntent.CHANGE, check_out=date(2026, 7, 12)),
+        account_id=ACCOUNT,
+    )
+    assert changed is not None
+    assert changed.status == CleaningTaskStatus.NOTIFIED
+    assert changed.cleaning_date == date(2026, 7, 12)
+    assert len(client.sent) == 2  # Neubuchung + Re-Notify
+
+
+def test_cancellation_fans_out_to_all_partners(
+    service: CleaningScheduleService,
+    partner_repo: CleaningPartnerRepository,
+    settings_repo: PlatformSettingsRepository,
+    client: MockWhatsAppClient,
+) -> None:
+    """Storno geht an alle aktiven Partner der Wohnung."""
+    _enable(settings_repo)
+    _partner(partner_repo)
+    _partner2(partner_repo)
+    service.process_booking_event("c1", _booking(), account_id=ACCOUNT)
+    client.sent.clear()
+    service.process_booking_event(
+        "c2", _booking(BookingIntent.CANCELLATION), account_id=ACCOUNT
+    )
+    assert {m.template_name for m in client.sent} == {"booking_cleaning_cancelled_de"}
+    assert len(client.sent) == 2
 
 
 def test_disabled_whatsapp_keeps_scheduled(

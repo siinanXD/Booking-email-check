@@ -103,6 +103,53 @@ _TEMPLATE_BODIES: dict[NotificationKind, dict[str, str]] = {
             "Por favor, no programe limpieza para esta unidad. ¡Gracias!"
         ),
     },
+    NotificationKind.CLEANING_REMINDER: {
+        "de": (
+            "Erinnerung: morgen steht eine Reinigung an.\n\n"
+            "Unterkunft: {{1}}\n"
+            "Check-in: {{2}}\n"
+            "Check-out: {{3}}\n"
+            "Gast: {{4}}\n"
+            "Buchungsnummer: {{5}}\n\n"
+            "Bitte die Reinigung rechtzeitig einplanen. Danke!"
+        ),
+        "en": (
+            "Reminder: a cleaning is due tomorrow.\n\n"
+            "Property: {{1}}\n"
+            "Check-in: {{2}}\n"
+            "Check-out: {{3}}\n"
+            "Guest: {{4}}\n"
+            "Booking reference: {{5}}\n\n"
+            "Please schedule the cleaning in time. Thank you!"
+        ),
+        "pl": (
+            "Przypomnienie: jutro zaplanowane sprzatanie.\n\n"
+            "Obiekt: {{1}}\n"
+            "Zameldowanie: {{2}}\n"
+            "Wymeldowanie: {{3}}\n"
+            "Gosc: {{4}}\n"
+            "Numer rezerwacji: {{5}}\n\n"
+            "Prosimy zaplanowac sprzatanie na czas. Dziekujemy!"
+        ),
+        "it": (
+            "Promemoria: domani e prevista una pulizia.\n\n"
+            "Struttura: {{1}}\n"
+            "Check-in: {{2}}\n"
+            "Check-out: {{3}}\n"
+            "Ospite: {{4}}\n"
+            "Riferimento prenotazione: {{5}}\n\n"
+            "Pianifica la pulizia per tempo. Grazie!"
+        ),
+        "es": (
+            "Recordatorio: manana hay una limpieza prevista.\n\n"
+            "Alojamiento: {{1}}\n"
+            "Entrada: {{2}}\n"
+            "Salida: {{3}}\n"
+            "Huesped: {{4}}\n"
+            "Referencia de reserva: {{5}}\n\n"
+            "Programa la limpieza a tiempo. Gracias!"
+        ),
+    },
     NotificationKind.BOOKING_STATUS_NOTICE: {
         "de": (
             "Buchungsupdate: {{1}}\n\nUnterkunft: {{2}}\nCheck-in: {{3}}\n"
