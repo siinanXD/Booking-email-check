@@ -283,6 +283,7 @@ def admin_config_public() -> tuple[Any, int]:
     return jsonify(data.model_dump()), 200
 
 
+import backend.api.blueprints.admin_account_cleaning  # noqa: E402, F401
 import backend.api.blueprints.admin_account_workflows  # noqa: E402, F401
 import backend.api.blueprints.admin_activity_routes  # noqa: E402, F401
 import backend.api.blueprints.admin_diagnostics_routes  # noqa: E402, F401

@@ -8,6 +8,7 @@ import {
 import { useAllAccounts } from "@/features/admin/useAllAccounts";
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
 import { AdminWhatsAppDiagnosticsCard } from "@/features/admin/AdminWhatsAppDiagnosticsCard";
+import { AdminCleaningDiagnosticsCard } from "@/features/admin/AdminCleaningDiagnosticsCard";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 
@@ -56,8 +57,8 @@ export function AdminDiagnosticsPage() {
   return (
     <div className="space-y-6">
       <AdminPageIntro
-        title="Diagnose: Mail & WhatsApp"
-        description="Wähle einen Mandanten und teste dessen gespeicherte Verbindungen — du verbindest kein eigenes Postfach. Der Mail-Test prüft IMAP/Outlook mit den Mandanten-Credentials; der WhatsApp-Test sendet eine Template-Nachricht an eine Testnummer."
+        title="Diagnose: Mail, WhatsApp & Putzplan"
+        description="Wähle einen Mandanten und prüfe dessen Verbindungen und Putzplan — du verbindest kein eigenes Postfach. Der Mail-Test prüft IMAP/Outlook mit den Mandanten-Credentials; der WhatsApp-Test sendet eine Template-Nachricht an eine Testnummer; der Putzplan zeigt Partner und Aufträge des Mandanten (read-only)."
         impact="Tests lösen echte Verbindungsversuche aus (max. 5 pro Minute pro Mandant). Erfolg oder Fehler werden sofort angezeigt; Credentials bleiben serverseitig und erscheinen nicht in der Antwort."
       />
 
@@ -146,6 +147,8 @@ export function AdminDiagnosticsPage() {
             whatsappInfo={whatsappInfo}
             loading={waLoading}
           />
+
+          <AdminCleaningDiagnosticsCard accountId={accountId} />
         </>
       )}
     </div>
