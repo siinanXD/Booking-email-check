@@ -40,7 +40,7 @@ export function TenantCostRankingChart({
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} />
           <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(v: number) => [`$${v.toFixed(4)}`, "Kosten"]} />
+          <Tooltip formatter={(v) => [`$${Number(v).toFixed(4)}`, "Kosten"]} />
           <Bar dataKey="cost" fill={ADMIN_CHART.indigo} radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
@@ -75,7 +75,7 @@ export function TopCostMailsChart({
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} />
           <Tooltip
-            formatter={(v: number) => [`$${v.toFixed(4)}`, "Kosten"]}
+            formatter={(v) => [`$${Number(v).toFixed(4)}`, "Kosten"]}
             labelFormatter={(_, payload) => {
               const item = payload?.[0]?.payload as { id?: string } | undefined;
               return item?.id ? `Mail ${item.id}…` : "";

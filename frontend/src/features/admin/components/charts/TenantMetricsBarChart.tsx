@@ -43,8 +43,8 @@ export function TenantCostBarChart({ tenants }: { tenants: AdminTenantRow[] }) {
             tick={{ fontSize: 11 }}
           />
           <Tooltip
-            formatter={(v: number, key: string) => [
-              key === "cost" ? `$${v.toFixed(4)}` : v,
+            formatter={(v, key) => [
+              key === "cost" ? `$${Number(v).toFixed(4)}` : v,
               key === "cost" ? "Kosten" : "Mails",
             ]}
           />
@@ -82,7 +82,7 @@ export function TenantMailsBarChart({ tenants }: { tenants: AdminTenantRow[] }) 
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={60} />
           <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-          <Tooltip formatter={(v: number) => [v, "Mails"]} />
+          <Tooltip formatter={(v) => [v, "Mails"]} />
           <Bar dataKey="mails" fill={ADMIN_CHART.violet} radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>

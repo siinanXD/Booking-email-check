@@ -37,7 +37,7 @@ export function LlmTemperatureChart({
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis dataKey="step" tick={{ fontSize: 11 }} />
           <YAxis domain={[0, 1]} tick={{ fontSize: 11 }} tickCount={6} />
-          <Tooltip formatter={(v: number) => [v.toFixed(1), "Temperatur"]} />
+          <Tooltip formatter={(v) => [Number(v).toFixed(1), "Temperatur"]} />
           <Bar dataKey="temp" radius={[4, 4, 0, 0]}>
             {data.map((entry) => (
               <Cell key={entry.step} fill={entry.color} />
