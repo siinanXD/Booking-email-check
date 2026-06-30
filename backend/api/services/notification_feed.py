@@ -43,22 +43,15 @@ def _iso(value: Any) -> str:
     return str(value) if value else ""
 
 
-def _item_for(email: Any) -> NotificationItem | None:
+def _item_for(email: Any, escalated_cids: set[str]) -> NotificationItem | None:
     created = _iso(getattr(email, "received_at", None))
     cid = getattr(email, "correlation_id", "")
     subject = (getattr(email, "subject", "") or "Mail").strip()
     state = getattr(email, "processing_state", None)
     intent = getattr(email, "effective_intent", None)
-    review_status = getattr(email, "review_status", None)
 
-    if review_status == "escalated":
-        return NotificationItem(
-            id=f"esc:{cid}",
-            kind="escalation",
-            title=f"Eskaliert · {subject}",
-            created_at=created,
-            href="/review",
-        )
+    if cid in escalated_cids:
+        return None  # bereits als Eskalation gelistet
     if state == ProcessingState.PENDING_REVIEW:
         return NotificationItem(
             id=f"rev:{cid}",
@@ -80,16 +73,46 @@ def _item_for(email: Any) -> NotificationItem | None:
     return None
 
 
-def build_feed(ctx: Any, account_id: str) -> NotificationsResponse:
-    """Erzeugt das Glocken-Feed für einen Account."""
-    emails, _ = ctx.email_repo.list_filtered(account_id=account_id, limit=_FEED_LIMIT)
-    read_at = _read_at(ctx.db, account_id)
+def _escalation_items(
+    ctx: Any, account_id: str, subjects: dict[str, str]
+) -> list[NotificationItem]:
+    """Eskalierte offene Reviews (Eskalation liegt auf dem Review-Datensatz)."""
     items: list[NotificationItem] = []
-    for email in emails:
-        item = _item_for(email)
-        if item is None:
+    for record in ctx.review_repo.list_pending(
+        limit=_FEED_LIMIT, account_id=account_id
+    ):
+        if not getattr(record, "escalated", False):
             continue
+        cid = record.correlation_id
+        subject = subjects.get(cid) or "Mail"
+        items.append(
+            NotificationItem(
+                id=f"esc:{cid}",
+                kind="escalation",
+                title=f"Eskaliert · {subject}",
+                created_at=_iso(record.updated_at),
+                href="/review",
+            )
+        )
+    return items
+
+
+def build_feed(ctx: Any, account_id: str) -> NotificationsResponse:
+    """Erzeugt das Glocken-Feed für einen Account (inkl. Eskalationen)."""
+    emails, _ = ctx.email_repo.list_filtered(account_id=account_id, limit=_FEED_LIMIT)
+    subjects = {e.correlation_id: (e.subject or "Mail").strip() for e in emails}
+    read_at = _read_at(ctx.db, account_id)
+
+    escalations = _escalation_items(ctx, account_id, subjects)
+    escalated_cids = {e.id.split(":", 1)[1] for e in escalations}
+
+    items: list[NotificationItem] = list(escalations)
+    for email in emails:
+        item = _item_for(email, escalated_cids)
+        if item is not None:
+            items.append(item)
+
+    for item in items:
         item.read = bool(read_at) and item.created_at <= read_at
-        items.append(item)
     unread = sum(1 for item in items if not item.read)
-    return NotificationsResponse(items=items, unread=unread)
+    return NotificationsResponse(items=items[:_FEED_LIMIT], unread=unread)
