@@ -1,8 +1,19 @@
-"""Leichte Sprach-Heuristik (DE/EN) für die Antwortsprache."""
+"""Sprach-Erkennung (DE/EN) für die Antwortsprache.
+
+langdetect liefert auf längeren Texten zuverlässig — bei sehr kurzen/gemischten
+Texten aber auch mal Unsinn (z. B. „af" für klares Englisch). Daher: langdetect
+zuerst, und nur wenn es eindeutig de/en sagt; sonst die DE/EN-Stopword-Heuristik
+als Rückfall.
+"""
 
 from __future__ import annotations
 
 import re
+
+from langdetect import DetectorFactory, detect
+
+# Deterministisch (gleicher Text → gleiches Ergebnis).
+DetectorFactory.seed = 0
 
 _DE_MARKERS = {
     "der",
@@ -60,8 +71,21 @@ _WORD_RE = re.compile(r"[a-zA-Zäöüß]+")
 
 def detect_reply_language(text: str | None) -> str:
     """Gibt "de" oder "en" zurück; Standard "de" bei Gleichstand/leer."""
-    if not text:
+    if not text or not text.strip():
         return "de"
+    try:
+        code = detect(text)
+    except Exception:  # noqa: BLE001 - LangDetectException o. Ä. → Heuristik
+        code = ""
+    if code == "de":
+        return "de"
+    if code == "en":
+        return "en"
+    return _heuristic_language(text)
+
+
+def _heuristic_language(text: str) -> str:
+    """DE/EN-Stopword-Heuristik als Rückfall für kurze/gemischte Texte."""
     words = [w.lower() for w in _WORD_RE.findall(text)]
     if not words:
         return "de"
