@@ -20,7 +20,7 @@ dependencies = [
     "langfuse==2.60.10",
     "google-genai==2.9.0",
     "python-dotenv==1.2.2",
-    "tenacity==8.5.0",                 # Retry/Backoff für externe Aufrufe
+    "tenacity==9.1.4",                 # Retry/Backoff für externe Aufrufe
     "msal==1.37.0",                    # Microsoft Graph (delegated + application)
     "flask==3.1.0",
     "flask-cors==6.0.5",
