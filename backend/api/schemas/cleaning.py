@@ -76,6 +76,13 @@ class PartnersResponse(BaseModel):
     items: list[PartnerItem] = Field(default_factory=list)
 
 
+class StatusEventItem(BaseModel):
+    status: str
+    at: str | None = None
+    source: str
+    note: str | None = None
+
+
 class TaskItem(BaseModel):
     task_id: str
     property_name: str | None = None
@@ -93,6 +100,7 @@ class TaskItem(BaseModel):
     last_notification_status: str | None = None
     last_notification_error: str | None = None
     updated_at: str | None = None
+    status_history: list[StatusEventItem] = Field(default_factory=list)
 
 
 class TasksResponse(BaseModel):

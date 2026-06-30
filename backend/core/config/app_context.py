@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from backend.application.review import ReviewRouter
     from backend.core.config.settings import Settings
     from backend.features.cleaning.service import CleaningScheduleService
+    from backend.features.notifications.notification_service import NotificationService
     from backend.infrastructure.repositories.account_repository import AccountRepository
     from backend.infrastructure.repositories.admin_audit_log_repository import (
         AdminAuditLogRepository,
@@ -110,3 +111,4 @@ class AppContext:
     cleaning_partner_repo: CleaningPartnerRepository | None = None
     cleaning_task_repo: CleaningTaskRepository | None = None
     cleaning_service: CleaningScheduleService | None = None
+    notification_service: NotificationService | None = None

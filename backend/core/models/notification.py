@@ -16,6 +16,8 @@ class NotificationKind(StrEnum):
     BOOKING_GUEST_INQUIRY = "booking_guest_inquiry"
     # Putzplan: Auftrag entfällt nach Stornierung (an den Putzpartner).
     CLEANING_CANCELLED = "cleaning_cancelled"
+    # Putzplan: Erinnerung an den Putzpartner vor dem Putztermin.
+    CLEANING_REMINDER = "cleaning_reminder"
 
 
 class NotificationStatus(StrEnum):

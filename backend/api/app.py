@@ -17,6 +17,7 @@ from pydantic import ValidationError
 
 from backend.api.auth.routes import auth_bp
 from backend.api.auth.token_blocklist import MongoBlocklistBackend, configure
+from backend.api.background_jobs import start_cleaning_reminders
 from backend.api.blueprints import register_api_blueprints
 from backend.api.rate_limit import limiter
 from backend.core.config.factory import AppContext, build_app_context
@@ -221,6 +222,7 @@ def create_app(settings: Settings | None = None) -> Flask:
         return jsonify({"error": str(err), "code": 500}), 500
 
     _start_mail_poll(app, cfg)
+    start_cleaning_reminders(app, cfg)
 
     return app
 

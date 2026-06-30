@@ -29,7 +29,8 @@ export type NavCountKey =
   | "nav_changes"
   | "nav_messages"
   | "nav_ground_zero"
-  | "nav_completed";
+  | "nav_completed"
+  | "nav_cleaning_tasks";
 
 export type SidebarLink = {
   to: string;
@@ -99,7 +100,14 @@ export function useSidebarNav(): SidebarNavData {
     (s) => Boolean(s.user?.features?.cleaning_schedule)
   );
   const cleaningLinks: SidebarLink[] = cleaningEnabled
-    ? [{ to: "/cleaning", label: "Putzplan", icon: Sparkles }]
+    ? [
+        {
+          to: "/cleaning",
+          label: "Putzplan",
+          icon: Sparkles,
+          navCountKey: "nav_cleaning_tasks",
+        },
+      ]
     : [];
   const links = isPlatformAdmin
     ? adminLinks

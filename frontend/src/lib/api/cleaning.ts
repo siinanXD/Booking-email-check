@@ -11,6 +11,13 @@ export interface CleaningPartner {
   active: boolean;
 }
 
+export interface StatusEvent {
+  status: string;
+  at?: string | null;
+  source: string;
+  note?: string | null;
+}
+
 export interface CleaningTask {
   task_id: string;
   property_name?: string | null;
@@ -28,6 +35,7 @@ export interface CleaningTask {
   last_notification_status?: string | null;
   last_notification_error?: string | null;
   updated_at?: string | null;
+  status_history?: StatusEvent[];
 }
 
 export interface TaskFilters {
@@ -103,21 +111,42 @@ export async function updateTask(
   return data;
 }
 
-export async function downloadTasksXlsx(filters: TaskFilters = {}): Promise<void> {
-  const { data } = await apiClient.get("/api/cleaning/tasks/export", {
+async function downloadBlob(
+  path: string,
+  filters: TaskFilters,
+  mime: string,
+  extension: string
+): Promise<void> {
+  const { data } = await apiClient.get(path, {
     params: cleanFilters(filters),
     responseType: "blob",
   });
-  const blob = new Blob([data], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
+  const blob = new Blob([data], { type: mime });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   const stamp = new Date().toISOString().slice(0, 10);
-  link.download = `Putzplan_${stamp}.xlsx`;
+  link.download = `Putzplan_${stamp}.${extension}`;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function downloadTasksXlsx(filters: TaskFilters = {}): Promise<void> {
+  await downloadBlob(
+    "/api/cleaning/tasks/export",
+    filters,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xlsx"
+  );
+}
+
+export async function downloadTasksIcs(filters: TaskFilters = {}): Promise<void> {
+  await downloadBlob(
+    "/api/cleaning/tasks/export.ics",
+    filters,
+    "text/calendar",
+    "ics"
+  );
 }

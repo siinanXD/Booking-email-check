@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from io import BytesIO
 
 from openpyxl import Workbook
@@ -86,6 +86,53 @@ def build_cleaning_xlsx(
     buffer = BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
+
+
+def _ics_escape(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\n", "\\n")
+    )
+
+
+def build_cleaning_ics(
+    tasks: list[CleaningTask],
+    partners_by_id: dict[str, CleaningPartner],
+    *,
+    now: datetime,
+) -> bytes:
+    """Erzeugt einen iCal-Kalender (.ics) mit je einem Ganztags-Termin pro Auftrag."""
+    stamp = now.strftime("%Y%m%dT%H%M%SZ")
+    lines: list[str] = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Booking-Email//Putzplan//DE",
+        "CALSCALE:GREGORIAN",
+    ]
+    for task in tasks:
+        if task.status == CleaningTaskStatus.CANCELLED or task.cleaning_date is None:
+            continue
+        day = task.cleaning_date.strftime("%Y%m%d")
+        next_day = (task.cleaning_date + timedelta(days=1)).strftime("%Y%m%d")
+        partner = partners_by_id.get(task.partner_id or "")
+        summary = f"Putzen: {task.property_name or '—'}"
+        desc = f"Gast: {task.guest_name or '—'} | Status: {status_label(task.status)}"
+        if partner:
+            desc += f" | Partner: {partner.name}"
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:cleaning-{task.task_id}@booking-email",
+            f"DTSTAMP:{stamp}",
+            f"DTSTART;VALUE=DATE:{day}",
+            f"DTEND;VALUE=DATE:{next_day}",
+            f"SUMMARY:{_ics_escape(summary)}",
+            f"DESCRIPTION:{_ics_escape(desc)}",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return ("\r\n".join(lines) + "\r\n").encode("utf-8")
 
 
 def _autosize(ws: object, columns: int) -> None:

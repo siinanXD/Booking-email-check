@@ -117,7 +117,17 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
         ),
         nav_ground_zero=nav_ground_zero(ctx, account_id),
         nav_completed=nav_completed,
+        nav_cleaning_tasks=_nav_cleaning_tasks(ctx, account_id),
     )
+
+
+def _nav_cleaning_tasks(ctx: AppContext, account_id: str) -> int:
+    """Offene Putzaufträge — nur wenn das Feature für den Account aktiv ist."""
+    service = ctx.cleaning_service
+    repo = ctx.cleaning_task_repo
+    if service is None or repo is None or not service.is_enabled(account_id):
+        return 0
+    return repo.count_open_tasks(account_id=account_id)
 
 
 def demo_stats() -> DashboardStats:

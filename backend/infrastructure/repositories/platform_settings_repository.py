@@ -57,6 +57,10 @@ class PlatformSettingsRecord(BaseModel):
     whatsapp_template_status_notice: str = "booking_status_notice_de"
     whatsapp_template_guest_inquiry: str = "booking_guest_inquiry_de"
     whatsapp_template_cleaning_cancelled: str = "booking_cleaning_cancelled_de"
+    whatsapp_template_cleaning_reminder: str = "booking_cleaning_reminder_de"
+    # Quiet-Hours für Putz-Erinnerungen (Stunde 0–23; start == end = aus).
+    cleaning_quiet_hours_start: int = Field(default=0, ge=0, le=23)
+    cleaning_quiet_hours_end: int = Field(default=0, ge=0, le=23)
     whatsapp_default_recipients: str = ""
     whatsapp_test_recipient: str = ""
     outlook_mailbox: str = ""
