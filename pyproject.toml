@@ -46,7 +46,7 @@ ocr = [
 # damit lokal, in pre-commit und in der CI dasselbe läuft.
 dev = [
     "ruff==0.15.18",
-    "black==24.10.0",
+    "black==26.5.1",
     "mypy==1.13.0",
     "pytest==8.3.3",
     "pre-commit==4.6.0",
