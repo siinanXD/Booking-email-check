@@ -23,6 +23,22 @@ from backend.infrastructure.repositories.platform_llm_config_repository import (
     PlatformLlmConfigRepository,
 )
 
+_MAX_KNOWN_PROPERTIES = 50
+
+
+def _known_properties_hint(names: list[str] | None) -> str:
+    """Rendert die Katalog-Namen als Prompt-Block (leer, wenn keiner)."""
+    cleaned = [n.strip() for n in names or [] if n and n.strip()]
+    if not cleaned:
+        return ""
+    listed = "\n".join(f"- {name}" for name in cleaned[:_MAX_KNOWN_PROPERTIES])
+    return (
+        "\nBekannte Unterkünfte dieses Kontos — wenn die Mail eindeutig eine davon "
+        "meint, gib property_name EXAKT in dieser Schreibweise zurück; sonst den in "
+        "der Mail genannten Namen:\n"
+        f"{listed}\n"
+    )
+
 
 class ExtractionService:
     """Extrahiert BookingExtraction aus Mail-Text."""
@@ -49,9 +65,14 @@ class ExtractionService:
         self,
         email: StoredEmail,
         intent: BookingIntent | None = None,
+        *,
+        known_property_names: list[str] | None = None,
     ) -> BookingExtraction:
         """Extrahiert Felder; setzt intent falls übergeben."""
-        return cast(BookingExtraction, self._extract_observed(email, intent))
+        return cast(
+            BookingExtraction,
+            self._extract_observed(email, intent, known_property_names),
+        )
 
     @observe(
         name="extract",
@@ -63,6 +84,7 @@ class ExtractionService:
         self,
         email: StoredEmail,
         intent: BookingIntent | None,
+        known_property_names: list[str] | None = None,
     ) -> BookingExtraction:
         if self._tracing:
             langfuse_context.update_current_trace(
@@ -86,6 +108,7 @@ class ExtractionService:
             few_shot_style="extract",
             subject=email.subject,
             body=email.body_text,
+            known_properties=_known_properties_hint(known_property_names),
         )
         data: dict[str, Any]
         try:

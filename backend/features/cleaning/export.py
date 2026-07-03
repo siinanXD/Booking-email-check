@@ -25,6 +25,7 @@ _STATUS_LABELS: dict[CleaningTaskStatus, str] = {
 
 _HEADERS = [
     "Wohnung",
+    "Zimmer",
     "Putztermin",
     "Gast",
     "Check-in",
@@ -33,6 +34,7 @@ _HEADERS = [
     "Ansprechpartner",
     "Telefon",
     "Status",
+    "Bemerkung",
     "Quelle",
     "Zuletzt aktualisiert",
 ]
@@ -65,10 +67,10 @@ def build_cleaning_xlsx(
 
     for task in tasks:
         partner = partners_by_id.get(task.partner_id or "")
-        room = f" – Zimmer {task.room_number}" if task.room_number else ""
         ws.append(
             [
-                f"{task.property_name or ''}{room}",
+                task.property_name or "",
+                task.room_number or "",
                 _fmt_date(task.cleaning_date),
                 task.guest_name or "",
                 _fmt_date(task.check_in),
@@ -77,6 +79,7 @@ def build_cleaning_xlsx(
                 partner.contact_person if partner else "",
                 partner.phone if partner else "",
                 status_label(task.status),
+                task.note or "",
                 task.source_intent or "",
                 _fmt_dt(task.updated_at),
             ]
@@ -121,6 +124,8 @@ def build_cleaning_ics(
         desc = f"Gast: {task.guest_name or '—'} | Status: {status_label(task.status)}"
         if partner:
             desc += f" | Partner: {partner.name}"
+        if task.note:
+            desc += f" | Bemerkung: {task.note}"
         lines += [
             "BEGIN:VEVENT",
             f"UID:cleaning-{task.task_id}@booking-email",

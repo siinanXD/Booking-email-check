@@ -90,7 +90,11 @@ def _enrich_room_and_channel(email: StoredEmail, data: dict[str, object]) -> Non
     subject = email.subject or ""
     # beds24-Mails sind oft HTML; der Text-Teil kann die Zeile verlieren.
     html = _strip_html(getattr(email, "body_html", "") or "")
-    room = parse_room_number(body, subject, html)
+    # Bewusst OHNE Betreff: der Betreff ist bei Booking der feste Listing-Titel
+    # ("... : Zimmer Nr. 3") und damit NICHT das gebuchte Zimmer dieser Mail —
+    # ihn als Fallback zu nutzen erzeugt das im Ticket gemeldete falsche
+    # "Zimmer 3". Widersprüche Betreff↔Body fängt detect_source_conflicts ab.
+    room = parse_room_number(body, html)
     if room:
         data["room_number"] = room
     elif expects_room(str(data.get("property_name") or ""), subject):

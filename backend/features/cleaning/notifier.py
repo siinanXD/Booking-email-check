@@ -76,6 +76,10 @@ class CleaningNotifier:
         for partner in partners:
             if not partner.phone:
                 continue
+            if partner.test_mode:
+                # Testmodus: kein echter Versand, aber am Auftrag sichtbar machen.
+                last_status = last_status or "test_mode"
+                continue
             record = self._svc.dispatch_to_partner(
                 correlation_id,
                 extraction,

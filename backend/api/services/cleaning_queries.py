@@ -27,6 +27,7 @@ from backend.features.cleaning.models import (
     CleaningTask,
     CleaningTaskStatus,
 )
+from backend.features.cleaning.overlap import overlapping_task_ids
 from backend.infrastructure.repositories.platform_settings_repository import (
     FEATURE_CLEANING_SCHEDULE,
 )
@@ -73,10 +74,13 @@ def _partner_item(partner: CleaningPartner) -> PartnerItem:
         locale=partner.locale,
         property_names=list(partner.property_names),
         active=partner.active,
+        test_mode=partner.test_mode,
     )
 
 
-def _task_item(task: CleaningTask, partner_name: str | None) -> TaskItem:
+def _task_item(
+    task: CleaningTask, partner_name: str | None, *, overlap: bool = False
+) -> TaskItem:
     return TaskItem(
         task_id=task.task_id,
         property_name=task.property_name,
@@ -90,6 +94,8 @@ def _task_item(task: CleaningTask, partner_name: str | None) -> TaskItem:
         partner_name=partner_name,
         status=task.status.value,
         status_label=status_label(task.status),
+        note=task.note,
+        overlap=overlap,
         source_intent=task.source_intent,
         last_notification_status=task.last_notification_status,
         last_notification_error=task.last_notification_error,
@@ -125,6 +131,7 @@ def create_partner(
         phone=body.phone,
         locale=body.locale or "de",
         property_names=[p.strip() for p in body.property_names if p.strip()],
+        test_mode=body.test_mode,
     )
     _partners(ctx).upsert(partner, account_id=account_id)
     return _partner_item(partner)
@@ -140,7 +147,7 @@ def update_partner(
     data = body.model_dump(exclude_unset=True)
     if "name" in data and data["name"]:
         partner.name = data["name"].strip()
-    for field in ("address", "contact_person", "phone", "active"):
+    for field in ("address", "contact_person", "phone", "active", "test_mode"):
         if field in data:
             setattr(partner, field, data[field])
     if "locale" in data and data["locale"]:
@@ -198,8 +205,13 @@ def list_tasks(
         date_from=date_from,
         date_to=date_to,
     )
+    overlaps = overlapping_task_ids(tasks)
     items = [
-        _task_item(t, partners[t.partner_id].name if t.partner_id in partners else None)
+        _task_item(
+            t,
+            partners[t.partner_id].name if t.partner_id in partners else None,
+            overlap=t.task_id in overlaps,
+        )
         for t in tasks
     ]
     return TasksResponse(items=items, total=len(items))
@@ -218,6 +230,8 @@ def update_task(
             task.record_status(CleaningTaskStatus.SCHEDULED, source=SOURCE_MANUAL)
     if body.status is not None:
         task.record_status(CleaningTaskStatus(body.status), source=SOURCE_MANUAL)
+    if "note" in body.model_dump(exclude_unset=True):
+        task.note = (body.note or "").strip() or None
     task.manually_edited = True
     task.updated_at = datetime.now(UTC)
     _tasks(ctx).upsert(task, account_id=account_id)

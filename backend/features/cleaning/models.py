@@ -57,12 +57,20 @@ class CleaningPartner(BaseModel):
     locale: str = "de"
     property_names: list[str] = Field(default_factory=list)
     active: bool = True
+    # Testmodus: Partner erhält KEINE echte WhatsApp (für gefahrlose Selbsttests).
+    test_mode: bool = False
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
     def to_mongo(self) -> dict[str, Any]:
-        """Serialisiert für MongoDB."""
-        return self.model_dump(mode="json")
+        """Serialisiert für MongoDB (inkl. normalisierter Suchspalte)."""
+        doc = self.model_dump(mode="json")
+        doc["property_names_lower"] = [
+            name.strip().lower()
+            for name in self.property_names
+            if name and name.strip()
+        ]
+        return doc
 
     @classmethod
     def from_mongo(cls, doc: dict[str, Any]) -> CleaningPartner:
@@ -89,6 +97,8 @@ class CleaningTask(BaseModel):
     partner_id: str | None = None
     status: CleaningTaskStatus = CleaningTaskStatus.UNASSIGNED
     source_intent: str | None = None
+    # Freies Bemerkungsfeld (z. B. frühe Anreise, Sonderwünsche) – manuell gepflegt.
+    note: str | None = None
     # Schutz vor automatischem Überschreiben nach manueller Bearbeitung.
     manually_edited: bool = False
     status_history: list[CleaningStatusEvent] = Field(default_factory=list)

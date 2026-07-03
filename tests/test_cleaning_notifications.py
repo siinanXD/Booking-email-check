@@ -256,6 +256,33 @@ def test_cancellation_fans_out_to_all_partners(
     assert len(client.sent) == 2
 
 
+def test_test_mode_partner_receives_no_whatsapp(
+    service: CleaningScheduleService,
+    partner_repo: CleaningPartnerRepository,
+    settings_repo: PlatformSettingsRepository,
+    client: MockWhatsAppClient,
+) -> None:
+    """Partner im Testmodus bekommt keine echte WhatsApp; Auftrag bleibt SCHEDULED."""
+    _enable(settings_repo)
+    partner_repo.upsert(
+        CleaningPartner(
+            partner_id="p-test",
+            account_id=ACCOUNT,
+            name="Tester",
+            phone="+491700000009",
+            locale="de",
+            property_names=["Loft A"],
+            test_mode=True,
+        ),
+        account_id=ACCOUNT,
+    )
+    task = service.process_booking_event("c1", _booking(), account_id=ACCOUNT)
+    assert task is not None
+    assert client.sent == []
+    assert task.status == CleaningTaskStatus.SCHEDULED
+    assert task.last_notification_status == "test_mode"
+
+
 def test_disabled_whatsapp_keeps_scheduled(
     service: CleaningScheduleService,
     partner_repo: CleaningPartnerRepository,

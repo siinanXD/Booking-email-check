@@ -9,7 +9,7 @@ price, guest_count, phone, email, platform, status, intent (slug wie classify)
 Wichtig: Auch bei informellen Anfragen („ich möchte buchen“) guest_name, email und
 property_name aus dem Text extrahieren, sofern erkennbar. check_in/check_out nur wenn
 explizit genannt.
-
+{known_properties}
 Mail-Daten:
 --- BEGIN UNTRUSTED MAIL ---
 Betreff: {subject}
