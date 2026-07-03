@@ -190,16 +190,13 @@ class WorkflowNodes(PipelineReviewMixin):
                 return {"extraction": extraction, "custom_extraction": custom}
         intent = state.get("intent")
         db = self._email_repo._col.database
-        known_props: list[str] = []
+        hints: list[str] | None = None
         if email.account_id:
             from backend.features.booking.property_catalog import known_property_names
 
-            known_props = known_property_names(db, email.account_id)
-        extraction = enrich_extraction(
-            email,
-            self._extraction.extract(email, intent=intent),
-            known_property_names=known_props or None,
-        )
+            hints = known_property_names(db, email.account_id) or None
+        raw = self._extraction.extract(email, intent=intent, known_property_names=hints)
+        extraction = enrich_extraction(email, raw, known_property_names=hints)
         if email.account_id:
             from backend.features.booking.entity_sync import (
                 ensure_property_from_extraction,

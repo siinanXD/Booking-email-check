@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -22,6 +23,7 @@ class CleaningPartnerRepository:
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
         self._col.create_index([("account_id", 1), ("active", 1)])
         self._col.create_index([("account_id", 1), ("property_names", 1)])
+        self._col.create_index([("account_id", 1), ("property_names_lower", 1)])
 
     def upsert(
         self,
@@ -71,12 +73,22 @@ class CleaningPartnerRepository:
         *,
         account_id: str | None = None,
     ) -> list[CleaningPartner]:
-        """Aktive Putzpartner, die einer Wohnung zugeordnet sind."""
+        """Aktive Putzpartner, die einer Wohnung zugeordnet sind.
+
+        Der Name wird case-/whitespace-insensitiv gematcht (konsistent zu den
+        WhatsApp-Empfängern). Neue Datensätze führen die normalisierte Spalte
+        ``property_names_lower``; für Altbestände greift der Regex-Fallback.
+        """
         if not property_name or not property_name.strip():
             return []
+        key = property_name.strip().lower()
+        legacy = re.compile(f"^{re.escape(property_name.strip())}$", re.IGNORECASE)
         base: dict[str, Any] = {
             "active": True,
-            "property_names": property_name.strip(),
+            "$or": [
+                {"property_names_lower": key},
+                {"property_names": legacy},
+            ],
         }
         query = with_account_filter(base, account_id)
         cursor = self._col.find(query).sort("name", 1)

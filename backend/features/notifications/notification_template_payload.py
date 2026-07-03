@@ -22,6 +22,25 @@ from backend.features.notifications.whatsapp_locale import (
 
 _E164_RE = re.compile(r"^\+[1-9]\d{6,14}$")
 
+# Ein am Ende in den Objektnamen "eingebackenes" Zimmer-Fragment
+# (" - Zimmer Nr. 3", " : Zimmer Nummer 4" …). Bewusst NUR mit Nr/Nummer, damit
+# "Ferienzimmer" selbst nicht getroffen wird.
+_ROOM_FRAGMENT_RE = re.compile(
+    r"\s*[-:–]?\s*zimmer[\s\-]*(?:nr|nummer)\.?\s*[:.\-]?\s*\d{1,4}\s*$",
+    re.IGNORECASE,
+)
+
+
+def _strip_room_fragment(name: str) -> str:
+    """Entfernt ein angehängtes Zimmer-Fragment aus dem Objektnamen.
+
+    Das Zimmer wird für die Anzeige ausschließlich aus ``room_number`` geführt;
+    ein im Namen verbliebenes (evtl. veraltetes) "- Zimmer Nr. 3" würde sonst
+    doppelt oder widersprüchlich erscheinen.
+    """
+    stripped = _ROOM_FRAGMENT_RE.sub("", name).strip()
+    return stripped or name
+
 
 def kind_for_extraction(extraction: BookingExtraction) -> NotificationKind | None:
     intent = extraction.intent
@@ -153,7 +172,9 @@ def _property_display(extraction: BookingExtraction, locale: str) -> str:
     Nummer wenn erkannt, sonst sichtbar „unbekannt" (statt still wegzulassen).
     Ganz-Apartments (z. B. RebenGlück) bleiben ohne Zimmer.
     """
-    label = _text(extraction.property_name, unknown_property_label(locale))
+    label = _strip_room_fragment(
+        _text(extraction.property_name, unknown_property_label(locale))
+    )
     room = (extraction.room_number or "").strip()
     if room:
         label = f"{label} - Zimmer Nr. {room}"

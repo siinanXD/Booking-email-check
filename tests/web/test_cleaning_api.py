@@ -124,6 +124,35 @@ def test_tasks_list_and_patch(
     assert patched.get_json()["status"] == "done"
 
 
+def test_tasks_patch_note_roundtrip(
+    app: object,
+    client: object,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+) -> None:
+    """Bemerkungsfeld setzen, lesen und wieder leeren."""
+    _enable(app, tenant_account_id)
+    task_id = _seed_task(app, tenant_account_id)
+
+    saved = client.patch(  # type: ignore[attr-defined]
+        f"/api/cleaning/tasks/{task_id}",
+        headers=auth_headers,
+        json={"note": "  Frühe Anreise, Kaffee  "},
+    )
+    assert saved.status_code == 200
+    assert saved.get_json()["note"] == "Frühe Anreise, Kaffee"
+
+    listed = client.get("/api/cleaning/tasks", headers=auth_headers)  # type: ignore[attr-defined]
+    assert listed.get_json()["items"][0]["note"] == "Frühe Anreise, Kaffee"
+
+    cleared = client.patch(  # type: ignore[attr-defined]
+        f"/api/cleaning/tasks/{task_id}",
+        headers=auth_headers,
+        json={"note": ""},
+    )
+    assert cleared.get_json()["note"] is None
+
+
 def test_tasks_export_xlsx(
     app: object,
     client: object,

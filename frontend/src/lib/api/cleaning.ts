@@ -9,6 +9,7 @@ export interface CleaningPartner {
   locale: string;
   property_names: string[];
   active: boolean;
+  test_mode: boolean;
 }
 
 export interface StatusEvent {
@@ -31,6 +32,8 @@ export interface CleaningTask {
   partner_name?: string | null;
   status: string;
   status_label: string;
+  note?: string | null;
+  overlap?: boolean;
   source_intent?: string | null;
   last_notification_status?: string | null;
   last_notification_error?: string | null;
@@ -53,6 +56,7 @@ export interface PartnerPayload {
   locale?: string;
   property_names?: string[];
   active?: boolean;
+  test_mode?: boolean;
 }
 
 export async function fetchPartners(): Promise<{ items: CleaningPartner[] }> {
@@ -102,7 +106,7 @@ export async function fetchTasks(
 
 export async function updateTask(
   taskId: string,
-  payload: { status?: string; partner_id?: string | null }
+  payload: { status?: string; partner_id?: string | null; note?: string | null }
 ): Promise<CleaningTask> {
   const { data } = await apiClient.patch(
     `/api/cleaning/tasks/${taskId}`,

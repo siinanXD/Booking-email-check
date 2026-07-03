@@ -231,3 +231,27 @@ def test_tenant_isolation(
     _enable(settings_repo)
     service.process_booking_event("c1", _booking(), account_id=ACCOUNT)
     assert task_repo.list_tasks(account_id="other") == []
+
+
+def test_overlap_detection_flags_same_room_overlapping_stays() -> None:
+    """Gleiches Zimmer + überlappende Aufenthalte werden beide markiert."""
+    from backend.features.cleaning.models import CleaningTask
+    from backend.features.cleaning.overlap import overlapping_task_ids
+
+    def _task(tid: str, room: str, ci: date, co: date) -> CleaningTask:
+        return CleaningTask(
+            task_id=tid,
+            account_id=ACCOUNT,
+            property_name="Loft A",
+            room_number=room,
+            check_in=ci,
+            check_out=co,
+        )
+
+    a = _task("a", "3", date(2026, 7, 5), date(2026, 7, 10))
+    b = _task("b", "3", date(2026, 7, 8), date(2026, 7, 12))  # überlappt a
+    c = _task("c", "3", date(2026, 7, 12), date(2026, 7, 14))  # nahtlos an b → ok
+    d = _task("d", "4", date(2026, 7, 6), date(2026, 7, 9))  # anderes Zimmer
+
+    flagged = overlapping_task_ids([a, b, c, d])
+    assert flagged == {"a", "b"}

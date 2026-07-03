@@ -25,6 +25,36 @@ function fmt(value?: string | null): string {
   return d ? `${d}.${m}.${y}` : value;
 }
 
+function NoteEditor({
+  value,
+  saving,
+  onSave,
+}: {
+  value: string;
+  saving: boolean;
+  onSave: (note: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const dirty = draft.trim() !== value.trim();
+  return (
+    <div className="mt-3 flex items-end gap-2 border-t border-oktext/10 pt-3">
+      <div className="flex-1">
+        <Input
+          label="Bemerkung"
+          placeholder="z. B. frühe Anreise, Kaffee gewünscht…"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+        />
+      </div>
+      {dirty && (
+        <Button size="sm" loading={saving} onClick={() => onSave(draft.trim())}>
+          Speichern
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function PutzplanPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("tasks");
@@ -46,7 +76,13 @@ export function PutzplanPage() {
       taskId: string;
       status?: string;
       partner_id?: string | null;
-    }) => updateTask(vars.taskId, { status: vars.status, partner_id: vars.partner_id }),
+      note?: string | null;
+    }) =>
+      updateTask(vars.taskId, {
+        status: vars.status,
+        partner_id: vars.partner_id,
+        note: vars.note,
+      }),
     onSuccess: () => {
       toast.success("Auftrag aktualisiert.");
       void queryClient.invalidateQueries({ queryKey: ["cleaning-tasks"] });
@@ -171,6 +207,9 @@ export function PutzplanPage() {
                           {t.room_number ? ` · Zimmer ${t.room_number}` : ""}
                         </span>
                         <Badge label={t.status_label} tone={toneFor(t.status)} dot />
+                        {t.overlap && (
+                          <Badge label="Überschneidung" tone="escalated" dot />
+                        )}
                       </div>
                       <div className="text-sm text-oktext/70">
                         Putztermin {fmt(t.cleaning_date)} · Gast {t.guest_name ?? "—"}
@@ -223,6 +262,13 @@ export function PutzplanPage() {
                       </Button>
                     </div>
                   </div>
+                  <NoteEditor
+                    value={t.note ?? ""}
+                    saving={mutate.isPending}
+                    onSave={(note) =>
+                      mutate.mutate({ taskId: t.task_id, note })
+                    }
+                  />
                   {openHistory === t.task_id && (
                     <ul className="mt-3 space-y-1 border-t border-oktext/10 pt-3 text-xs text-oktext/70">
                       {(t.status_history ?? []).map((ev, i) => (

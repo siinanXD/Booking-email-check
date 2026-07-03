@@ -22,6 +22,7 @@ interface FormState {
   address: string;
   contact_person: string;
   property_names: string;
+  test_mode: boolean;
 }
 
 const EMPTY: FormState = {
@@ -30,6 +31,7 @@ const EMPTY: FormState = {
   address: "",
   contact_person: "",
   property_names: "",
+  test_mode: false,
 };
 
 function toPayload(form: FormState): PartnerPayload {
@@ -42,6 +44,7 @@ function toPayload(form: FormState): PartnerPayload {
       .split(",")
       .map((p) => p.trim())
       .filter(Boolean),
+    test_mode: form.test_mode,
   };
 }
 
@@ -91,6 +94,7 @@ export function PartnerManager() {
       address: p.address ?? "",
       contact_person: p.contact_person ?? "",
       property_names: p.property_names.join(", "),
+      test_mode: p.test_mode,
     });
   };
 
@@ -126,6 +130,21 @@ export function PartnerManager() {
             }
           />
         </div>
+        <label className="mt-3 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={form.test_mode}
+            onChange={(e) => setForm({ ...form, test_mode: e.target.checked })}
+          />
+          <span>
+            Testmodus – Partner erhält <strong>keine</strong> echte WhatsApp
+            (für gefahrlose Tests).
+          </span>
+        </label>
+        <p className="mt-2 text-xs text-oktext/60">
+          Hinweis: Zugewiesene Partner werden bei Freigabe einer Buchung
+          automatisch per WhatsApp benachrichtigt.
+        </p>
         <div className="mt-3 flex gap-2">
           <Button
             onClick={() => saveMut.mutate()}
@@ -156,6 +175,7 @@ export function PartnerManager() {
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">{p.name}</span>
                   {!p.active && <Badge label="inaktiv" tone="rejected" />}
+                  {p.test_mode && <Badge label="Testmodus" tone="pending" />}
                 </div>
                 <div className="text-sm text-oktext/70">
                   {p.phone ?? "—"} ·{" "}

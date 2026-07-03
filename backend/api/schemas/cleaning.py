@@ -39,6 +39,7 @@ class PartnerCreateRequest(BaseModel):
     phone: str | None = None
     locale: str = "de"
     property_names: list[str] = Field(default_factory=list)
+    test_mode: bool = False
 
     @field_validator("phone")
     @classmethod
@@ -54,6 +55,7 @@ class PartnerUpdateRequest(BaseModel):
     locale: str | None = None
     property_names: list[str] | None = None
     active: bool | None = None
+    test_mode: bool | None = None
 
     @field_validator("phone")
     @classmethod
@@ -70,6 +72,7 @@ class PartnerItem(BaseModel):
     locale: str = "de"
     property_names: list[str] = Field(default_factory=list)
     active: bool = True
+    test_mode: bool = False
 
 
 class PartnersResponse(BaseModel):
@@ -96,6 +99,9 @@ class TaskItem(BaseModel):
     partner_name: str | None = None
     status: str
     status_label: str
+    note: str | None = None
+    # True, wenn dieses Zimmer mit überlappenden Aufenthaltsdaten doppelt belegt ist.
+    overlap: bool = False
     source_intent: str | None = None
     last_notification_status: str | None = None
     last_notification_error: str | None = None
@@ -111,6 +117,7 @@ class TasksResponse(BaseModel):
 class TaskUpdateRequest(BaseModel):
     status: str | None = None
     partner_id: str | None = None
+    note: str | None = Field(default=None, max_length=1000)
 
     @field_validator("status")
     @classmethod

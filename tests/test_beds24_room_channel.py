@@ -176,6 +176,31 @@ def test_property_display_whole_apartment_omits_room() -> None:
     assert _property_display(ext, "de") == "Ferienwohnung RebenGlück (Booking.com)"
 
 
+def test_property_display_strips_folded_room_no_double() -> None:
+    # Altbestand: Zimmer im Namen eingebacken, room_number leer → EIN Zimmerfeld.
+    ext = BookingExtraction(
+        property_name="Münzbach Ferienzimmer - Zimmer Nr. 3",
+        channel="Booking.com",
+    )
+    assert (
+        _property_display(ext, "de")
+        == "Münzbach Ferienzimmer - Zimmer Nr.: unbekannt (Booking.com)"
+    )
+
+
+def test_property_display_folded_name_uses_room_number() -> None:
+    # Eingebackenes (veraltetes) "Nr. 3" wird durch das geprüfte room_number ersetzt.
+    ext = BookingExtraction(
+        property_name="Münzbach Ferienzimmer : Zimmer Nr. 3",
+        room_number="4",
+        channel="Booking.com",
+    )
+    assert (
+        _property_display(ext, "de")
+        == "Münzbach Ferienzimmer - Zimmer Nr. 4 (Booking.com)"
+    )
+
+
 def test_property_display_marks_unknown_room() -> None:
     # Multi-Zimmer-Objekt ohne erkannte Nummer → sichtbar "unbekannt".
     ext = BookingExtraction(
@@ -185,6 +210,18 @@ def test_property_display_marks_unknown_room() -> None:
         _property_display(ext, "de")
         == "Münzbach Ferienzimmer - Zimmer Nr.: unbekannt (Booking.com)"
     )
+
+
+def test_room_not_taken_from_subject_listing_title() -> None:
+    # Booking-Betreff = fester Listing-Titel "... Zimmer Nr. 3". Fehlt das Zimmer
+    # im Body, darf die "3" NICHT aus dem Betreff übernommen werden (Ticket 2:
+    # falsches "Zimmer 3"). Erwartung: unbekannt statt falsch.
+    ext = _enrich(
+        "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 3 - 88902627 - Booking.com",
+        _beds24_body("Münzbach Ferienzimmer", "", "g@guest.booking.com"),
+        "Münzbach Ferienzimmer",
+    )
+    assert ext.room_number is None
 
 
 def test_enrich_reads_room_from_html_body() -> None:
