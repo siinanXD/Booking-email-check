@@ -70,7 +70,12 @@ def _verify_signature(req: Any) -> bool:
     """Prüft X-Hub-Signature-256 von Meta (wenn WHATSAPP_APP_SECRET gesetzt)."""
     secret = g.settings.whatsapp_app_secret
     if not secret:
-        return True  # Prüfung deaktiviert wenn kein App-Secret konfiguriert
+        if g.settings.app_env == "development" or g.settings.flask_env == "development":
+            return True  # nur in Dev ohne App-Secret erlaubt
+        logger.error(
+            "WHATSAPP_APP_SECRET nicht konfiguriert – Webhook-Payload abgelehnt"
+        )
+        return False
 
     signature = req.headers.get("X-Hub-Signature-256", "")
     if not signature.startswith("sha256="):

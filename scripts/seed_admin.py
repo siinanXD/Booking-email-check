@@ -15,6 +15,7 @@ def main() -> int:
     from werkzeug.security import check_password_hash, generate_password_hash
 
     from backend.core.config.settings import get_settings
+    from backend.core.utils.field_crypto import FieldCipher
     from backend.infrastructure.repositories.account_repository import AccountRepository
     from backend.infrastructure.repositories.mail_connection_repository import (
         MailConnectionRepository,
@@ -31,7 +32,9 @@ def main() -> int:
     db = get_database(settings)
     accounts = AccountRepository(db)
     users = UserRepository(db)
-    mail_connections = MailConnectionRepository(db)
+    mail_connections = MailConnectionRepository(
+        db, FieldCipher(settings.credentials_encryption_key)
+    )
 
     def _skip_mail_onboarding(account_id: str) -> None:
         record = mail_connections.get_or_create(account_id)

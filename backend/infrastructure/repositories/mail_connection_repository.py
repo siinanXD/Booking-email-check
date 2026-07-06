@@ -8,7 +8,11 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 from pymongo.collection import Collection
 
+from backend.core.utils.field_crypto import FieldCipher
 from backend.infrastructure.repositories.mongo import Db
+
+# Felder mit Credentials — werden at rest verschlüsselt (FieldCipher).
+_ENCRYPTED_FIELDS = ("imap_password", "outlook_token_cache")
 
 MailProvider = Literal["outlook", "imap"]
 MailConnectionStatus = Literal["disconnected", "connected", "error"]
@@ -41,22 +45,29 @@ class MailConnectionRepository:
 
     COLLECTION = "mail_connections"
 
-    def __init__(self, db: Db) -> None:
+    def __init__(self, db: Db, cipher: FieldCipher | None = None) -> None:
         """Initialize the instance with its dependencies."""
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
+        self._cipher = cipher or FieldCipher()
         self._col.create_index(
             [("onboarding_completed", 1)],
             name="idx_mail_conn_onboarding",
         )
+
+    def _to_record(self, doc: dict[str, Any], account_id: str) -> MailConnectionRecord:
+        payload = {k: v for k, v in doc.items() if k != "_id"}
+        payload["account_id"] = account_id
+        for field in _ENCRYPTED_FIELDS:
+            if isinstance(payload.get(field), str):
+                payload[field] = self._cipher.decrypt(payload[field])
+        return MailConnectionRecord.model_validate(payload)
 
     def get(self, account_id: str) -> MailConnectionRecord | None:
         """Lädt die Verbindung eines Accounts."""
         doc = self._col.find_one({"_id": account_id})
         if doc is None:
             return None
-        payload = {k: v for k, v in doc.items() if k != "_id"}
-        payload["account_id"] = account_id
-        return MailConnectionRecord.model_validate(payload)
+        return self._to_record(doc, account_id)
 
     def get_or_create(self, account_id: str) -> MailConnectionRecord:
         """Lädt oder legt leere Verbindung an."""
@@ -71,6 +82,8 @@ class MailConnectionRepository:
         """Speichert Verbindung."""
         record.updated_at = datetime.now(UTC)
         doc = record.model_dump(mode="json")
+        for field in _ENCRYPTED_FIELDS:
+            doc[field] = self._cipher.encrypt(doc[field])
         doc["_id"] = record.account_id
         self._col.replace_one({"_id": record.account_id}, doc, upsert=True)
         return record
@@ -116,13 +129,7 @@ class MailConnectionRepository:
 
     def list_all(self) -> list[MailConnectionRecord]:
         """Lädt alle gespeicherten Postfach-Verbindungen."""
-        result: list[MailConnectionRecord] = []
-        for doc in self._col.find({}):
-            account_id = str(doc["_id"])
-            payload = {k: v for k, v in doc.items() if k != "_id"}
-            payload["account_id"] = account_id
-            result.append(MailConnectionRecord.model_validate(payload))
-        return result
+        return [self._to_record(doc, str(doc["_id"])) for doc in self._col.find({})]
 
     @staticmethod
     def is_pollable(record: MailConnectionRecord) -> bool:
@@ -147,10 +154,7 @@ class MailConnectionRepository:
         docs = self._col.find({"onboarding_completed": True})
         result: list[MailConnectionRecord] = []
         for doc in docs:
-            account_id = str(doc["_id"])
-            payload = {k: v for k, v in doc.items() if k != "_id"}
-            payload["account_id"] = account_id
-            record = MailConnectionRecord.model_validate(payload)
+            record = self._to_record(doc, str(doc["_id"]))
             if self.is_pollable(record):
                 result.append(record)
         return result

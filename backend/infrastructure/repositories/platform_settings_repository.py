@@ -8,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 from pymongo.collection import Collection
 
+from backend.core.utils.field_crypto import FieldCipher
 from backend.infrastructure.repositories.mongo import Db
 
 LEGACY_PLATFORM_DOC_ID = "platform"
@@ -76,9 +77,20 @@ class PlatformSettingsRepository:
 
     COLLECTION = "platform_settings"
 
-    def __init__(self, db: Db) -> None:
+    def __init__(self, db: Db, cipher: FieldCipher | None = None) -> None:
         """Initialize the instance with its dependencies."""
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
+        self._cipher = cipher or FieldCipher()
+
+    def _to_record(
+        self, doc: dict[str, Any], account_id: str
+    ) -> PlatformSettingsRecord:
+        payload = {k: v for k, v in doc.items() if k != "_id"}
+        payload["id"] = account_id
+        token = payload.get("whatsapp_access_token")
+        if isinstance(token, str):
+            payload["whatsapp_access_token"] = self._cipher.decrypt(token)
+        return PlatformSettingsRecord.model_validate(payload)
 
     def get(self, account_id: str) -> PlatformSettingsRecord | None:
         """Lädt Einstellungen für einen Account."""
@@ -86,18 +98,17 @@ class PlatformSettingsRepository:
         if doc is None:
             legacy = self._col.find_one({"_id": LEGACY_PLATFORM_DOC_ID})
             if legacy is not None:
-                payload = {k: v for k, v in legacy.items() if k != "_id"}
-                payload["id"] = account_id
-                return PlatformSettingsRecord.model_validate(payload)
+                return self._to_record(legacy, account_id)
             return None
-        payload = {k: v for k, v in doc.items() if k != "_id"}
-        payload["id"] = account_id
-        return PlatformSettingsRecord.model_validate(payload)
+        return self._to_record(doc, account_id)
 
     def save(self, record: PlatformSettingsRecord) -> PlatformSettingsRecord:
         """Speichert Einstellungen für einen Account."""
         record.updated_at = datetime.now(UTC)
         doc = record.model_dump(mode="json")
+        doc["whatsapp_access_token"] = self._cipher.encrypt(
+            doc["whatsapp_access_token"]
+        )
         account_id = record.id
         doc["_id"] = account_id
         doc["id"] = account_id

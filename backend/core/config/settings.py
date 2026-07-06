@@ -109,6 +109,12 @@ class Settings(BaseSettings):
     )
 
     flask_secret_key: str = Field(default="", alias="FLASK_SECRET_KEY")
+    # Fernet-Key für Credentials at rest (IMAP-Passwort, Outlook-Token, WhatsApp-Token).
+    # Leer = Klartext (nur Dev). Generieren: siehe .env.example.
+    credentials_encryption_key: str = Field(
+        default="",
+        alias="CREDENTIALS_ENCRYPTION_KEY",
+    )
     admin_email: str = Field(default="admin@example.com", alias="ADMIN_EMAIL")
     admin_password: str = Field(default="", alias="ADMIN_PASSWORD")
     jwt_access_expires: int = Field(default=3600, alias="JWT_ACCESS_TOKEN_EXPIRES")
