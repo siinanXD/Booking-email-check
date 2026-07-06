@@ -26,6 +26,7 @@ from backend.application.review import ReviewRouter
 from backend.core.config.app_context import AppContext as AppContext
 from backend.core.config.llm_clients import build_llm_and_embeddings
 from backend.core.config.settings import Settings, get_settings
+from backend.core.utils.field_crypto import build_credentials_cipher
 from backend.features.cleaning.wiring import build_cleaning_service
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
@@ -111,8 +112,11 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
     revoked_token_repo = RevokedTokenRepository(db)
     notification_repo = NotificationRepository(db)
     property_recipient_repo = PropertyRecipientRepository(db)
-    platform_settings_repo = PlatformSettingsRepository(db)
-    mail_connection_repo = MailConnectionRepository(db)
+    credentials_cipher = build_credentials_cipher(
+        cfg.credentials_encryption_key, cfg.app_env
+    )
+    platform_settings_repo = PlatformSettingsRepository(db, credentials_cipher)
+    mail_connection_repo = MailConnectionRepository(db, credentials_cipher)
     outlook_oauth_flow_repo = OutlookOAuthFlowRepository(db)
     platform_llm_config_repo = PlatformLlmConfigRepository(db)
     platform_llm_prompt_history_repo = PlatformLlmPromptHistoryRepository(db)
