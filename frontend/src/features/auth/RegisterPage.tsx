@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { User, Mail, Phone, Lock, Building2, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
+import { RegisterFormFooter } from "@/features/auth/RegisterFormFooter";
 import { useAuthStore } from "@/features/auth/authStore";
 import { useAuthHydrated } from "@/features/auth/useAuthHydrated";
 
@@ -276,26 +277,7 @@ export function RegisterPage() {
                 {loading ? "Wird gesendet…" : "Registrieren"}
               </Button>
 
-              <p className="text-center text-xs text-slate-500">
-                Mit der Registrierung nimmst du unsere{" "}
-                <Link
-                  to="/datenschutz"
-                  className="font-medium text-indigo-400 transition-colors hover:text-indigo-300"
-                >
-                  Datenschutzerklärung
-                </Link>{" "}
-                zur Kenntnis.
-              </p>
-
-              <p className="text-center text-xs text-slate-500">
-                Bereits ein Konto?{" "}
-                <Link
-                  to="/login"
-                  className="font-medium text-indigo-400 transition-colors hover:text-indigo-300"
-                >
-                  Anmelden
-                </Link>
-              </p>
+              <RegisterFormFooter />
             </form>
           )}
         </div>
