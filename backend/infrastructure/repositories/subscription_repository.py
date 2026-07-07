@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pymongo.collection import Collection
+from pymongo.errors import OperationFailure
 
 from backend.features.billing.plans import TRIAL_DAYS
 from backend.infrastructure.repositories._subscription_models import (
@@ -52,12 +53,23 @@ class SubscriptionRepository:
         """Initialize the instance with its dependencies."""
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
         self._col.create_index("account_id", unique=True, name="idx_sub_account")
-        self._col.create_index(
-            "stripe_customer_id",
-            unique=True,
-            sparse=True,
-            name="idx_sub_stripe_customer",
-        )
+        self._ensure_stripe_customer_index()
+
+    def _ensure_stripe_customer_index(self) -> None:
+        # Partial-Index: nur nicht-leere stripe_customer_id sind eindeutig.
+        # sparse reicht nicht, da das Feld als "" (nicht fehlend) gespeichert wird.
+        name = "idx_sub_stripe_customer"
+        options: dict[str, Any] = {
+            "unique": True,
+            "name": name,
+            "partialFilterExpression": {"stripe_customer_id": {"$gt": ""}},
+        }
+        try:
+            self._col.create_index("stripe_customer_id", **options)
+        except OperationFailure:
+            # Alte (sparse) Index-Definition kollidiert → neu aufbauen.
+            self._col.drop_index(name)
+            self._col.create_index("stripe_customer_id", **options)
 
     def get_by_account(self, account_id: str) -> SubscriptionRecord | None:
         """Lädt Abo per account_id."""
