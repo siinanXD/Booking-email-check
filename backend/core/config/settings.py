@@ -147,6 +147,7 @@ class Settings(BaseSettings):
         default="", alias="WHATSAPP_WEBHOOK_VERIFY_TOKEN"
     )
     whatsapp_app_secret: str = Field(default="", alias="WHATSAPP_APP_SECRET")
+    whatsapp_echo_mode: bool = Field(default=False, alias="WHATSAPP_ECHO_MODE")
     whatsapp_enabled: bool = Field(default=False, alias="WHATSAPP_ENABLED")
     whatsapp_access_token: str = Field(default="", alias="WHATSAPP_ACCESS_TOKEN")
     whatsapp_phone_number_id: str = Field(default="", alias="WHATSAPP_PHONE_NUMBER_ID")
