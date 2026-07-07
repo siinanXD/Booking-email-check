@@ -277,6 +277,17 @@ export function RegisterPage() {
               </Button>
 
               <p className="text-center text-xs text-slate-500">
+                Mit der Registrierung nimmst du unsere{" "}
+                <Link
+                  to="/datenschutz"
+                  className="font-medium text-indigo-400 transition-colors hover:text-indigo-300"
+                >
+                  Datenschutzerklärung
+                </Link>{" "}
+                zur Kenntnis.
+              </p>
+
+              <p className="text-center text-xs text-slate-500">
                 Bereits ein Konto?{" "}
                 <Link
                   to="/login"

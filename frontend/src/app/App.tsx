@@ -51,6 +51,12 @@ const DashboardPage = lazy(() =>
 const LandingPage = lazy(() =>
   import("@/features/marketing/LandingPage").then((m) => ({ default: m.LandingPage }))
 );
+const DatenschutzPage = lazy(() =>
+  import("@/features/legal/DatenschutzPage").then((m) => ({ default: m.DatenschutzPage }))
+);
+const ImpressumPage = lazy(() =>
+  import("@/features/legal/ImpressumPage").then((m) => ({ default: m.ImpressumPage }))
+);
 const LoginPage = lazy(() =>
   import("@/features/auth/LoginPage").then((m) => ({ default: m.LoginPage }))
 );
@@ -96,6 +102,8 @@ export function App() {
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/welcome" element={<LandingPage />} />
+          <Route path="/datenschutz" element={<DatenschutzPage />} />
+          <Route path="/impressum" element={<ImpressumPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route element={<ProtectedRoute />}>

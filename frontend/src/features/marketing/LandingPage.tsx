@@ -186,9 +186,6 @@ export function LandingPage() {
             <Link to="/datenschutz" className="hover:text-ink2">
               Datenschutz
             </Link>
-            <Link to="/agb" className="hover:text-ink2">
-              AGB
-            </Link>
           </nav>
           <span>Nur technisch notwendige Cookies. Kein Tracking.</span>
         </div>
