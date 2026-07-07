@@ -15,6 +15,9 @@ from backend.features.billing.access import account_api_access_error
 
 F = TypeVar("F", bound=Callable[..., Any])
 
+# Billing bleibt bei gesperrtem Zugang erreichbar, damit Upgrade/Zahlung möglich ist.
+_ACCESS_GATE_EXEMPT_PREFIX = "/api/billing"
+
 
 def require_auth(fn: F) -> F:
     """Decorator: Bearer-JWT erforderlich."""
@@ -48,7 +51,9 @@ def require_auth(fn: F) -> F:
                 return jsonify({"error": "Unauthorized", "code": 401}), 401
             if user.is_locked:
                 return jsonify({"error": "Account gesperrt", "code": 403}), 403
-            if isinstance(account_id, str):
+            if isinstance(account_id, str) and not request.path.startswith(
+                _ACCESS_GATE_EXEMPT_PREFIX
+            ):
                 account = g.ctx.account_repo.get_by_id(account_id)
                 subscription = g.ctx.subscription_repo.get_by_account(account_id)
                 access_error = account_api_access_error(account, subscription)

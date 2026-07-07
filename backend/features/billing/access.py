@@ -7,7 +7,14 @@ from datetime import UTC, datetime
 from backend.infrastructure.repositories._subscription_models import SubscriptionRecord
 from backend.infrastructure.repositories.account_repository import AccountRecord
 
-_ACTIVE_SUB_STATUSES = frozenset({"trialing", "active"})
+
+def trial_expired(subscription: SubscriptionRecord | None) -> bool:
+    """True wenn Trial-Abo über current_period_end hinaus ist."""
+    return (
+        subscription is not None
+        and subscription.status == "trialing"
+        and subscription.current_period_end < datetime.now(UTC)
+    )
 
 
 def account_api_access_error(
@@ -23,7 +30,11 @@ def account_api_access_error(
     if account.status == "suspended":
         return "Dein Konto wurde vorübergehend gesperrt."
     if subscription is not None:
-        if subscription.status in _ACTIVE_SUB_STATUSES:
+        if subscription.status == "trialing":
+            if trial_expired(subscription):
+                return "Testphase abgelaufen — bitte wähle einen Plan."
+            return None
+        if subscription.status == "active":
             return None
         if subscription.status == "past_due":
             return "Zahlung ausstehend — Zugang vorübergehend gesperrt."

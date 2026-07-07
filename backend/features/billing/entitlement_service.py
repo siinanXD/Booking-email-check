@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from backend.core.config.settings import Settings
+from backend.features.billing.access import trial_expired
 from backend.features.billing.plans import (
     PlanDefinition,
     get_plan,
@@ -115,7 +116,8 @@ class EntitlementService:
             account_id=account_id,
             exclude_processed_before=exclude_before,
         )
-        return QuotaStatus(used=used, limit=limit, exhausted=used >= limit)
+        exhausted = used >= limit or trial_expired(sub)
+        return QuotaStatus(used=used, limit=limit, exhausted=exhausted)
 
     def can_create_property(self, account_id: str) -> bool:
         """True wenn eine weitere Unterkunft angelegt werden darf."""

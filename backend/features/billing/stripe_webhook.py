@@ -22,10 +22,13 @@ _STRIPE_STATUS_MAP: dict[str, SubscriptionStatus] = {
     "past_due": "past_due",
     "unpaid": "past_due",
     "canceled": "canceled",
-    "incomplete": "past_due",
-    "incomplete_expired": "canceled",
     "paused": "past_due",
 }
+
+# Nie aktivierte Subscriptions (z. B. 3DS-Abbruch im Checkout) dürfen den
+# lokalen Abo-Zustand nicht überschreiben — sonst sperrt ein fehlgeschlagenes
+# Upgrade einen gültigen Trial-Account aus.
+_IGNORED_STRIPE_STATUSES = frozenset({"incomplete", "incomplete_expired"})
 
 
 class StripeWebhookHandler:
@@ -78,12 +81,15 @@ class StripeWebhookHandler:
         return plan_id_for_price(self._settings, price_id)
 
     def _period_bounds(self, stripe_sub: dict[str, Any]) -> tuple[datetime, datetime]:
-        start = datetime.fromtimestamp(
-            int(stripe_sub.get("current_period_start", 0)), tz=UTC
+        # Ab Stripe-API 2025-03 (Basil) liegen current_period_* auf Item-Ebene.
+        items = stripe_sub.get("items", {}).get("data", [])
+        item = items[0] if items else {}
+        start_ts = stripe_sub.get("current_period_start") or item.get(
+            "current_period_start"
         )
-        end = datetime.fromtimestamp(
-            int(stripe_sub.get("current_period_end", 0)), tz=UTC
-        )
+        end_ts = stripe_sub.get("current_period_end") or item.get("current_period_end")
+        start = datetime.fromtimestamp(int(start_ts or 0), tz=UTC)
+        end = datetime.fromtimestamp(int(end_ts or 0), tz=UTC)
         return start, end
 
     def _map_status(self, stripe_status: str) -> SubscriptionStatus:
@@ -107,6 +113,14 @@ class StripeWebhookHandler:
             )
 
     def _on_subscription_changed(self, stripe_sub: dict[str, Any]) -> None:
+        stripe_status = str(stripe_sub.get("status") or "")
+        if stripe_status in _IGNORED_STRIPE_STATUSES:
+            logger.info(
+                "Ignoriere subscription event mit Status %s: %s",
+                stripe_status,
+                stripe_sub.get("id"),
+            )
+            return
         customer_id = str(stripe_sub.get("customer") or "")
         account_id = self._account_id_from_customer(customer_id)
         if not account_id:
