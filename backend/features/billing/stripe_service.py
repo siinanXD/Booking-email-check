@@ -114,4 +114,4 @@ class StripeService:
         secret = self._settings.stripe_webhook_secret.strip()
         if not secret:
             raise StripeBillingError("Webhook-Secret nicht konfiguriert")
-        return stripe.Webhook.construct_event(payload, sig_header, secret)
+        return stripe.Webhook.construct_event(payload, sig_header, secret)  # type: ignore[no-untyped-call]

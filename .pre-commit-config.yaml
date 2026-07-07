@@ -24,6 +24,7 @@ repos:
           - pydantic==2.13.4
           - pydantic-settings==2.14.1
           - pymongo==4.17.0
+          - stripe==11.6.0
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.29.1
