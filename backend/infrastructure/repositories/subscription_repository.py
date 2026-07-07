@@ -17,6 +17,9 @@ from backend.infrastructure.repositories._subscription_stripe import (
     apply_stripe_subscription as _apply_stripe_subscription,
 )
 from backend.infrastructure.repositories._subscription_stripe import (
+    ensure_stripe_customer_index as _ensure_stripe_customer_index,
+)
+from backend.infrastructure.repositories._subscription_stripe import (
     get_by_stripe_customer as _get_by_stripe_customer,
 )
 from backend.infrastructure.repositories._subscription_stripe import (
@@ -52,12 +55,7 @@ class SubscriptionRepository:
         """Initialize the instance with its dependencies."""
         self._col: Collection[dict[str, Any]] = db[self.COLLECTION]
         self._col.create_index("account_id", unique=True, name="idx_sub_account")
-        self._col.create_index(
-            "stripe_customer_id",
-            unique=True,
-            sparse=True,
-            name="idx_sub_stripe_customer",
-        )
+        _ensure_stripe_customer_index(self._col)
 
     def get_by_account(self, account_id: str) -> SubscriptionRecord | None:
         """Lädt Abo per account_id."""
