@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/features/auth/authStore";
 import { fetchDashboardStats } from "@/lib/api/dashboard";
+import { fetchSubscription } from "@/lib/api/billing";
 import { fetchMailConnection, syncMailConnection } from "@/lib/api/mail";
 import { MailVolumeChart } from "@/features/dashboard/MailVolumeChart";
+import { MailQuotaBanner } from "@/features/dashboard/MailQuotaBanner";
 import { StatCard } from "@/shared/components/StatCard";
 import { ErrorState } from "@/shared/components/ErrorState";
 import { Button } from "@/shared/ui/Button";
@@ -47,6 +49,12 @@ export function DashboardPage() {
     refetchInterval: 30_000,
   });
 
+  const { data: subscription } = useQuery({
+    queryKey: ["billing-subscription"],
+    queryFn: fetchSubscription,
+    refetchInterval: 60_000,
+  });
+
   const { data: mailConnection } = useQuery({
     queryKey: ["mail-connection"],
     queryFn: fetchMailConnection,
@@ -59,6 +67,7 @@ export function DashboardPage() {
       void queryClient.invalidateQueries({ queryKey: ["emails"] });
       void queryClient.invalidateQueries({ queryKey: ["review-queue"] });
       void queryClient.invalidateQueries({ queryKey: ["mail-connection"] });
+      void queryClient.invalidateQueries({ queryKey: ["billing-subscription"] });
     },
   });
 
@@ -149,6 +158,7 @@ export function DashboardPage() {
           </p>
         </div>
       )}
+      {subscription && <MailQuotaBanner subscription={subscription} />}
       {stats?.mail_fetch_unread_only && (
         <div className="flex items-start gap-3 rounded-xl border border-border bg-warnbg px-4 py-3">
           <Info size={16} className="mt-0.5 flex-shrink-0 text-warntext" />

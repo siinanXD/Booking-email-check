@@ -9,9 +9,10 @@ from backend.ai.domain.booking.source_consistency import detect_source_conflicts
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.email import ProcessingState
 from backend.core.models.response import ReviewStatus
-from backend.features.review.auto_approve import should_auto_approve
+from backend.features.review.auto_approve import should_auto_approve_for_account
 
 if TYPE_CHECKING:
+    from backend.features.billing.entitlement_service import EntitlementService
     from backend.features.cleaning.service import CleaningScheduleService
     from backend.features.notifications.notification_service import (
         NotificationService,
@@ -48,18 +49,27 @@ class PipelineReviewMixin:
     _feedback_tracker: ReviewFeedbackTracker | None
     _langfuse_tracer: LangfuseTracer | None
     _platform_settings_repo: PlatformSettingsRepository | None
+    _entitlement_service: EntitlementService | None
 
     def _decide_auto_approve(
         self, account_id: str | None, intent: str | None, confidence: float
     ) -> bool:
-        """Auto-Freigabe nur bei aktiviertem, passendem Mandanten-Setting."""
+        """Auto-Freigabe nur bei aktiviertem Plan-Feature und Mandanten-Setting."""
         repo = self._platform_settings_repo
         if repo is None or not account_id:
             return False
         settings = repo.get(account_id)
         if settings is None:
             return False
-        return should_auto_approve(confidence, intent, settings.auto_approve)
+        svc = self._entitlement_service
+        enforcement = svc.enforcement_enabled if svc is not None else False
+        if enforcement and svc is not None:
+            features = svc.effective_features(account_id)
+        else:
+            features = {"auto_approve"}
+        return should_auto_approve_for_account(
+            confidence, intent, settings.auto_approve, features
+        )
 
     @staticmethod
     def _should_escalate(intent: str | None, confidence: float) -> bool:

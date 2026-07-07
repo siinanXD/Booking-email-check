@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from backend.core.config.settings import Settings
+from backend.features.billing.entitlement_service import EntitlementService
 from backend.infrastructure.adapters.mail.ingestion import MailIngestionRunner
 from backend.infrastructure.repositories.account_repository import AccountRepository
 from backend.infrastructure.repositories.mail_connection_repository import (
@@ -50,11 +51,13 @@ class MailPollService:
         mail_connection_repo: MailConnectionRepository,
         account_repo: AccountRepository,
         runner: MailIngestionRunner,
+        entitlement_service: EntitlementService | None = None,
     ) -> None:
         """Initialize the instance with its dependencies."""
         self._mail_repo = mail_connection_repo
         self._account_repo = account_repo
         self._runner = runner
+        self._entitlement_service = entitlement_service
 
     def run_all(
         self,
@@ -86,6 +89,19 @@ class MailPollService:
         for r in pollable:
             if r.account_id not in active_ids:
                 logger.debug("Skip poll for account %s (not active)", r.account_id)
+
+        quota_skipped: set[str] = set()
+        if self._entitlement_service is not None:
+            for record in active_pollable:
+                if self._entitlement_service.mail_quota(record.account_id).exhausted:
+                    quota_skipped.add(record.account_id)
+                    logger.info(
+                        "Skip poll for account %s (mail quota exhausted)",
+                        record.account_id,
+                    )
+            active_pollable = [
+                r for r in active_pollable if r.account_id not in quota_skipped
+            ]
 
         summaries: list[AccountPollSummary] = []
         total_processed = 0
@@ -196,9 +212,15 @@ def build_mail_poll_service(
     mail_connection_repo: MailConnectionRepository,
     account_repo: AccountRepository,
     runner: MailIngestionRunner,
+    entitlement_service: EntitlementService | None = None,
 ) -> MailPollService:
     """Factory für MailPollService."""
-    return MailPollService(mail_connection_repo, account_repo, runner)
+    return MailPollService(
+        mail_connection_repo,
+        account_repo,
+        runner,
+        entitlement_service=entitlement_service,
+    )
 
 
 def build_mail_poll_service_from_context(
@@ -214,7 +236,14 @@ def build_mail_poll_service_from_context(
         ctx.email_repo,
         settings,
         ctx.account_repo,
+        ingestion_router=ctx.ingestion_router,
+        entitlement_service=ctx.entitlement_service,
         fetch_max=settings.outlook_fetch_max,
         fetch_unread_only=settings.outlook_fetch_unread_only,
     )
-    return MailPollService(ctx.mail_connection_repo, ctx.account_repo, runner)
+    return MailPollService(
+        ctx.mail_connection_repo,
+        ctx.account_repo,
+        runner,
+        entitlement_service=ctx.entitlement_service,
+    )

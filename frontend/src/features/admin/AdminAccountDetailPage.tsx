@@ -9,6 +9,7 @@ import {
 import { AdminPageIntro } from "@/features/admin/components/AdminPageIntro";
 import { ActivityBadge } from "@/features/admin/components/ActivityBadge";
 import { AdminAccountActions } from "@/features/admin/components/AdminAccountActions";
+import { AdminSubscriptionCard } from "@/features/admin/components/AdminSubscriptionCard";
 import { DbCountsBarChart } from "@/features/admin/components/charts/DbCountsBarChart";
 import { Card } from "@/shared/ui/Card";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -140,6 +141,8 @@ export function AdminAccountDetailPage() {
           }
         />
       </Card>
+
+      <AdminSubscriptionCard accountId={accountId} />
 
       <Card className="space-y-3">
         <h3 className="font-medium text-slate-900">Zusatz-Features</h3>

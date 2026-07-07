@@ -53,6 +53,11 @@ class PropertyRepository:
             return None
         return Property.from_mongo(doc)
 
+    def count_for_account(self, account_id: str) -> int:
+        """Anzahl Unterkünfte eines Mandanten."""
+        query = with_account_filter({}, account_id)
+        return int(self._col.count_documents(query))
+
     def list_all(
         self,
         *,

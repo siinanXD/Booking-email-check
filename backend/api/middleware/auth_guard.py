@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime
 from functools import wraps
 from typing import Any, TypeVar
 
@@ -12,6 +11,7 @@ from flask import g, jsonify, request
 from backend.api.auth.token_blocklist import is_revoked
 from backend.api.auth.tokens import decode_token
 from backend.core.config.settings import Settings
+from backend.features.billing.access import account_api_access_error
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -50,9 +50,10 @@ def require_auth(fn: F) -> F:
                 return jsonify({"error": "Account gesperrt", "code": 403}), 403
             if isinstance(account_id, str):
                 account = g.ctx.account_repo.get_by_id(account_id)
-                if account is not None and account.expires_at is not None:
-                    if account.expires_at < datetime.now(UTC):
-                        return jsonify({"error": "Zugang abgelaufen", "code": 403}), 403
+                subscription = g.ctx.subscription_repo.get_by_account(account_id)
+                access_error = account_api_access_error(account, subscription)
+                if access_error is not None:
+                    return jsonify({"error": access_error, "code": 403}), 403
 
         g.current_user = {
             "id": user_id,

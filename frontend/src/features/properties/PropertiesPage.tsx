@@ -1,29 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Trash2 } from "lucide-react";
+import { PropertyPlanLimitDialog } from "@/features/properties/PropertyPlanLimitDialog";
+import { PropertySuggestionsCard } from "@/features/properties/PropertySuggestionsCard";
+import { getApiErrorCode } from "@/lib/api/errors";
 import {
   createProperty,
   fetchProperties,
   fetchPropertyHistory,
   fetchPropertyRecipients,
   fetchPropertySuggestions,
-  savePropertyRecipients,
-} from "@/lib/api/properties";
-import { Trash2 } from "lucide-react";
-import { PropertySuggestionsCard } from "@/features/properties/PropertySuggestionsCard";
-import { EmptyState } from "@/shared/components/EmptyState";
-import { toast } from "@/shared/feedback/toastStore";
-import { Button } from "@/shared/ui/Button";
-import { Card } from "@/shared/ui/Card";
-import { Input } from "@/shared/ui/Input";
-import {
   normalizePropertyRecipientItem,
+  savePropertyRecipients,
 } from "@/lib/api/properties";
 import type { PropertyRecipientItem } from "@/lib/types/api";
 import {
   DEFAULT_EMPLOYEE_WHATSAPP_LOCALE,
   type EmployeeWhatsAppLocale,
 } from "@/lib/whatsappLocales";
+import { EmptyState } from "@/shared/components/EmptyState";
+import { toast } from "@/shared/feedback/toastStore";
+import { Button } from "@/shared/ui/Button";
+import { Card } from "@/shared/ui/Card";
+import { Input } from "@/shared/ui/Input";
 import { EmployeeWhatsAppField } from "@/shared/ui/EmployeeWhatsAppField";
 
 export function PropertiesPage() {
@@ -50,6 +50,7 @@ export function PropertiesPage() {
 
   const [propertyRows, setPropertyRows] = useState<PropertyRecipientItem[]>([]);
   const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   useEffect(() => {
     if (!recipients) return;
@@ -96,6 +97,13 @@ export function PropertiesPage() {
       void queryClient.invalidateQueries({ queryKey: ["property-suggestions"] });
       void queryClient.invalidateQueries({ queryKey: ["properties"] });
       navigate(`/properties/${created.property_id}`);
+    },
+    onError: (err: unknown) => {
+      if (getApiErrorCode(err) === "plan_limit_reached") {
+        setUpgradeOpen(true);
+        return;
+      }
+      toast.error("Unterkunft konnte nicht angelegt werden.");
     },
   });
 
@@ -285,6 +293,8 @@ export function PropertiesPage() {
           ))}
         </ul>
       </Card>
+
+      <PropertyPlanLimitDialog open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   );
 }

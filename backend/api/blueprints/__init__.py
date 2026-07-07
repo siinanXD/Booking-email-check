@@ -5,6 +5,7 @@ from __future__ import annotations
 from flask import Flask
 
 from backend.api.blueprints.admin import admin_bp
+from backend.api.blueprints.billing import billing_bp
 from backend.api.blueprints.bookings import bookings_bp
 from backend.api.blueprints.cleaning import cleaning_bp
 from backend.api.blueprints.costs import costs_bp
@@ -36,6 +37,7 @@ def register_api_blueprints(app: Flask) -> None:
     app.register_blueprint(notifications_bp)
     app.register_blueprint(guests_bp)
     app.register_blueprint(costs_bp)
+    app.register_blueprint(billing_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(properties_bp)
     app.register_blueprint(cleaning_bp)

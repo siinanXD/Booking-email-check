@@ -33,6 +33,9 @@ from backend.infrastructure.repositories.property_recipient_repository import (
     PropertyRecipientRepository,
 )
 from backend.infrastructure.repositories.review_repository import ReviewRepository
+from backend.infrastructure.repositories.subscription_repository import (
+    SubscriptionRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,7 @@ WIPE_COLLECTIONS = (
     NotificationRepository.COLLECTION,
     PropertyRecipientRepository.COLLECTION,
     PlatformSettingsRepository.COLLECTION,
+    SubscriptionRepository.COLLECTION,
     "mail_connections",
     GUESTS,
     BOOKINGS,

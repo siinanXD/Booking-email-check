@@ -161,6 +161,10 @@ class UserRepository:
             users.append(self._from_doc(doc))
         return users
 
+    def count_for_account(self, account_id: str) -> int:
+        """Anzahl Benutzer eines Mandanten."""
+        return int(self._col.count_documents({"account_id": account_id}))
+
     def count_by_role(self, role: UserRole) -> int:
         """Anzahl der Benutzer mit einer bestimmten Rolle."""
         return self._col.count_documents({"role": role})

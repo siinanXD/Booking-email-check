@@ -81,17 +81,17 @@ class MailMetricsRepository:
         end: datetime,
         *,
         account_id: str | None = None,
+        exclude_processed_before: datetime | None = None,
     ) -> int:
         """Anzahl Metrik-Einträge im Zeitraum."""
-        query = with_account_filter(
-            {
-                "processed_at": {
-                    "$gte": start.isoformat(),
-                    "$lte": end.isoformat(),
-                }
-            },
-            account_id,
-        )
+        processed_filter: dict[str, str] = {
+            "$gte": start.isoformat(),
+            "$lte": end.isoformat(),
+        }
+        if exclude_processed_before is not None:
+            floor = max(start, exclude_processed_before)
+            processed_filter["$gte"] = floor.isoformat()
+        query = with_account_filter({"processed_at": processed_filter}, account_id)
         return int(self._col.count_documents(query))
 
     def aggregate_by_day(

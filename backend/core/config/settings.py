@@ -227,6 +227,26 @@ class Settings(BaseSettings):
     poll_heartbeat_stale_seconds: int = Field(
         default=900, alias="POLL_HEARTBEAT_STALE_SECONDS"
     )
+    # false = Billing-Limits deaktiviert (Rollout: deploy → backfill → true).
+    billing_enforcement_enabled: bool = Field(
+        default=False,
+        alias="BILLING_ENFORCEMENT_ENABLED",
+    )
+    stripe_enabled: bool = Field(default=False, alias="STRIPE_ENABLED")
+    stripe_secret_key: str = Field(default="", alias="STRIPE_SECRET_KEY")
+    stripe_webhook_secret: str = Field(default="", alias="STRIPE_WEBHOOK_SECRET")
+    stripe_price_standard: str = Field(default="", alias="STRIPE_PRICE_STANDARD")
+    stripe_price_pro: str = Field(default="", alias="STRIPE_PRICE_PRO")
+    stripe_price_business: str = Field(default="", alias="STRIPE_PRICE_BUSINESS")
+    stripe_checkout_success_url: str = Field(
+        default="",
+        alias="STRIPE_CHECKOUT_SUCCESS_URL",
+    )
+    stripe_checkout_cancel_url: str = Field(
+        default="",
+        alias="STRIPE_CHECKOUT_CANCEL_URL",
+    )
+    stripe_portal_return_url: str = Field(default="", alias="STRIPE_PORTAL_RETURN_URL")
 
     @model_validator(mode="after")
     def apply_dev_defaults(self) -> Self:
