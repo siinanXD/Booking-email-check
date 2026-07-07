@@ -52,7 +52,7 @@ dev = [
     "mypy==1.13.0",
     "pytest==9.1.1",
     "pre-commit==4.6.0",
-    "commitizen==3.29.1",
+    "commitizen==4.16.4",
     "python-semantic-release==10.4.1",
     "mongomock==4.3.0",           # Mongo für Tests ohne echtes Atlas
 ]
