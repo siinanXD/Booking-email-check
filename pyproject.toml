@@ -50,7 +50,7 @@ dev = [
     "ruff==0.15.18",
     "black==26.5.1",
     "mypy==1.13.0",
-    "pytest==8.3.3",
+    "pytest==9.1.1",
     "pre-commit==4.6.0",
     "commitizen==3.29.1",
     "python-semantic-release==10.4.1",
