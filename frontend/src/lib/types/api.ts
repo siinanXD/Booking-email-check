@@ -289,6 +289,7 @@ export interface ApiError {
 }
 
 export * from "./api-admin";
+export * from "./api-billing";
 export * from "./api-cost";
 export * from "./api-workflows";
 export * from "./api-features";

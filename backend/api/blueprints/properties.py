@@ -110,6 +110,17 @@ def property_create() -> tuple[Any, int]:
         body = PropertyCreateRequest.model_validate(request.get_json(silent=True) or {})
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 422
+    entitlement = g.ctx.entitlement_service
+    if entitlement is not None and not entitlement.can_create_property(account_id):
+        return (
+            jsonify(
+                {
+                    "error": "Unterkunfts-Limit des Plans erreicht.",
+                    "code": "plan_limit_reached",
+                }
+            ),
+            403,
+        )
     created = create_property(g.ctx, account_id, body)
     if created is None:
         return (

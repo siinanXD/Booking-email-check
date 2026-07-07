@@ -127,6 +127,8 @@ def approve_account(account_id: str) -> tuple[Any, int]:
     updated = g.ctx.account_repo.update_status(account_id, "active")
     if updated is None:
         return jsonify({"error": "Account not found", "code": 404}), 404
+    if g.ctx.subscription_repo.get_by_account(account_id) is None:
+        g.ctx.subscription_repo.create_trial(account_id)
     _append_audit("account.approve", account_id=account_id)
     return (
         jsonify(
@@ -286,6 +288,7 @@ def admin_config_public() -> tuple[Any, int]:
 import backend.api.blueprints.admin_account_cleaning  # noqa: E402, F401
 import backend.api.blueprints.admin_account_workflows  # noqa: E402, F401
 import backend.api.blueprints.admin_activity_routes  # noqa: E402, F401
+import backend.api.blueprints.admin_billing  # noqa: E402, F401
 import backend.api.blueprints.admin_diagnostics_routes  # noqa: E402, F401
 import backend.api.blueprints.admin_llm_routes  # noqa: E402, F401
 import backend.api.blueprints.admin_pipeline_routes  # noqa: E402, F401

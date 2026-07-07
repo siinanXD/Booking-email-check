@@ -30,6 +30,7 @@ from backend.ai.workflows.routing import (
 )
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.response import ReviewStatus
+from backend.features.billing.entitlement_service import EntitlementService
 from backend.features.cleaning.service import CleaningScheduleService
 from backend.features.notifications.notification_service import NotificationService
 from backend.infrastructure.observability.alerts import AlertService
@@ -87,6 +88,7 @@ class EmailWorkflow:
         tenant_workflow_executor: TenantWorkflowExecutor | None = None,
         tenant_workflow_repo: TenantWorkflowRepository | None = None,
         platform_settings_repo: PlatformSettingsRepository | None = None,
+        entitlement_service: EntitlementService | None = None,
         *,
         tracing: bool = False,
     ) -> None:
@@ -116,6 +118,7 @@ class EmailWorkflow:
             tenant_workflow_repo=tenant_workflow_repo,
             platform_settings_repo=platform_settings_repo,
         )
+        self._nodes._entitlement_service = entitlement_service
         self._alerts = alerts
         self._graph = self._build()
         from langgraph.checkpoint.memory import MemorySaver

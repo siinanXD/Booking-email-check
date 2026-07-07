@@ -28,9 +28,6 @@ from backend.features.cleaning.models import (
     CleaningTaskStatus,
 )
 from backend.features.cleaning.overlap import overlapping_task_ids
-from backend.infrastructure.repositories.platform_settings_repository import (
-    FEATURE_CLEANING_SCHEDULE,
-)
 
 if TYPE_CHECKING:
     from backend.core.config.app_context import AppContext
@@ -44,8 +41,13 @@ if TYPE_CHECKING:
 
 def feature_enabled(ctx: AppContext, account_id: str) -> bool:
     """True, wenn der Putzplan für den Account freigeschaltet ist."""
+    svc = ctx.entitlement_service
+    if svc is not None:
+        from backend.features.billing.plans import FEATURE_CLEANING_SCHEDULE
+
+        return FEATURE_CLEANING_SCHEDULE in svc.effective_features(account_id)
     settings = ctx.platform_settings_repo.get(account_id)
-    return settings is not None and settings.feature_enabled(FEATURE_CLEANING_SCHEDULE)
+    return settings is not None and settings.feature_enabled("cleaning_schedule")
 
 
 def _partners(ctx: AppContext) -> CleaningPartnerRepository:

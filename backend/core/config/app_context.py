@@ -13,6 +13,9 @@ if TYPE_CHECKING:
     from backend.application.ingestion import IngestionRouter
     from backend.application.review import ReviewRouter
     from backend.core.config.settings import Settings
+    from backend.features.billing.entitlement_service import EntitlementService
+    from backend.features.billing.stripe_service import StripeService
+    from backend.features.billing.stripe_webhook import StripeWebhookHandler
     from backend.features.cleaning.service import CleaningScheduleService
     from backend.features.notifications.notification_service import NotificationService
     from backend.infrastructure.repositories.account_repository import AccountRepository
@@ -64,6 +67,9 @@ if TYPE_CHECKING:
     from backend.infrastructure.repositories.revoked_token_repository import (
         RevokedTokenRepository,
     )
+    from backend.infrastructure.repositories.subscription_repository import (
+        SubscriptionRepository,
+    )
     from backend.infrastructure.repositories.support_ticket_repository import (
         SupportTicketRepository,
     )
@@ -103,6 +109,7 @@ class AppContext:
     mail_summary_repo: MailSummaryRepository
     tenant_learned_examples_repo: TenantLearnedExamplesRepository
     support_ticket_repo: SupportTicketRepository
+    subscription_repo: SubscriptionRepository
     platform_admin_config_repo: PlatformAdminConfigRepository
     notification_repo: NotificationRepository
     indexing_service: IndexingService | None = None
@@ -112,3 +119,6 @@ class AppContext:
     cleaning_task_repo: CleaningTaskRepository | None = None
     cleaning_service: CleaningScheduleService | None = None
     notification_service: NotificationService | None = None
+    entitlement_service: EntitlementService | None = None
+    stripe_service: StripeService | None = None
+    stripe_webhook_handler: StripeWebhookHandler | None = None

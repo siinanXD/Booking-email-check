@@ -24,19 +24,14 @@ from backend.ai.workflows.email_workflow import EmailWorkflow
 from backend.application.ingestion import IngestionRouter
 from backend.application.review import ReviewRouter
 from backend.core.config.app_context import AppContext as AppContext
+from backend.core.config.factory_billing import build_subscription_stack
+from backend.core.config.factory_observability import build_observability_stack
 from backend.core.config.llm_clients import build_llm_and_embeddings
 from backend.core.config.settings import Settings, get_settings
 from backend.core.utils.field_crypto import build_credentials_cipher
 from backend.features.cleaning.wiring import build_cleaning_service
 from backend.features.notifications.notification_service import NotificationService
-from backend.infrastructure.observability.alerts import AlertService
-from backend.infrastructure.observability.langfuse_client import LangfuseTracer
-from backend.infrastructure.observability.langfuse_setup import (
-    configure_langfuse_env,
-    tracing_enabled,
-)
 from backend.infrastructure.observability.mail_cost import MailCostTracker
-from backend.infrastructure.observability.review_feedback import ReviewFeedbackTracker
 from backend.infrastructure.repositories.account_repository import AccountRepository
 from backend.infrastructure.repositories.admin_audit_log_repository import (
     AdminAuditLogRepository,
@@ -125,6 +120,16 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
     mail_summary_repo = MailSummaryRepository(db)
     tenant_learned_examples_repo = TenantLearnedExamplesRepository(db)
     support_ticket_repo = SupportTicketRepository(db)
+    subscription_repo, entitlement_service, stripe_service, stripe_webhook_handler = (
+        build_subscription_stack(
+            cfg,
+            db,
+            metrics_repo,
+            account_repo,
+            user_repo,
+            platform_settings_repo,
+        )
+    )
     platform_admin_config_repo = PlatformAdminConfigRepository(db)
     notification_service = NotificationService(
         cfg,
@@ -137,16 +142,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         build_cleaning_service(db, platform_settings_repo, notification_service)
     )
 
-    alerts = AlertService(webhook_url=cfg.webhook_alert_url)
-    tracing = configure_langfuse_env(cfg) and tracing_enabled(cfg)
-    langfuse_tracer = LangfuseTracer(
-        enabled=tracing,
-        public_key=cfg.langfuse_public_key or None,
-        secret_key=cfg.langfuse_secret_key or None,
-        host=cfg.langfuse_host,
-    )
-    feedback_tracker = ReviewFeedbackTracker(alerts=alerts)
-
+    alerts, tracing, langfuse_tracer, feedback_tracker = build_observability_stack(cfg)
     llm, embed_client = build_llm_and_embeddings(cfg, tracing=tracing)
     mail_cost = MailCostTracker(
         alerts=alerts,
@@ -256,6 +252,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         tenant_workflow_executor=tenant_workflow_executor,
         tenant_workflow_repo=tenant_workflow_repo,
         platform_settings_repo=platform_settings_repo,
+        entitlement_service=entitlement_service,
         tracing=tracing,
     )
 
@@ -283,12 +280,16 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         mail_summary_repo=mail_summary_repo,
         tenant_learned_examples_repo=tenant_learned_examples_repo,
         support_ticket_repo=support_ticket_repo,
+        subscription_repo=subscription_repo,
         platform_admin_config_repo=platform_admin_config_repo,
         notification_repo=notification_repo,
         cleaning_partner_repo=cleaning_partner_repo,
         cleaning_task_repo=cleaning_task_repo,
         cleaning_service=cleaning_service,
         notification_service=notification_service,
+        entitlement_service=entitlement_service,
+        stripe_service=stripe_service,
+        stripe_webhook_handler=stripe_webhook_handler,
         indexing_service=indexing,
         gemini_client=gemini_client,
         llm=llm,

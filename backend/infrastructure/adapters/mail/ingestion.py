@@ -6,7 +6,10 @@ import logging
 from dataclasses import dataclass
 
 from backend.ai.workflows.email_workflow import EmailWorkflow
+from backend.application.ingestion import IngestionRouter
 from backend.core.config.settings import Settings
+from backend.core.models.email import ProcessingState
+from backend.features.billing.entitlement_service import EntitlementService
 from backend.features.mail.ingest_window import filter_messages_since_cutoff
 from backend.infrastructure.adapters.mail.connector import build_mail_connector
 from backend.infrastructure.adapters.outlook.poll_window import (
@@ -50,6 +53,8 @@ class MailIngestionRunner:
         settings: Settings,
         account_repo: AccountRepository,
         *,
+        ingestion_router: IngestionRouter | None = None,
+        entitlement_service: EntitlementService | None = None,
         fetch_max: int = 100,
         fetch_unread_only: bool = False,
     ) -> None:
@@ -59,6 +64,8 @@ class MailIngestionRunner:
         self._email_repo = email_repo
         self._settings = settings
         self._account_repo = account_repo
+        self._ingestion_router = ingestion_router
+        self._entitlement_service = entitlement_service
         self._fetch_max = fetch_max
         self._fetch_unread_only = fetch_unread_only
 
@@ -148,6 +155,16 @@ class MailIngestionRunner:
                 )
                 continue
             try:
+                if self._quota_blocks_processing(account_id):
+                    self._store_quota_exceeded(payload, account_id)
+                    items.append(
+                        MailPollItemResult(
+                            message_id=payload.message_id,
+                            ingested=False,
+                            duplicate=False,
+                        )
+                    )
+                    continue
                 result = self._workflow.run(payload, thread_id=payload.correlation_id)
                 duplicate = bool(result.get("ingest_duplicate"))
                 items.append(
@@ -177,6 +194,28 @@ class MailIngestionRunner:
                 len(items),
             )
         return MailPollRunResult(processed=processed, items=items)
+
+    def _quota_blocks_processing(self, account_id: str) -> bool:
+        svc = self._entitlement_service
+        if svc is None:
+            return False
+        return svc.mail_quota(account_id).exhausted
+
+    def _store_quota_exceeded(self, payload: object, account_id: str) -> None:
+        router = self._ingestion_router
+        if router is None:
+            return
+        from backend.core.models.email import IncomingEmail
+
+        if not isinstance(payload, IncomingEmail):
+            return
+        enriched = payload.model_copy(update={"account_id": account_id})
+        router.ingest_email(enriched)
+        self._email_repo.update_processing_state(
+            payload.message_id,
+            ProcessingState.QUOTA_EXCEEDED,
+            account_id=account_id,
+        )
 
     def run_all_pollable(
         self,

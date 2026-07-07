@@ -11,6 +11,8 @@ import { SettingsDangerZone } from "@/features/settings/SettingsDangerZone";
 import { SettingsMailCard } from "@/features/settings/SettingsMailCard";
 import { SettingsWhatsAppCard } from "@/features/settings/SettingsWhatsAppCard";
 import { SettingsWhatsAppRecipientsCard } from "@/features/settings/SettingsWhatsAppRecipientsCard";
+import { BILLING_SETTINGS_HASH } from "@/lib/billing/display";
+import { SubscriptionCard } from "@/features/settings/SubscriptionCard";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { Input } from "@/shared/ui/Input";
@@ -55,6 +57,13 @@ export function SettingsPage() {
       }
     },
   });
+
+  useEffect(() => {
+    if (window.location.hash !== `#${BILLING_SETTINGS_HASH}`) return;
+    document
+      .getElementById(BILLING_SETTINGS_HASH)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   useEffect(() => {
     if (!data) return;
@@ -159,6 +168,8 @@ export function SettingsPage() {
           automatisch vorausgefüllt. Nach dem Speichern gelten die Einträge dauerhaft in der Datenbank.
         </p>
       </div>
+
+      <SubscriptionCard />
 
       {/* Profile */}
       <Card>

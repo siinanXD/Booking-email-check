@@ -24,6 +24,7 @@ class ProcessingState(StrEnum):
     APPROVED = "approved"
     REJECTED = "rejected"
     DISCARDED = "discarded"
+    QUOTA_EXCEEDED = "quota_exceeded"
 
 
 class IncomingEmail(BaseModel):

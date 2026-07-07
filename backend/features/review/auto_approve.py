@@ -58,3 +58,15 @@ def should_auto_approve(
     if key is None or not settings.per_intent.get(key, False):
         return False
     return normalize_confidence(confidence) >= settings.threshold
+
+
+def should_auto_approve_for_account(
+    confidence: float | int | None,
+    intent: str | None,
+    settings: AutoApproveSettings,
+    effective_features: set[str],
+) -> bool:
+    """Auto-Freigabe inkl. Plan-Feature ``auto_approve``."""
+    if "auto_approve" not in effective_features:
+        return False
+    return should_auto_approve(confidence, intent, settings)
