@@ -16,7 +16,7 @@ dependencies = [
     "langchain-openai==0.2.14",
     "openai==1.109.1",
     "tiktoken==0.13.0",
-    "pymongo==4.12.1",
+    "pymongo==4.17.0",
     "langfuse==2.60.10",
     "google-genai==2.9.0",
     "python-dotenv==1.2.2",
