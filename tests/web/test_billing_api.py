@@ -120,6 +120,27 @@ def test_billing_checkout_with_mock_stripe(
     assert resp.get_json()["url"] == "https://checkout.test/url"
 
 
+def test_expired_trial_blocks_api_but_not_billing(
+    app: object, client: object, tenant_owner_auth_headers: dict
+) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    ctx = app.extensions["ctx"]  # type: ignore[union-attr]
+    account_id = ctx.user_repo.get_by_email("owner-mail@test.local").account_id
+    assert account_id
+    assert ctx.subscription_repo.get_by_account(account_id) is not None
+    past = datetime.now(UTC) - timedelta(days=1)
+    ctx.subscription_repo._col.update_one(
+        {"account_id": account_id},
+        {"$set": {"current_period_end": past.isoformat()}},
+    )
+    blocked = client.get("/api/properties", headers=tenant_owner_auth_headers)
+    assert blocked.status_code == 403
+    assert "Testphase" in blocked.get_json()["error"]
+    billing = client.get("/api/billing/subscription", headers=tenant_owner_auth_headers)
+    assert billing.status_code == 200
+
+
 def test_billing_subscription_self_service_flag(
     app: object, client: object, tenant_owner_auth_headers: dict
 ) -> None:

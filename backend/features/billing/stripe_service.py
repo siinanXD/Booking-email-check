@@ -79,6 +79,16 @@ class StripeService:
         price_id = price_id_for_plan(self._settings, plan_id)
         if not price_id:
             raise StripeBillingError("Stripe-Preis für Plan nicht konfiguriert")
+        existing = self._subscription_repo.get_by_account(account_id)
+        if (
+            existing is not None
+            and existing.stripe_subscription_id.strip()
+            and existing.status in {"trialing", "active", "past_due"}
+        ):
+            raise StripeBillingError(
+                "Es besteht bereits ein aktives Abo — "
+                "Planwechsel bitte über das Kundenportal"
+            )
         customer_id = self.ensure_customer(account_id)
         session = stripe.checkout.Session.create(
             mode="subscription",

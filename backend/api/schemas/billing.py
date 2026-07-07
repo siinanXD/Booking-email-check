@@ -9,7 +9,6 @@ class PlanCatalogItem(BaseModel):
     plan_id: str
     display_name: str
     price_eur_monthly: int
-    price_eur_yearly: int
     monthly_mail_quota: int
     max_properties: int
     max_users: int

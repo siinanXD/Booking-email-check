@@ -19,7 +19,6 @@ export interface PlanCatalogItem {
   plan_id: string;
   display_name: string;
   price_eur_monthly: number;
-  price_eur_yearly: number;
   monthly_mail_quota: number;
   max_properties: number;
   max_users: number;

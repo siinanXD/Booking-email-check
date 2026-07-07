@@ -203,6 +203,25 @@ def test_no_double_count_per_correlation_id(mock_db: object) -> None:
     )
 
 
+def test_expired_trial_exhausts_mail_quota(mock_db: object) -> None:
+    svc = _service(mock_db, enforcement=True)
+    accounts = AccountRepository(mock_db)
+    subs = SubscriptionRepository(mock_db)
+    account = accounts.create(
+        display_name="Expired",
+        contact_email="expired@test.local",
+        status="active",
+    )
+    subs.create_trial(account.id)
+    assert not svc.mail_quota(account.id).exhausted
+    past = datetime.now(UTC) - timedelta(days=1)
+    subs._col.update_one(
+        {"account_id": account.id},
+        {"$set": {"current_period_end": past.isoformat()}},
+    )
+    assert svc.mail_quota(account.id).exhausted
+
+
 def test_feature_merge_admin_toggle_survives_downgrade(mock_db: object) -> None:
     from backend.core.utils.field_crypto import FieldCipher
 

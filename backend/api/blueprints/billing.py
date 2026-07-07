@@ -66,7 +66,6 @@ def list_plans() -> tuple[Any, int]:
             plan_id=plan.plan_id,
             display_name=plan.display_name,
             price_eur_monthly=plan.price_eur_monthly,
-            price_eur_yearly=plan.price_eur_monthly * 10,
             monthly_mail_quota=plan.monthly_mail_quota,
             max_properties=plan.max_properties,
             max_users=plan.max_users,
