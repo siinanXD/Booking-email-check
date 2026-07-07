@@ -7,11 +7,31 @@ from datetime import UTC, datetime
 from typing import Any
 
 from pymongo.collection import Collection
+from pymongo.errors import OperationFailure
 
 from backend.infrastructure.repositories._subscription_models import (
     SubscriptionRecord,
     SubscriptionStatus,
 )
+
+
+def ensure_stripe_customer_index(col: Collection[dict[str, Any]]) -> None:
+    """Partial-Unique-Index: nur nicht-leere stripe_customer_id sind eindeutig.
+
+    sparse reicht nicht, da das Feld als "" (nicht fehlend) gespeichert wird —
+    mehrere Trial/Legacy-Abos mit "" verletzen sonst die Unique-Bedingung.
+    """
+    name = "idx_sub_stripe_customer"
+    options: dict[str, Any] = {
+        "unique": True,
+        "name": name,
+        "partialFilterExpression": {"stripe_customer_id": {"$gt": ""}},
+    }
+    try:
+        col.create_index("stripe_customer_id", **options)
+    except OperationFailure:
+        col.drop_index(name)
+        col.create_index("stripe_customer_id", **options)
 
 
 def get_by_stripe_customer(
