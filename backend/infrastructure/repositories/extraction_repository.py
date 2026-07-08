@@ -167,6 +167,29 @@ class ExtractionRepository:
             )
         return result
 
+    def list_bookings_overlapping(
+        self,
+        *,
+        account_id: str | None = None,
+        date_from: date,
+        date_to: date,
+    ) -> list[BookingExtraction]:
+        """Buchungen, deren Aufenthalt den Zeitraum überlappt (Wochen-Review)."""
+        base: dict[str, Any] = {
+            "extraction.check_in": {"$lte": date_to.isoformat()},
+            "extraction.check_out": {"$gte": date_from.isoformat()},
+            "extraction.intent": {"$in": ["new_booking", "change"]},
+        }
+        query = with_account_filter(base, account_id)
+        result: list[BookingExtraction] = []
+        for doc in self._col.find(query).sort("extraction.check_in", 1):
+            if account_id and doc.get("account_id") not in (None, account_id):
+                continue
+            if "extraction" not in doc:
+                continue
+            result.append(BookingExtraction.model_validate(doc["extraction"]))
+        return result
+
     def find_booking_by_number(
         self,
         booking_number: str,

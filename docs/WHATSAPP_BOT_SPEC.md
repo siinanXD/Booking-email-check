@@ -60,6 +60,32 @@ proaktive Versand (`notification_service`, `docs/whatsapp_templates_cleaning.md`
 | Routing, Dedupe, Pending-Actions, Audit | `service.py` |
 | Konversations-State (TTL 24h) | `infrastructure/repositories/whatsapp_conversation_repository.py` |
 | Audit-Log | `infrastructure/repositories/whatsapp_audit_repository.py` |
+| Wochen-Berichte (Putzplan Mo, Review Fr) | `weekly_reports.py` + `api/background_jobs.py` |
+
+### Geplante Wochen-Berichte
+
+Hintergrund-Thread (Fälligkeitsprüfung alle 5 Minuten, Zeitzone
+Europe/Berlin, Dedupe über `whatsapp_report_markers` — genau ein Versand
+pro Account und Kalenderwoche, auch bei Restarts/mehreren Workern):
+
+- **Montags 07:00** (`WHATSAPP_WEEKLY_PUTZPLAN_ENABLED`): aktueller
+  Wochen-Putzplan als Text + Excel an alle WhatsApp-Empfänger des Accounts.
+- **Freitags 16:00** (`WHATSAPP_WEEKLY_REVIEW_ENABLED`): Wochen-Review —
+  Übernachtungen (anteilig je Woche), An-/Abreisen, Umsatz (Summe der
+  Preise aller Anreisen der Woche), meistgebuchtes Objekt, erledigte
+  Reinigungen.
+
+Wochentag/Uhrzeit sind konfigurierbar (`*_WEEKDAY` 0=Mo…6=So, `*_HOUR`).
+Versand erfolgt als Session-Nachricht; ist das 24h-Fenster geschlossen,
+klopft optional ein Template an (`WHATSAPP_TEMPLATE_WEEKLY_PUTZPLAN` /
+`WHATSAPP_TEMPLATE_WEEKLY_REVIEW`, leer = kein Fallback). Empfohlene
+Template-Texte:
+
+- `weekly_putzplan_de`: „🧹 Dein Putzplan für KW {{1}} ist fertig
+  ({{2}} Reinigungen). Antworte mit ‚Putzplan‘, um die Excel-Datei zu
+  erhalten.“
+- `weekly_review_de`: „📊 Deine Wochen-Review für KW {{1}} ist da.
+  Antworte mit ‚Review‘, um die Details zu sehen.“
 
 ---
 
