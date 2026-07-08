@@ -14,6 +14,7 @@ from backend.features.notifications.whatsapp_echo_service import WhatsAppEchoSer
 from backend.features.notifications.whatsapp_incoming_service import (
     WhatsAppIncomingService,
 )
+from backend.features.whatsapp_bot.wiring import build_bot_service
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,11 @@ def receive_webhook() -> tuple[Any, int]:
     if not account_id:
         logger.debug("Kein Account für eingehende WhatsApp-Nachricht gefunden")
         return jsonify({"status": "no_account"}), 200
+
+    if g.settings.whatsapp_bot_enabled:
+        bot = build_bot_service(g.ctx, g.settings, account_id=account_id)
+        status = bot.handle(payload, account_id)
+        return jsonify({"status": status}), 200
 
     svc = WhatsAppIncomingService(
         settings=g.settings,

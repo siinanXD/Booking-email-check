@@ -37,6 +37,30 @@ Bereits vorhandene Bausteine (wiederverwenden, nicht neu bauen):
 - `backend/ai/testing/mock_whatsapp.py` – Mock für Tests.
 - `docs/whatsapp_templates_cleaning.md` – bestehende Meta-Templates.
 
+## Umsetzungsstand: Konversations-Bot (`backend/features/whatsapp_bot/`)
+
+Der Bot ist implementiert und wird über `WHATSAPP_BOT_ENABLED=true`
+aktiviert (Vorrangkette im Webhook: Echo > Bot > Host-Weiterleitung).
+Sitzungsfreie Nachrichten (Service-Konversationen) — **keine Meta-Templates
+nötig**, da der Bot nur auf eingehende Nachrichten antwortet
+(24h-Kundenservice-Fenster). Templates braucht weiterhin nur der
+proaktive Versand (`notification_service`, `docs/whatsapp_templates_cleaning.md`).
+
+| Baustein | Modul |
+| --- | --- |
+| Sender-Auflösung `wa_id` → Account + Rolle | `sender_resolver.py` (Dashboard-User → owner/manager, Putzpartner → cleaner) |
+| Rollen-Matrix | `permissions.py` |
+| Intent-Erkennung (LLM, structured output, Injection-Schutz) | `intent_service.py` |
+| Deterministische Zeitangaben (heute/morgen/KW/Datum) | `dates.py` |
+| Nachrichten-Templates (Emoji, *fett*, Limits) | `messages.py` |
+| Putzplan + Excel-Anhang, eigene Termine, Buchungen | `handlers_read.py` |
+| Mitarbeiter-/Objekt-CRUD mit Bestätigungs-Buttons | `handlers_admin.py` |
+| Versand: Text, Buttons, Dokument (Media-Upload) | `messenger.py` |
+| Sprachnachrichten (Whisper, mockbar) | `transcription.py` |
+| Routing, Dedupe, Pending-Actions, Audit | `service.py` |
+| Konversations-State (TTL 24h) | `infrastructure/repositories/whatsapp_conversation_repository.py` |
+| Audit-Log | `infrastructure/repositories/whatsapp_audit_repository.py` |
+
 ---
 
 ## Teil 1: Masterspezifikation

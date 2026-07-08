@@ -148,6 +148,11 @@ class Settings(BaseSettings):
     )
     whatsapp_app_secret: str = Field(default="", alias="WHATSAPP_APP_SECRET")
     whatsapp_echo_mode: bool = Field(default=False, alias="WHATSAPP_ECHO_MODE")
+    whatsapp_bot_enabled: bool = Field(default=False, alias="WHATSAPP_BOT_ENABLED")
+    whatsapp_bot_intent_model: str = Field(
+        default="gpt-4o-mini",
+        alias="WHATSAPP_BOT_INTENT_MODEL",
+    )
     whatsapp_enabled: bool = Field(default=False, alias="WHATSAPP_ENABLED")
     whatsapp_access_token: str = Field(default="", alias="WHATSAPP_ACCESS_TOKEN")
     whatsapp_phone_number_id: str = Field(default="", alias="WHATSAPP_PHONE_NUMBER_ID")

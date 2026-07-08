@@ -140,6 +140,51 @@ class ExtractionRepository:
             )
         return result
 
+    def list_bookings_between(
+        self,
+        *,
+        account_id: str | None = None,
+        date_from: date,
+        date_to: date,
+    ) -> list[tuple[str, BookingExtraction]]:
+        """Buchungen mit Check-in im Zeitraum (für WhatsApp-Bot-Anzeige)."""
+        base: dict[str, Any] = {
+            "extraction.check_in": {
+                "$gte": date_from.isoformat(),
+                "$lte": date_to.isoformat(),
+            },
+            "extraction.intent": {"$in": ["new_booking", "change"]},
+        }
+        query = with_account_filter(base, account_id)
+        result: list[tuple[str, BookingExtraction]] = []
+        for doc in self._col.find(query).sort("extraction.check_in", 1):
+            if account_id and doc.get("account_id") not in (None, account_id):
+                continue
+            if "extraction" not in doc:
+                continue
+            result.append(
+                (str(doc["_id"]), BookingExtraction.model_validate(doc["extraction"]))
+            )
+        return result
+
+    def find_booking_by_number(
+        self,
+        booking_number: str,
+        *,
+        account_id: str | None = None,
+    ) -> BookingExtraction | None:
+        """Buchung anhand der Buchungsnummer (für WhatsApp-Bot-Details)."""
+        cleaned = booking_number.strip()
+        if not cleaned:
+            return None
+        query = with_account_filter({"extraction.booking_number": cleaned}, account_id)
+        doc = self._col.find_one(query)
+        if doc is None or "extraction" not in doc:
+            return None
+        if account_id and doc.get("account_id") not in (None, account_id):
+            return None
+        return BookingExtraction.model_validate(doc["extraction"])
+
     def get_workflow_id(
         self,
         correlation_id: str,
