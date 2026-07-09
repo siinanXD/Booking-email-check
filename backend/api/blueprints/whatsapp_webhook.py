@@ -9,9 +9,12 @@ from typing import Any
 
 from flask import Blueprint, g, jsonify, request
 
+from backend.api.rate_limit import limiter
+from backend.features.notifications.whatsapp_echo_service import WhatsAppEchoService
 from backend.features.notifications.whatsapp_incoming_service import (
     WhatsAppIncomingService,
 )
+from backend.features.whatsapp_bot.wiring import build_bot_service
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +44,7 @@ def verify_webhook() -> tuple[Any, int]:
 
 
 @whatsapp_webhook_bp.post("/webhook")
+@limiter.exempt
 def receive_webhook() -> tuple[Any, int]:
     """Empfängt eingehende WhatsApp-Nachrichten und leitet sie an den Host weiter."""
     if not _verify_signature(request):
@@ -52,10 +56,19 @@ def receive_webhook() -> tuple[Any, int]:
     if payload.get("object") != "whatsapp_business_account":
         return jsonify({"status": "ignored"}), 200
 
+    if g.settings.whatsapp_echo_mode:
+        echoed = WhatsAppEchoService(g.settings).handle(payload)
+        return jsonify({"status": "echoed" if echoed else "skipped"}), 200
+
     account_id = _resolve_account_id(payload)
     if not account_id:
         logger.debug("Kein Account für eingehende WhatsApp-Nachricht gefunden")
         return jsonify({"status": "no_account"}), 200
+
+    if g.settings.whatsapp_bot_enabled:
+        bot = build_bot_service(g.ctx, g.settings, account_id=account_id)
+        status = bot.handle(payload, account_id)
+        return jsonify({"status": status}), 200
 
     svc = WhatsAppIncomingService(
         settings=g.settings,

@@ -17,7 +17,10 @@ from pydantic import ValidationError
 
 from backend.api.auth.routes import auth_bp
 from backend.api.auth.token_blocklist import MongoBlocklistBackend, configure
-from backend.api.background_jobs import start_cleaning_reminders
+from backend.api.background_jobs import (
+    start_cleaning_reminders,
+    start_whatsapp_weekly_reports,
+)
 from backend.api.blueprints import register_api_blueprints
 from backend.api.rate_limit import limiter
 from backend.core.config.factory import AppContext, build_app_context
@@ -223,6 +226,7 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     _start_mail_poll(app, cfg)
     start_cleaning_reminders(app, cfg)
+    start_whatsapp_weekly_reports(app, cfg)
 
     return app
 
