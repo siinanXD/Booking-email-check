@@ -2,7 +2,7 @@
 
 AI-powered processing of incoming booking emails with human approval — no automatic sending. Built for vacation rental hosts (Airbnb, Booking.com, Expedia, VRBO, direct bookings).
 
-**Live:** [booking-email-checl-production.up.railway.app](https://booking-email-checl-production.up.railway.app)
+**Live:** [booking-email-check-production.up.railway.app](https://booking-email-check-production.up.railway.app)
 
 ---
 
@@ -128,7 +128,7 @@ LANGFUSE_PUBLIC_KEY     Langfuse key
 LANGFUSE_SECRET_KEY     Langfuse secret
 APP_ENV                 production
 FLASK_ENV               production
-CORS_ORIGINS            https://booking-email-checl-production.up.railway.app
+CORS_ORIGINS            https://booking-email-check-production.up.railway.app
 ```
 
 **Optional variables:**
@@ -155,7 +155,7 @@ railway run python scripts/seed_admin.py
 So that replies from the cleaning team are automatically forwarded to the host:
 
 1. [Meta Developer Portal](https://developers.facebook.com) → App → WhatsApp → Configuration
-2. Callback URL: `https://booking-email-checl-production.up.railway.app/api/whatsapp/webhook`
+2. Callback URL: `https://booking-email-check-production.up.railway.app/api/whatsapp/webhook`
 3. Verify token: same value as `WHATSAPP_WEBHOOK_VERIFY_TOKEN` in Railway
 4. Subscribe to the **`messages`** webhook field
 
