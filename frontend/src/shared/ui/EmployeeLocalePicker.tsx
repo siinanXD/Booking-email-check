@@ -37,7 +37,7 @@ export function EmployeeLocalePicker({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-lg leading-none shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-lg leading-none shadow-sm transition hover:border-border2 hover:bg-surface2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         aria-label={`Language: ${current.englishName}`}
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -50,7 +50,7 @@ export function EmployeeLocalePicker({
         <ul
           role="listbox"
           aria-label="Select language"
-          className="absolute right-0 z-30 mt-1 min-w-[10.5rem] overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 z-30 mt-1 min-w-[10.5rem] overflow-hidden rounded-lg border border-border bg-surface py-1 shadow-lg"
         >
           {EMPLOYEE_WHATSAPP_LOCALES.map((option) => {
             const meta = EMPLOYEE_WHATSAPP_LOCALE_META[option];
@@ -63,8 +63,8 @@ export function EmployeeLocalePicker({
                     onChange(option);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-slate-50 ${
-                    selected ? "bg-indigo-50 font-medium text-indigo-700" : "text-slate-700"
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-surface2 ${
+                    selected ? "bg-brandsoft font-medium text-brandink" : "text-ink2"
                   }`}
                 >
                   <span className="text-base leading-none" aria-hidden="true">
