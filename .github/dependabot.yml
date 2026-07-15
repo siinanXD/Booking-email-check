@@ -7,6 +7,27 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
+    # Major bumps of the LLM/observability stack are deliberately deferred:
+    # langchain-openai>=1 forces openai>=2 + langchain-core>=1 + langgraph>=1
+    # (a coordinated langchain-1.0 migration on the critical LLM path), and
+    # langfuse>=3 is an OpenTelemetry rewrite (~13 files). Do these as dedicated,
+    # fully-tested migrations when there is a real driver — not as auto-bumps.
+    # Minor/patch updates still flow through.
+    ignore:
+      - dependency-name: "openai"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langchain"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langchain-openai"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langchain-core"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langgraph"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langgraph-checkpoint-mongodb"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langfuse"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
