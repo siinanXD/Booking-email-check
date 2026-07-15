@@ -36,7 +36,7 @@ dependencies = [
 
 [project.optional-dependencies]
 prod = [
-    "gunicorn==23.0.0",
+    "gunicorn==26.0.0",
 ]
 ocr = [
     "paddlepaddle>=2.6.2",
