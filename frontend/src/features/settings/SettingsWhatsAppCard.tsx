@@ -31,13 +31,13 @@ export function SettingsWhatsAppCard({
 }: SettingsWhatsAppCardProps) {
   return (
     <Card className="space-y-4">
-      <h3 className="font-medium text-slate-800">WhatsApp (Meta Cloud API)</h3>
+      <h3 className="font-medium text-ink">WhatsApp (Meta Cloud API)</h3>
       {data?.whatsapp_access_token_set && (
-        <p className="text-xs text-green-700">
+        <p className="text-xs text-oktext">
           Verbindung konfiguriert (Zugangsdaten werden zentral verwaltet).
         </p>
       )}
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-ink2">
         <input
           type="checkbox"
           checked={whatsappEnabled}
@@ -45,7 +45,7 @@ export function SettingsWhatsAppCard({
         />
         WhatsApp-Versand aktiv
       </label>
-      <label className="block text-sm text-slate-600">
+      <label className="block text-sm text-ink2">
         Standard-Empfänger (kommagetrennt, E.164)
         <Input
           className="mt-1"
@@ -54,7 +54,7 @@ export function SettingsWhatsAppCard({
           placeholder="+491701234567"
         />
       </label>
-      <label className="block text-sm text-slate-600">
+      <label className="block text-sm text-ink2">
         Test-Empfänger (hello_world)
         <Input
           className="mt-1"
@@ -70,7 +70,7 @@ export function SettingsWhatsAppCard({
       </div>
       {testMessage && (
         <p
-          className={`text-sm ${testMessage.startsWith("Test erfolgreich") ? "text-green-700" : "text-red-600"}`}
+          className={`text-sm ${testMessage.startsWith("Test erfolgreich") ? "text-oktext" : "text-dangertext"}`}
         >
           {testMessage}
         </p>
