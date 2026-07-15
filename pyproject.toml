@@ -47,7 +47,7 @@ ocr = [
 # Dev-Tooling exakt auf die Versionen in .pre-commit-config.yaml abgestimmt,
 # damit lokal, in pre-commit und in der CI dasselbe läuft.
 dev = [
-    "ruff==0.15.18",
+    "ruff==0.15.21",
     "black==26.5.1",
     "mypy==1.13.0",
     "pytest==9.1.1",
