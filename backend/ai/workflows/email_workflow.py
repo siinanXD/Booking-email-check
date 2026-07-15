@@ -129,8 +129,8 @@ class EmailWorkflow:
             interrupt_after=["human_review"],
         )
 
-    def _build(self) -> StateGraph:
-        graph: StateGraph = StateGraph(EmailWorkflowState)
+    def _build(self) -> StateGraph[EmailWorkflowState]:
+        graph: StateGraph[EmailWorkflowState] = StateGraph(EmailWorkflowState)
         graph.add_node("ingest", self._nodes.ingest)
         graph.add_node("classify", self._nodes.classify)
         graph.add_node("extract", self._nodes.extract)
