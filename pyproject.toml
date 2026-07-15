@@ -10,7 +10,7 @@ requires-python = ">=3.11,<3.12"
 dependencies = [
     "pydantic==2.13.4",
     "pydantic-settings==2.14.1",
-    "langgraph==0.2.76",
+    "langgraph==0.6.11",
     "langgraph-checkpoint-mongodb==0.2.1",
     "langchain==0.3.30",
     "langchain-openai==0.2.14",
