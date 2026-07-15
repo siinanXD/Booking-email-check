@@ -8,6 +8,7 @@ from typing import Any
 
 from pymongo.collection import Collection
 
+from backend.core.utils.phone import normalize_phone_digits
 from backend.features.cleaning.models import CleaningPartner
 from backend.infrastructure.repositories.mongo import Db
 from backend.infrastructure.repositories.tenant_scope import with_account_filter
@@ -66,6 +67,24 @@ class CleaningPartnerRepository:
         query = with_account_filter(base, account_id)
         cursor = self._col.find(query).sort("name", 1)
         return [CleaningPartner.from_mongo(doc) for doc in cursor]
+
+    def find_account_ids_by_phone(self, digits: str) -> list[str]:
+        """Konten mit einem aktiven Putzpartner, dessen Nummer passt.
+
+        Plattform-weit (bewusst NICHT tenant-scoped) – für das Routing
+        eingehender Nachrichten über eine geteilte Absendernummer.
+        """
+        if not digits:
+            return []
+        found: list[str] = []
+        for doc in self._col.find({"active": True}):
+            account_id = doc.get("account_id")
+            if (
+                account_id
+                and normalize_phone_digits(str(doc.get("phone") or "")) == digits
+            ):
+                found.append(str(account_id))
+        return found
 
     def find_for_property(
         self,
