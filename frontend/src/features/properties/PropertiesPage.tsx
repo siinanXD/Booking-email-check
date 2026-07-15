@@ -157,18 +157,21 @@ export function PropertiesPage() {
     );
   }
 
+  const hasIncompleteData = (properties?.items ?? []).some(
+    (p) => (p.stats?.incomplete_data_count ?? 0) > 0
+  );
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-slate-800">Unterkünfte</h2>
-        <p className="text-sm text-slate-500">
-          Profile, WhatsApp-Empfänger, Statistiken und KI-Vorschläge aus Buchungs-Mails.
-        </p>
-      </div>
+    <div className="space-y-5">
+      <p className="text-sm text-muted">
+        Profile, WhatsApp-Empfänger, Statistiken und KI-Vorschläge aus deinen
+        Buchungs-Mails.
+      </p>
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-medium">Unterkünfte ({year})</h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-ink">Unterkünfte</h3>
+          <span className="font-numeric text-xs text-faint">{year}</span>
         </div>
         {(properties?.items.length ?? 0) === 0 ? (
           <EmptyState
@@ -180,30 +183,37 @@ export function PropertiesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-slate-500">
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Tage</th>
-                  <th className="py-2 pr-4">Umsatz</th>
-                  <th className="py-2 pr-4">Buchungen</th>
-                  <th className="py-2" />
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-faint">
+                  <th className="pb-2 pr-4 font-medium">Name</th>
+                  <th className="pb-2 pr-4 text-right font-medium">Tage</th>
+                  <th className="pb-2 pr-4 text-right font-medium">Umsatz</th>
+                  <th className="pb-2 pr-4 text-right font-medium">Buchungen</th>
+                  <th className="pb-2" />
                 </tr>
               </thead>
               <tbody>
                 {properties!.items.map((p) => (
-                  <tr key={p.property_id} className="border-b">
-                    <td className="py-2 pr-4 font-medium">{p.name}</td>
-                    <td className="py-2 pr-4">{p.stats?.booked_days ?? 0}</td>
-                    <td className="py-2 pr-4">
+                  <tr
+                    key={p.property_id}
+                    className="border-b border-border last:border-0"
+                  >
+                    <td className="py-2.5 pr-4 font-medium text-ink">{p.name}</td>
+                    <td className="py-2.5 pr-4 text-right font-numeric text-ink2">
+                      {p.stats?.booked_days ?? 0}
+                    </td>
+                    <td className="py-2.5 pr-4 text-right font-numeric text-ink2">
                       {(p.stats?.revenue ?? 0).toLocaleString("de-DE", {
                         style: "currency",
                         currency: "EUR",
                       })}
                     </td>
-                    <td className="py-2 pr-4">{p.stats?.booking_count ?? 0}</td>
-                    <td className="py-2 text-right">
+                    <td className="py-2.5 pr-4 text-right font-numeric text-ink2">
+                      {p.stats?.booking_count ?? 0}
+                    </td>
+                    <td className="py-2.5 text-right">
                       <Link
                         to={`/properties/${p.property_id}`}
-                        className="text-indigo-600 hover:underline"
+                        className="font-medium text-brandink hover:underline"
                       >
                         Profil
                       </Link>
@@ -214,64 +224,79 @@ export function PropertiesPage() {
             </table>
           </div>
         )}
-        {(properties?.items ?? []).some(
-          (p) => (p.stats?.incomplete_data_count ?? 0) > 0
-        ) && (
-          <p className="mt-2 text-xs text-amber-600">
-            Einige Buchungen haben unvollständige Preis- oder Datumsdaten in der Extraktion.
+        {hasIncompleteData && (
+          <p className="mt-3 inline-flex rounded-lg bg-warnbg px-2.5 py-1.5 text-xs text-warntext">
+            Einige Buchungen haben unvollständige Preis- oder Datumsdaten in der
+            Extraktion.
           </p>
         )}
       </Card>
 
       <div id="empfaenger-liste">
-      <Card className="space-y-4">
-        <h3 className="font-medium">Mitarbeiter-Empfänger</h3>
-        <p className="text-sm text-slate-500">
-          Sprache gilt nur für Reinigungs-Nachrichten an Putzfrau/Mitarbeiter. Storno,
-          Änderungen und Gastnachrichten bleiben auf Deutsch.
-        </p>
-        {isLoading ? (
-          <p className="text-slate-500">Lade…</p>
-        ) : (
-          propertyRows.map((row, index) => (
-            <div key={index} className="flex items-start gap-2">
-              <div className="grid flex-1 gap-2 sm:grid-cols-2">
-                <Input
-                  placeholder="Unterkunftsname"
-                  aria-label="Unterkunftsname"
-                  value={row.property_name}
-                  onChange={(e) =>
-                    updatePropertyRow(index, "property_name", e.target.value)
-                  }
-                />
-                <EmployeeWhatsAppField
-                  phone={row.employees[0]?.phone_e164 ?? ""}
-                  locale={row.employees[0]?.locale ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE}
-                  onPhoneChange={(phone) => updatePropertyRow(index, "phone", phone)}
-                  onLocaleChange={(locale) => updatePropertyRow(index, "locale", locale)}
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-0.5"
-                aria-label="Zeile entfernen"
-                onClick={() => removeRow(index)}
-              >
-                <Trash2 size={15} aria-hidden />
-              </Button>
+        <Card className="space-y-4">
+          <div>
+            <h3 className="text-base font-semibold text-ink">Mitarbeiter</h3>
+            <p className="mt-1 text-sm text-muted">
+              WhatsApp-Empfänger je Unterkunft. Die Sprache gilt nur für
+              Reinigungs-Nachrichten; Storno, Änderungen und Gastnachrichten bleiben
+              auf Deutsch.
+            </p>
+          </div>
+          {isLoading ? (
+            <p className="text-sm text-muted">Lade…</p>
+          ) : (
+            <div className="space-y-2.5">
+              {propertyRows.map((row, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-border2 bg-surface2 p-3"
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="grid flex-1 gap-2 sm:grid-cols-2">
+                      <Input
+                        placeholder="Unterkunftsname"
+                        aria-label="Unterkunftsname"
+                        value={row.property_name}
+                        onChange={(e) =>
+                          updatePropertyRow(index, "property_name", e.target.value)
+                        }
+                      />
+                      <EmployeeWhatsAppField
+                        phone={row.employees[0]?.phone_e164 ?? ""}
+                        locale={
+                          row.employees[0]?.locale ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE
+                        }
+                        onPhoneChange={(phone) =>
+                          updatePropertyRow(index, "phone", phone)
+                        }
+                        onLocaleChange={(locale) =>
+                          updatePropertyRow(index, "locale", locale)
+                        }
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-0.5"
+                      aria-label="Mitarbeiter entfernen"
+                      onClick={() => removeRow(index)}
+                    >
+                      <Trash2 size={15} aria-hidden />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))
-        )}
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => saveMut.mutate()} loading={saveMut.isPending}>
-            Speichern
-          </Button>
-          <Button variant="secondary" onClick={addEmptyRow}>
-            + Zeile hinzufügen
-          </Button>
-        </div>
-      </Card>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => saveMut.mutate()} loading={saveMut.isPending}>
+              Speichern
+            </Button>
+            <Button variant="secondary" onClick={addEmptyRow}>
+              + Mitarbeiter hinzufügen
+            </Button>
+          </div>
+        </Card>
       </div>
 
       <PropertySuggestionsCard
@@ -283,12 +308,19 @@ export function PropertiesPage() {
       />
 
       <Card>
-        <h3 className="mb-2 font-medium">Historie (letzte Buchungs-Mails)</h3>
-        <ul className="text-sm space-y-2 max-h-64 overflow-y-auto">
+        <h3 className="mb-3 text-base font-semibold text-ink">
+          Letzte Buchungs-Mails
+        </h3>
+        <ul className="max-h-64 overflow-y-auto text-sm">
           {(history?.items ?? []).map((h) => (
-            <li key={h.correlation_id} className="border-b pb-1">
-              <span className="font-medium">{h.property_name ?? "—"}</span> —{" "}
-              {h.subject}
+            <li
+              key={h.correlation_id}
+              className="flex gap-2 border-b border-border py-2 last:border-0"
+            >
+              <span className="shrink-0 font-medium text-ink">
+                {h.property_name ?? "—"}
+              </span>
+              <span className="truncate text-muted">{h.subject}</span>
             </li>
           ))}
         </ul>
