@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2 } from "lucide-react";
 import { PropertyPlanLimitDialog } from "@/features/properties/PropertyPlanLimitDialog";
+import { PropertyRecipientsCard } from "@/features/properties/PropertyRecipientsCard";
 import { PropertySuggestionsCard } from "@/features/properties/PropertySuggestionsCard";
 import { getApiErrorCode } from "@/lib/api/errors";
 import {
@@ -21,10 +21,7 @@ import {
 } from "@/lib/whatsappLocales";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { toast } from "@/shared/feedback/toastStore";
-import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
-import { Input } from "@/shared/ui/Input";
-import { EmployeeWhatsAppField } from "@/shared/ui/EmployeeWhatsAppField";
 
 export function PropertiesPage() {
   const navigate = useNavigate();
@@ -233,70 +230,15 @@ export function PropertiesPage() {
       </Card>
 
       <div id="empfaenger-liste">
-        <Card className="space-y-4">
-          <div>
-            <h3 className="text-base font-semibold text-ink">Mitarbeiter</h3>
-            <p className="mt-1 text-sm text-muted">
-              WhatsApp-Empfänger je Unterkunft. Die Sprache gilt nur für
-              Reinigungs-Nachrichten; Storno, Änderungen und Gastnachrichten bleiben
-              auf Deutsch.
-            </p>
-          </div>
-          {isLoading ? (
-            <p className="text-sm text-muted">Lade…</p>
-          ) : (
-            <div className="space-y-2.5">
-              {propertyRows.map((row, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-border2 bg-surface2 p-3"
-                >
-                  <div className="flex items-start gap-2">
-                    <div className="grid flex-1 gap-2 sm:grid-cols-2">
-                      <Input
-                        placeholder="Unterkunftsname"
-                        aria-label="Unterkunftsname"
-                        value={row.property_name}
-                        onChange={(e) =>
-                          updatePropertyRow(index, "property_name", e.target.value)
-                        }
-                      />
-                      <EmployeeWhatsAppField
-                        phone={row.employees[0]?.phone_e164 ?? ""}
-                        locale={
-                          row.employees[0]?.locale ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE
-                        }
-                        onPhoneChange={(phone) =>
-                          updatePropertyRow(index, "phone", phone)
-                        }
-                        onLocaleChange={(locale) =>
-                          updatePropertyRow(index, "locale", locale)
-                        }
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-0.5"
-                      aria-label="Mitarbeiter entfernen"
-                      onClick={() => removeRow(index)}
-                    >
-                      <Trash2 size={15} aria-hidden />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => saveMut.mutate()} loading={saveMut.isPending}>
-              Speichern
-            </Button>
-            <Button variant="secondary" onClick={addEmptyRow}>
-              + Mitarbeiter hinzufügen
-            </Button>
-          </div>
-        </Card>
+        <PropertyRecipientsCard
+          rows={propertyRows}
+          isLoading={isLoading}
+          saving={saveMut.isPending}
+          onUpdate={updatePropertyRow}
+          onAdd={addEmptyRow}
+          onRemove={removeRow}
+          onSave={() => saveMut.mutate()}
+        />
       </div>
 
       <PropertySuggestionsCard
