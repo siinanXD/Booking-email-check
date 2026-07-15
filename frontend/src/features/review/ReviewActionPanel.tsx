@@ -105,11 +105,11 @@ export function ReviewActionPanel({
 
   if (!selected) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-slate-200/80 bg-white py-16 text-center shadow-card">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border/80 bg-surface py-16 text-center shadow-card">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface2 text-faint">
           <ChevronRight size={20} />
         </div>
-        <p className="text-sm text-slate-500">Eintrag aus der Liste wählen</p>
+        <p className="text-sm text-muted">Eintrag aus der Liste wählen</p>
       </div>
     );
   }
@@ -123,11 +123,11 @@ export function ReviewActionPanel({
   const isReadOnly = tab === "completed";
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+    <div className="overflow-hidden rounded-xl border border-border/80 bg-surface shadow-card">
       <div className="space-y-4 p-5">
-        <div className="border-b border-slate-100 pb-4">
-          <h3 className="font-semibold text-slate-900">{selected.subject}</h3>
-          <p className="mt-0.5 text-sm text-slate-500">{selected.from_address}</p>
+        <div className="border-b border-border pb-4">
+          <h3 className="font-semibold text-ink">{selected.subject}</h3>
+          <p className="mt-0.5 text-sm text-muted">{selected.from_address}</p>
         </div>
 
         <EmailDetailPanel
@@ -151,10 +151,10 @@ export function ReviewActionPanel({
         {canApprove && (
           <>
             <div className="flex items-center gap-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-faint">
                 Sprache
               </p>
-              <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+              <div className="inline-flex items-center rounded-lg border border-border bg-surface2 p-0.5">
                 {(["de", "en"] as ReplyLang[]).map((l) => (
                   <button
                     key={l}
@@ -163,8 +163,8 @@ export function ReviewActionPanel({
                     disabled={translateMut.isPending}
                     className={`rounded-md px-2.5 py-1 text-xs font-semibold uppercase transition ${
                       lang === l
-                        ? "bg-white text-indigo-600 shadow-sm"
-                        : "text-slate-400 hover:text-slate-600"
+                        ? "bg-surface text-brandink shadow-sm"
+                        : "text-faint hover:text-ink2"
                     }`}
                   >
                     {l}
@@ -172,16 +172,16 @@ export function ReviewActionPanel({
                 ))}
               </div>
               {translateMut.isPending && (
-                <Loader2 size={14} className="animate-spin text-slate-400" />
+                <Loader2 size={14} className="animate-spin text-faint" />
               )}
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-1">
-              <p className="mb-2 px-2 pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            <div className="rounded-xl border border-border bg-surface2 p-1">
+              <p className="mb-2 px-2 pt-1 text-[10px] font-semibold uppercase tracking-wide text-faint">
                 E-Mail-Antwort an Gast (bearbeitbar)
               </p>
               <textarea
                 data-review-draft
-                className="h-40 w-full resize-none rounded-lg border border-transparent bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                className="h-40 w-full resize-none rounded-lg border border-transparent bg-surface px-3 py-2 text-sm text-ink shadow-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
                 value={draftEdit}
                 onChange={(e) => setDraftEdit(e.target.value)}
               />
@@ -196,8 +196,8 @@ export function ReviewActionPanel({
                 Freigeben
               </Button>
             </div>
-            <div className="space-y-3 rounded-xl border border-red-100 bg-red-50/50 p-4">
-              <p className="text-xs font-semibold text-red-700">Ablehnen</p>
+            <div className="space-y-3 rounded-xl border border-red-100 bg-dangerbg/50 p-4">
+              <p className="text-xs font-semibold text-dangertext">Ablehnen</p>
               <Input
                 placeholder="Ablehnungsgrund (optional)"
                 value={rejectReason}
@@ -228,22 +228,22 @@ export function ReviewActionPanel({
 
         {isReadOnly && (
           <div>
-            <p className="mb-2 text-xs font-medium uppercase text-slate-500">
+            <p className="mb-2 text-xs font-medium uppercase text-muted">
               Arbeitsverlauf
             </p>
             {activityLoading ? (
-              <p className="text-sm text-slate-500">Lade Verlauf…</p>
+              <p className="text-sm text-muted">Lade Verlauf…</p>
             ) : (activity?.events.length ?? 0) === 0 ? (
-              <p className="text-sm text-slate-500">Kein Verlauf verfügbar.</p>
+              <p className="text-sm text-muted">Kein Verlauf verfügbar.</p>
             ) : (
-              <ol className="space-y-2 border-l border-slate-200 pl-4">
+              <ol className="space-y-2 border-l border-border pl-4">
                 {activity!.events.map((event) => (
                   <li key={`${event.kind}-${event.at}`} className="relative">
-                    <span className="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-indigo-500" />
-                    <p className="text-sm font-medium text-slate-800">
+                    <span className="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-brand" />
+                    <p className="text-sm font-medium text-ink">
                       {event.label}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted">
                       {formatActivityTime(event.at)}
                     </p>
                   </li>

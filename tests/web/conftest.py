@@ -29,6 +29,10 @@ def _test_settings() -> Settings:
             "ADMIN_PASSWORD": "test-password",
             "WEB_USE_MEMORY_CHECKPOINTER": "true",
             "LLM_MODE": "mock",
+            # No background mail-poll thread in tests: otherwise create_app starts
+            # a scheduler that fires a real poll after ~5 min and errors on the
+            # missing AZURE_CLIENT_ID — a non-deterministic CI failure.
+            "MAIL_POLL_IN_WEB": "false",
         }
     )
 
