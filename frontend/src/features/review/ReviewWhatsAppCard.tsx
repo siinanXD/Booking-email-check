@@ -22,9 +22,9 @@ export function ReviewWhatsAppCard({ correlationId }: Props) {
 
   return (
     <Card className="space-y-3">
-      <h4 className="text-sm font-medium text-slate-800">WhatsApp-Vorschau</h4>
-      {isLoading && <p className="text-xs text-slate-500">Lade…</p>}
-      {data?.note && <p className="text-xs text-amber-700">{data.note}</p>}
+      <h4 className="text-sm font-medium text-ink">WhatsApp-Vorschau</h4>
+      {isLoading && <p className="text-xs text-muted">Lade…</p>}
+      {data?.note && <p className="text-xs text-warntext">{data.note}</p>}
       {(data?.messages ?? []).map((msg) => {
         const localeMeta =
           EMPLOYEE_WHATSAPP_LOCALE_META[
@@ -37,15 +37,15 @@ export function ReviewWhatsAppCard({ correlationId }: Props) {
         return (
           <div
             key={`${msg.recipient_e164}-${msg.template_name}`}
-            className="space-y-2 rounded border border-slate-200 p-3 text-xs"
+            className="space-y-2 rounded border border-border p-3 text-xs"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium text-slate-800">{msg.recipient_e164}</p>
-              <span className="rounded bg-slate-100 px-2 py-0.5 text-slate-600">
+              <p className="font-medium text-ink">{msg.recipient_e164}</p>
+              <span className="rounded bg-surface2 px-2 py-0.5 text-ink2">
                 {roleLabel(msg.recipient_role)}
               </span>
               {localeMeta && (
-                <span className="inline-flex items-center gap-1 text-slate-500">
+                <span className="inline-flex items-center gap-1 text-muted">
                   <span aria-hidden="true">{localeMeta.flag}</span>
                   <span>{localeMeta.englishName}</span>
                 </span>
@@ -53,26 +53,26 @@ export function ReviewWhatsAppCard({ correlationId }: Props) {
             </div>
 
             <div>
-              <p className="mb-1 font-medium uppercase tracking-wide text-slate-500">
+              <p className="mb-1 font-medium uppercase tracking-wide text-muted">
                 Versandtext
               </p>
-              <pre className="whitespace-pre-wrap rounded bg-slate-50 p-2 text-sm text-slate-800">
+              <pre className="whitespace-pre-wrap rounded bg-surface2 p-2 text-sm text-ink">
                 {msg.generated_body || "—"}
               </pre>
             </div>
 
             {showGermanTranslation && (
               <div>
-                <p className="mb-1 font-medium uppercase tracking-wide text-slate-500">
+                <p className="mb-1 font-medium uppercase tracking-wide text-muted">
                   Deutsch (Review)
                 </p>
-                <pre className="whitespace-pre-wrap rounded bg-indigo-50 p-2 text-sm text-slate-800">
+                <pre className="whitespace-pre-wrap rounded bg-brandsoft p-2 text-sm text-ink">
                   {msg.generated_body_de}
                 </pre>
               </div>
             )}
 
-            <details className="text-slate-500">
+            <details className="text-muted">
               <summary className="cursor-pointer text-[11px]">Technische Details</summary>
               <p className="mt-1">{msg.template_name}</p>
               <ul className="mt-1 list-inside list-disc">

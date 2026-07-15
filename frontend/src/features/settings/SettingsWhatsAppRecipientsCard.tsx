@@ -13,14 +13,14 @@ export function SettingsWhatsAppRecipientsCard() {
 
   return (
     <Card className="space-y-2">
-      <h3 className="font-medium text-slate-800">WhatsApp pro Unterkunft</h3>
-      <p className="text-sm text-slate-600">
+      <h3 className="font-medium text-ink">WhatsApp pro Unterkunft</h3>
+      <p className="text-sm text-ink2">
         {count} Unterkunft(en) mit konfigurierten Empfängern. Verwalten Sie
         Putzfrau- und Mitarbeiter-Nummern auf der Unterkünfte-Seite.
       </p>
       <Link
         to="/properties"
-        className="text-sm font-medium text-indigo-600 hover:underline"
+        className="text-sm font-medium text-brandink hover:underline"
       >
         Zu Unterkünfte →
       </Link>
