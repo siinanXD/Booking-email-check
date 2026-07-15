@@ -28,6 +28,10 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "langfuse"
         update-types: ["version-update:semver-major"]
+      # mypy 2.x is a major with much stricter type rules (untyped-decorator,
+      # generics) — adopt via a dedicated cleanup pass, not a weekly auto-bump.
+      - dependency-name: "mypy"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
