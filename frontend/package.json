@@ -19,7 +19,7 @@
     "lucide-react": "^1.24.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.18.0",
+    "react-router-dom": "^7.18.1",
     "recharts": "^3.9.1",
     "zustand": "^5.0.3"
   },
