@@ -21,7 +21,7 @@ export function CostChart({
 }) {
   if (series.length === 0) {
     return (
-      <p className="px-4 py-8 text-center text-sm text-slate-500">{emptyHint}</p>
+      <p className="px-4 py-8 text-center text-sm text-muted">{emptyHint}</p>
     );
   }
 
