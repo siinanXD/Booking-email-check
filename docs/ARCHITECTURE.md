@@ -43,6 +43,11 @@ No `.py`, `.ts`, or `.tsx` file may exceed **300 lines**. CI runs `python script
 - New React screen → `frontend/src/features/<feature>/`
 - Shared UI → `frontend/src/shared/`
 - API client / types → `frontend/src/lib/`
+- Colors → use the design tokens (`text-ink`, `bg-surface`, `border-border`,
+  `text-brandink`, `bg-warnbg`/`text-warntext`, …), never hardcoded palette
+  classes (`text-slate-*`, `bg-amber-*`) — see README "Frontend theming". Tokens
+  honor the light/dark switch; palette classes wash out in dark mode. The
+  fixed-dark sidebar uses `rail*` tokens.
 
 ## Entrypoints
 

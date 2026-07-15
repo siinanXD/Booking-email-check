@@ -46,9 +46,9 @@ export function ReviewList({
 }: Props) {
   const selectable = Boolean(onToggleCheck);
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
-      <div className="border-b border-slate-100 px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+    <div className="overflow-hidden rounded-xl border border-border/80 bg-white shadow-card">
+      <div className="border-b border-border px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-faint">
           {items?.length ?? 0} Einträge
         </p>
       </div>
@@ -64,14 +64,14 @@ export function ReviewList({
         ) : (items?.length ?? 0) === 0 ? (
           <EmptyState bare title={emptyHint} />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-border">
             {items!.map((item) => (
               <li
                 key={item.correlation_id}
                 className={`flex items-start ${
                   selectedId === item.correlation_id
-                    ? "bg-indigo-50"
-                    : "hover:bg-slate-50"
+                    ? "bg-brandsoft"
+                    : "hover:bg-surface2"
                 }`}
               >
                 {selectable && (
@@ -81,7 +81,7 @@ export function ReviewList({
                   >
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 accent-indigo-600"
+                      className="h-4 w-4 rounded border-border2 accent-indigo-600"
                       checked={checkedIds?.has(item.correlation_id) ?? false}
                       onChange={() => onToggleCheck?.(item.correlation_id)}
                       aria-label={`Auswählen: ${item.subject}`}
@@ -95,10 +95,10 @@ export function ReviewList({
                 >
                   <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-900">
+                      <p className="truncate text-sm font-semibold text-ink">
                         {item.subject}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
+                      <p className="mt-0.5 truncate text-xs text-muted">
                         {item.from_address}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -107,12 +107,12 @@ export function ReviewList({
                           <Badge tone="escalated" label="Eskaliert" />
                         )}
                         {item.grounding_flag && (
-                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200/80">
+                          <span className="rounded-full bg-warnbg px-2 py-0.5 text-[10px] font-medium text-warntext ring-1 ring-amber-200/80">
                             Grounding
                           </span>
                         )}
                         {item.review_status === "approved" && (
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200/80">
+                          <span className="rounded-full bg-okbg px-2 py-0.5 text-[10px] font-medium text-oktext ring-1 ring-emerald-200/80">
                             Freigegeben
                           </span>
                         )}
@@ -122,8 +122,8 @@ export function ReviewList({
                       size={15}
                       className={`mt-0.5 flex-shrink-0 transition-colors ${
                         selectedId === item.correlation_id
-                          ? "text-indigo-500"
-                          : "text-slate-300 group-hover:text-slate-400"
+                          ? "text-brandink"
+                          : "text-faint group-hover:text-faint"
                       }`}
                     />
                   </div>

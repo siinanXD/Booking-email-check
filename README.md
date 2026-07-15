@@ -87,6 +87,20 @@ Changes / Messages); **Review** unifies the approval lifecycle as tabs
 
 Import direction is strictly top-down: `api → features → ai → infrastructure → core`. Max. 300 lines per file (CI-enforced).
 
+### Frontend theming (design tokens)
+
+Colors are driven by CSS **design tokens** in `frontend/src/index.css`
+(`--ink`, `--muted`, `--faint`, `--surface`, `--border`, `--brand`, `--warntext`, …),
+mapped to Tailwind utilities in `frontend/tailwind.config.ts`
+(`text-ink`, `text-muted`, `bg-surface`, `border-border`, `text-brandink`,
+`bg-warnbg` / `text-warntext`, …). Light lives on `:root`, dark on
+`[data-theme="dark"]`; the top-bar toggle switches themes at runtime.
+
+**Convention:** always use the token utilities — never hardcoded palette
+classes (`text-slate-*`, `text-indigo-*`, `bg-amber-*`). Palette classes ignore
+the theme switch and wash out in dark mode. The one exception is the
+fixed-dark sidebar, which uses the `rail*` tokens (`text-railtext`, `bg-rail1`).
+
 ---
 
 ## Local development

@@ -19,7 +19,7 @@ import { Input } from "@/shared/ui/Input";
 import { toast } from "@/shared/feedback/toastStore";
 
 function SectionHeader({ title }: { title: string }) {
-  return <h3 className="text-sm font-semibold text-slate-800">{title}</h3>;
+  return <h3 className="text-sm font-semibold text-ink">{title}</h3>;
 }
 
 export function SettingsPage() {
@@ -124,10 +124,10 @@ export function SettingsPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Einstellungen</h2>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <h2 className="text-xl font-bold text-ink">Einstellungen</h2>
+          <p className="mt-0.5 text-sm text-muted">
             Als Plattform-Administrator verwaltest du Mandanten über die{" "}
-            <Link to="/admin/overview" className="text-indigo-600 hover:underline">
+            <Link to="/admin/overview" className="text-brandink hover:underline">
               Admin-Konsole
             </Link>
             .
@@ -135,12 +135,12 @@ export function SettingsPage() {
         </div>
         <Card>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brandsoft text-brandink">
               <Shield size={18} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-800">Plattform-Administration</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-semibold text-ink">Plattform-Administration</p>
+              <p className="text-xs text-muted">
                 Verbindungstests pro Mandant unter Admin → Diagnose.
               </p>
             </div>
@@ -152,8 +152,8 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 py-10 text-slate-500">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-500" />
+      <div className="flex items-center gap-2 py-10 text-muted">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-border2 border-t-indigo-500" />
         <span className="text-sm">Einstellungen werden geladen…</span>
       </div>
     );
@@ -162,9 +162,9 @@ export function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Einstellungen</h2>
-        <p className="mt-0.5 text-sm text-slate-500">
-          Werte aus der <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">.env</code> werden
+        <h2 className="text-xl font-bold text-ink">Einstellungen</h2>
+        <p className="mt-0.5 text-sm text-muted">
+          Werte aus der <code className="rounded bg-surface2 px-1 py-0.5 text-xs">.env</code> werden
           automatisch vorausgefüllt. Nach dem Speichern gelten die Einträge dauerhaft in der Datenbank.
         </p>
       </div>
@@ -176,7 +176,7 @@ export function SettingsPage() {
         <div className="space-y-4">
           <SectionHeader title="Mein Profil (Host)" />
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-600">
+            <label className="block text-xs font-medium text-ink2">
               Meine WhatsApp-Nummer (E.164, z. B. +491701234567)
             </label>
             <Input
@@ -188,11 +188,11 @@ export function SettingsPage() {
           <label className="flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-slate-300 accent-indigo-600"
+              className="h-4 w-4 rounded border-border2 accent-indigo-600"
               checked={userWhatsappEnabled}
               onChange={(e) => setUserWhatsappEnabled(e.target.checked)}
             />
-            <span className="text-sm text-slate-700">
+            <span className="text-sm text-ink2">
               WhatsApp-Benachrichtigungen für mich aktiv
             </span>
           </label>

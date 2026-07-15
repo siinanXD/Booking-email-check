@@ -14,17 +14,17 @@ export function WhatsAppErrorHint({ errorText }: WhatsAppErrorHintProps) {
   if (!hint) return null;
 
   return (
-    <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
-      <p className="font-medium text-amber-900">
+    <div className="rounded-lg border border-amber-300 bg-warnbg p-3 text-sm">
+      <p className="font-medium text-warntext">
         Hinweis (Meta-Code {hint.code}): {hint.title}
       </p>
-      <p className="mt-1 text-amber-800">{hint.message}</p>
+      <p className="mt-1 text-warntext">{hint.message}</p>
       {hint.actionUrl && (
         <a
           href={hint.actionUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-block font-medium text-amber-900 underline"
+          className="mt-2 inline-block font-medium text-warntext underline"
         >
           {hint.actionLabel ?? "Mehr erfahren"}
         </a>
