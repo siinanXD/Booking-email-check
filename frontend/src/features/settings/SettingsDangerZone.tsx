@@ -21,14 +21,14 @@ export function SettingsDangerZone({ onWipe, wipePending }: SettingsDangerZonePr
   };
 
   return (
-    <div className="rounded-xl border border-red-200/80 bg-red-50/50 p-5 space-y-4">
+    <div className="rounded-xl border border-red-200/80 bg-dangerbg/50 p-5 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-dangerbg text-dangertext">
           <TriangleAlert size={16} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-red-800">Gefahrenzone</h3>
-          <p className="mt-0.5 text-xs text-red-600">
+          <h3 className="text-sm font-semibold text-dangertext">Gefahrenzone</h3>
+          <p className="mt-0.5 text-xs text-dangertext">
             Löscht alle E-Mails, Reviews, Metriken und gespeicherten Einstellungen.
             Login-Benutzer bleiben erhalten.
           </p>
