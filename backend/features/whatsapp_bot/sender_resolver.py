@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+from backend.core.utils.phone import normalize_phone_digits
 from backend.features.cleaning.models import CleaningPartner
 from backend.features.whatsapp_bot.models import BotRole, ResolvedSender
 from backend.infrastructure.repositories.cleaning_partner_repository import (
@@ -25,7 +26,7 @@ _USER_ROLE_MAP: dict[str, BotRole] = {
 
 def normalize_wa_id(phone: str | None) -> str:
     """Nur Ziffern (Meta wa_id-Format, z. B. '4915712345678')."""
-    return "".join(ch for ch in (phone or "") if ch.isdigit())
+    return normalize_phone_digits(phone)
 
 
 class SenderResolver:

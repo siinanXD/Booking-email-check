@@ -43,6 +43,14 @@ def unknown_number() -> str:
     )
 
 
+def ambiguous_account() -> str:
+    """Absendernummer ist mehreren Konten zugeordnet – bewusst nicht raten."""
+    return (
+        "❗ Deine Nummer ist mehreren Konten zugeordnet.\n"
+        "Bitte wende dich an deinen Administrator."
+    )
+
+
 def permission_denied() -> str:
     """Rollen-Verstoß — freundlich, ohne Stacktrace."""
     return (
@@ -59,8 +67,7 @@ def clarification(question: str) -> str:
 def error_generic() -> str:
     """Interner Fehler — keine Details nach außen."""
     return (
-        "\u26a0\ufe0f Da ist etwas schiefgelaufen. "
-        "Bitte versuch es gleich noch einmal."
+        "\u26a0\ufe0f Da ist etwas schiefgelaufen. Bitte versuch es gleich noch einmal."
     )
 
 

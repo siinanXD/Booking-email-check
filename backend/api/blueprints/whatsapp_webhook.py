@@ -14,6 +14,12 @@ from backend.features.notifications.whatsapp_echo_service import WhatsAppEchoSer
 from backend.features.notifications.whatsapp_incoming_service import (
     WhatsAppIncomingService,
 )
+from backend.features.whatsapp_bot import messages
+from backend.features.whatsapp_bot.account_router import (
+    AccountRouter,
+    extract_sender_wa_id,
+)
+from backend.features.whatsapp_bot.messenger import MetaBotMessenger
 from backend.features.whatsapp_bot.wiring import build_bot_service
 
 logger = logging.getLogger(__name__)
@@ -46,7 +52,7 @@ def verify_webhook() -> tuple[Any, int]:
 @whatsapp_webhook_bp.post("/webhook")
 @limiter.exempt
 def receive_webhook() -> tuple[Any, int]:
-    """Empfängt eingehende WhatsApp-Nachrichten und leitet sie an den Host weiter."""
+    """Empfängt eingehende WhatsApp-Nachrichten, ordnet Mandant zu, routet zum Bot."""
     if not _verify_signature(request):
         logger.warning("WhatsApp Webhook: ungültige Signatur abgelehnt")
         return jsonify({"error": "Invalid signature"}), 403
@@ -60,11 +66,28 @@ def receive_webhook() -> tuple[Any, int]:
         echoed = WhatsAppEchoService(g.settings).handle(payload)
         return jsonify({"status": "echoed" if echoed else "skipped"}), 200
 
-    account_id = _resolve_account_id(payload)
-    if not account_id:
+    router = AccountRouter(
+        platform_settings_repo=g.ctx.platform_settings_repo,
+        user_repo=g.ctx.user_repo,
+        cleaning_partner_repo=g.ctx.cleaning_partner_repo,
+        platform_phone_number_id=g.settings.whatsapp_phone_number_id,
+    )
+    routed = router.route(payload)
+
+    if routed.status == "ignored":
+        return jsonify({"status": "ignored"}), 200
+    if routed.status == "unknown_sender":
+        _reply_platform(payload, messages.unknown_number())
+        return jsonify({"status": "unknown_sender"}), 200
+    if routed.status == "ambiguous":
+        logger.warning("WhatsApp Webhook: Absender mehreren Konten zugeordnet")
+        _reply_platform(payload, messages.ambiguous_account())
+        return jsonify({"status": "ambiguous"}), 200
+    if routed.account_id is None:
         logger.debug("Kein Account für eingehende WhatsApp-Nachricht gefunden")
         return jsonify({"status": "no_account"}), 200
 
+    account_id = routed.account_id
     if g.settings.whatsapp_bot_enabled:
         bot = build_bot_service(g.ctx, g.settings, account_id=account_id)
         status = bot.handle(payload, account_id)
@@ -77,6 +100,26 @@ def receive_webhook() -> tuple[Any, int]:
     )
     forwarded = svc.handle(payload, account_id)
     return jsonify({"status": "forwarded" if forwarded else "skipped"}), 200
+
+
+def _reply_platform(payload: dict[str, Any], text: str) -> None:
+    """Antwortet dem Absender über die zentrale Plattform-Nummer (best effort).
+
+    Für nicht zuordenbare oder mehrdeutige Absender – nutzt die .env-Credentials
+    der geteilten Nummer. Fehler werden geschluckt (Webhook bleibt 200).
+    """
+    wa_id = extract_sender_wa_id(payload)
+    if not wa_id:
+        return
+    messenger = MetaBotMessenger(
+        access_token=g.settings.whatsapp_access_token,
+        phone_number_id=g.settings.whatsapp_phone_number_id,
+        api_version=g.settings.whatsapp_api_version,
+    )
+    try:
+        messenger.send_text(wa_id, text)
+    except Exception:
+        logger.exception("WhatsApp Webhook: Antwort an Absender fehlgeschlagen")
 
 
 def _verify_signature(req: Any) -> bool:
@@ -96,26 +139,3 @@ def _verify_signature(req: Any) -> bool:
 
     mac = hmac.new(secret.encode(), req.get_data(), hashlib.sha256)
     return hmac.compare_digest(signature[7:], mac.hexdigest())
-
-
-def _resolve_account_id(payload: dict[str, Any]) -> str | None:
-    """Ermittelt Account-ID anhand der phone_number_id im Meta-Payload."""
-    try:
-        entry = payload.get("entry", [])
-        if not entry:
-            return None
-        changes = entry[0].get("changes", [])
-        if not changes:
-            return None
-        phone_number_id = (
-            changes[0].get("value", {}).get("metadata", {}).get("phone_number_id", "")
-        )
-        if not phone_number_id:
-            return None
-        raw = g.ctx.platform_settings_repo.find_account_by_phone_number_id(
-            phone_number_id
-        )
-        return str(raw) if raw else None
-    except Exception:
-        logger.exception("Fehler beim Auflösen der Account-ID aus Webhook-Payload")
-        return None

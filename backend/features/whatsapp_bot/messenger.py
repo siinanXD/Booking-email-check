@@ -63,8 +63,7 @@ class MetaBotMessenger:
 
     def _messages_url(self) -> str:
         return (
-            f"https://graph.facebook.com/{self._api_version}"
-            f"/{self._phone_id}/messages"
+            f"https://graph.facebook.com/{self._api_version}/{self._phone_id}/messages"
         )
 
     def _post_message(self, payload: dict[str, Any]) -> bool:
@@ -134,9 +133,7 @@ class MetaBotMessenger:
         )
 
     def _upload_media(self, document: BotDocument) -> str | None:
-        url = (
-            f"https://graph.facebook.com/{self._api_version}" f"/{self._phone_id}/media"
-        )
+        url = f"https://graph.facebook.com/{self._api_version}/{self._phone_id}/media"
         try:
             resp = httpx.post(
                 url,
@@ -166,7 +163,8 @@ class MetaBotMessenger:
                 return None
             blob = httpx.get(file_url, headers=headers, timeout=30.0)
             blob.raise_for_status()
-            return blob.content
+            content: bytes = blob.content
+            return content
         except Exception:
             logger.exception("WhatsApp-Bot: Media-Download fehlgeschlagen")
             return None

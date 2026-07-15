@@ -9,6 +9,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 from pymongo.collection import Collection
 
+from backend.core.utils.phone import normalize_phone_digits
 from backend.infrastructure.repositories.mongo import Db
 
 UserRole = Literal["owner", "admin", "member", "platform_admin"]
@@ -153,6 +154,29 @@ class UserRepository:
         """Löscht einen Benutzer. Gibt True zurück wenn gefunden."""
         result = self._col.delete_one({"_id": user_id})
         return result.deleted_count > 0
+
+    def find_account_ids_by_whatsapp(self, digits: str) -> list[str]:
+        """Konten mit einem Dashboard-Nutzer, dessen WhatsApp-Nummer passt.
+
+        Plattform-weit (bewusst NICHT tenant-scoped) – für das Routing
+        eingehender Nachrichten über eine geteilte Absendernummer. Der
+        Vergleich erfolgt ziffern-normalisiert (E.164-Formatierung egal).
+        """
+        if not digits:
+            return []
+        found: list[str] = []
+        query: dict[str, Any] = {
+            "whatsapp_phone_e164": {"$exists": True, "$nin": [None, ""]}
+        }
+        for doc in self._col.find(query):
+            account_id = doc.get("account_id")
+            if (
+                account_id
+                and normalize_phone_digits(str(doc.get("whatsapp_phone_e164") or ""))
+                == digits
+            ):
+                found.append(str(account_id))
+        return found
 
     def list_by_account_id(self, account_id: str) -> list[UserRecord]:
         """Alle Benutzer eines Mandanten."""
