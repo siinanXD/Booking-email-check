@@ -29,6 +29,7 @@ from backend.features.whatsapp_bot.review_data import (
     ReviewEntry,
     load_entries,
     resolve_position,
+    resolve_positions,
 )
 
 REVIEW_ACTIONS = frozenset(
@@ -98,26 +99,44 @@ def handle_review_nachricht(
 def handle_review_freigeben(
     deps: BotDeps, sender: ResolvedSender, intent: UserIntent
 ) -> HandlerResult:
-    """Einzelnen Eintrag freigeben — erst nach Bestätigung."""
+    """Einen oder mehrere Einträge freigeben — erst nach Bestätigung.
+
+    "Buchung 1 und 3 freigeben" spart das einzelne Durchklicken. Aufgelöst wird
+    beim Befehl, nicht beim Klick: die PendingAction trägt die correlation_ids,
+    damit eine zwischenzeitlich eingetroffene Mail die Auswahl nicht verschiebt.
+    """
     if deps.review_repo is None or deps.review_router is None:
         return _unavailable()
-    entry, error = resolve_position(deps, sender, intent)
-    if entry is None:
+    entries, error = resolve_positions(deps, sender, intent)
+    if not entries:
         return HandlerResult(reply=BotReply.message(error or ""))
-    recipients = _recipient_hint(deps, sender, entry)
+    recipients = sorted(
+        {name for entry in entries for name in _recipient_hint(deps, sender, entry)}
+    )
     pending = PendingAction(
         action_id=uuid.uuid4().hex,
         action=BotAction.REVIEW_FREIGEBEN,
         payload={
-            "correlation_ids": [entry.correlation_id],
-            "label": entry.short_label(),
+            "correlation_ids": [e.correlation_id for e in entries],
+            "label": _label(entries),
         },
     )
-    reply = BotReply(
-        text=messages_review.approve_confirm(entry, recipients=recipients),
-        buttons=_confirm_buttons(pending.action_id),
+    text = (
+        messages_review.approve_confirm(entries[0], recipients=recipients)
+        if len(entries) == 1
+        else messages_review.approve_selection_confirm(entries, recipients=recipients)
     )
-    return HandlerResult(reply=reply, pending=pending)
+    return HandlerResult(
+        reply=BotReply(text=text, buttons=_confirm_buttons(pending.action_id)),
+        pending=pending,
+    )
+
+
+def _label(entries: list[ReviewEntry]) -> str:
+    """Audit-Bezeichnung: bei mehreren die Anzahl, sonst der Eintrag selbst."""
+    if len(entries) == 1:
+        return entries[0].short_label()
+    return f"{len(entries)} Einträge"
 
 
 def handle_review_alle_freigeben(

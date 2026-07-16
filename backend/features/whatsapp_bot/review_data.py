@@ -78,14 +78,17 @@ def load_entries(
     return entries
 
 
-def resolve_position(
+def resolve_positions(
     deps: BotDeps, sender: ResolvedSender, intent: UserIntent
-) -> tuple[ReviewEntry | None, str | None]:
-    """Position bzw. Buchungsnummer → Eintrag. Zweitwert ist die Fehlermeldung.
+) -> tuple[list[ReviewEntry], str | None]:
+    """Positionen bzw. Buchungsnummer → Einträge. Zweitwert ist die Fehlermeldung.
 
-    Die Nummer bezieht sich auf die zuletzt gezeigte Liste. Gibt es keine,
+    Die Nummern beziehen sich auf die zuletzt gezeigte Liste. Gibt es keine,
     wird die aktuelle Warteschlange genommen — dann aber ohne Intent-Filter,
     weil ohne Auflistung kein Kontext existiert.
+
+    Eine ungültige Nummer bricht das Ganze ab, statt die übrigen still
+    freizugeben: bei "1, 3 und 9" soll niemand rätseln, ob die 9 dabei war.
     """
     listing = deps.conversation_repo.get_last_listing(
         account_id=sender.account_id, wa_id=sender.wa_id
@@ -96,14 +99,23 @@ def resolve_position(
     if intent.booking_ref:
         for entry in entries:
             if entry.booking_number == intent.booking_ref:
-                return entry, None
-        return None, messages_review.unknown_booking(intent.booking_ref)
+                return [entry], None
+        return [], messages_review.unknown_booking(intent.booking_ref)
 
-    position = intent.position
-    if position is None or position < 1:
-        return None, messages_review.which_entry()
+    positions = [p for p in intent.positions if p >= 1]
+    if not positions:
+        return [], messages_review.which_entry()
 
     ordered = [by_id[cid] for cid in listing if cid in by_id] or entries
-    if position > len(ordered):
-        return None, messages_review.position_out_of_range(position, len(ordered))
-    return ordered[position - 1], None
+    for position in positions:
+        if position > len(ordered):
+            return [], messages_review.position_out_of_range(position, len(ordered))
+    return [ordered[p - 1] for p in positions], None
+
+
+def resolve_position(
+    deps: BotDeps, sender: ResolvedSender, intent: UserIntent
+) -> tuple[ReviewEntry | None, str | None]:
+    """Wie ``resolve_positions``, aber für Aktionen mit genau einem Ziel."""
+    found, error = resolve_positions(deps, sender, intent)
+    return (found[0] if found else None), error

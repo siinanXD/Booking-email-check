@@ -207,6 +207,28 @@ def approve_confirm(entry: ReviewEntry, *, recipients: list[str]) -> str:
     )
 
 
+def approve_selection_confirm(
+    entries: list[ReviewEntry], *, recipients: list[str]
+) -> str:
+    """Bestätigungsdialog: mehrere ausgewählte Einträge ("1 und 3 freigeben").
+
+    Die Einträge werden namentlich aufgeführt: Wer per Nummer auswählt, muss vor
+    dem Klick sehen, welche Buchungen gemeint sind — eine Zahl allein ist nicht
+    nachprüfbar.
+    """
+    lines = [f"✅ *Diese {len(entries)} freigeben?*\n"]
+    for entry in entries:
+        kind = _INTENT_SINGULAR.get(entry.intent or "", "Eintrag")
+        lines.append(f"• {kind}: *{entry.short_label()}*")
+    return "".join(
+        [
+            "\n".join(lines),
+            _recipient_line(recipients),
+            "\nAn den Gast geht nichts raus.",
+        ]
+    )
+
+
 def approve_all_confirm(entries: list[ReviewEntry], *, recipients: list[str]) -> str:
     """Bestätigungsdialog: Sammelfreigabe."""
     return (

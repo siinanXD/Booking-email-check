@@ -53,11 +53,18 @@ class UserIntent(BaseModel):
     # Zielwert bei Umbenennungen; person_name/property_name bleiben der Ist-Wert.
     neuer_name: str | None = None
     booking_ref: str | None = None
-    # Review: 1-basierte Position aus der zuletzt gezeigten Liste ("Buchung 2").
-    position: int | None = None
+    # Review: 1-basierte Positionen aus der zuletzt gezeigten Liste. Mehrzahl,
+    # weil "Buchung 1 und 3 freigeben" mehrere meint; Einzelbefehle liefern
+    # eine Liste mit einem Element.
+    positions: list[int] = Field(default_factory=list)
     # Review: Intent-Filter einer Auflistung (new_booking, cancellation, …).
     review_intent: str | None = None
     freitext: str | None = None
+
+    @property
+    def position(self) -> int | None:
+        """Erste Position — für Aktionen, die genau einen Eintrag meinen."""
+        return self.positions[0] if self.positions else None
 
 
 class ResolvedSender(BaseModel):

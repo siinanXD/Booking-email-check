@@ -33,7 +33,8 @@ Gib NUR ein JSON-Objekt zurück (kein Markdown) mit diesen Feldern:
 - property_name: Name eines erwähnten Objekts/einer Wohnung, sonst null
 - neuer_name: bei Umbenennungen der ZIEL-Name; person_name bzw.
   property_name bleiben dabei der bisherige Name. Sonst null.
-- position: Nummer eines Eintrags aus der zuletzt gezeigten Liste, sonst null
+- positions: Liste der genannten Eintrags-Nummern aus der zuletzt gezeigten
+  Liste, sonst []
 - review_intent: Intent-Filter einer Review-Auflistung, sonst null
 - booking_ref: erwähnte Buchungsnummer, sonst null
 - freitext: sonstiger relevanter Kontext, sonst null
@@ -60,12 +61,14 @@ Hinweise:
 - Einen Eintrag ansehen ("zeig mir Buchung 2") → review_details
 - Nur den Text des Gastes sehen ("was hat der Gast geschrieben", "Nachricht
   zu Buchung 1", "was will er") → review_nachricht
-- Einen Eintrag freigeben ("Buchung 1 freigeben", "gib Nummer 3 frei") →
-  review_freigeben
+- Einträge freigeben ("Buchung 1 freigeben", "gib Nummer 3 frei", "Buchung 1
+  und 3 freigeben", "1-3 freigeben") → review_freigeben
 - Alle freigeben ("alle neuen Buchungen freigeben") → review_alle_freigeben
-- position: die genannte Nummer aus der Liste (1, 2, 3 …), sonst null.
-  "Buchung eins" → position 1. Nicht mit booking_ref verwechseln: eine
-  lange Ziffernfolge wie 89790382 ist booking_ref, nicht position.
+- positions: alle genannten Nummern aus der Liste, sonst [].
+  "Buchung eins" → [1]. "Buchung 1 und 3" → [1, 3]. "1, 2 und 5" → [1, 2, 5].
+  Bereiche ausschreiben: "1-3" → [1, 2, 3], "Buchung 2 bis 4" → [2, 3, 4].
+  Nicht mit booking_ref verwechseln: eine lange Ziffernfolge wie 89790382 ist
+  booking_ref, nicht eine Position.
 - Sammelbegriffe ohne konkreten Auftrag ("Mitarbeiter", "Mitarbeiter
   verwalten", "Personal") → mitarbeiter_liste; ebenso "Objekte",
   "Objekte verwalten", "Wohnungen" → objekt_liste. Eine Liste ist die
@@ -149,14 +152,32 @@ def _validate_intent(data: dict[str, object], *, fallback_text: str) -> UserInte
         property_name=_opt("property_name"),
         neuer_name=_opt("neuer_name"),
         booking_ref=_opt("booking_ref"),
-        position=_position(data.get("position")),
+        positions=_positions(data.get("positions"), data.get("position")),
         review_intent=_opt("review_intent"),
         freitext=_opt("freitext") or fallback_text[:200],
     )
 
 
-def _position(value: object) -> int | None:
-    """LLM liefert die Nummer mal als Zahl, mal als String — defensiv lesen."""
+def _positions(plural: object, singular: object) -> list[int]:
+    """Positionen defensiv lesen — dedupliziert, Reihenfolge bleibt erhalten.
+
+    Das LLM liefert mal eine Liste, mal eine einzelne Zahl, mal Strings. Das
+    Feld `position` wird weiter gelesen, falls das Modell beim alten Namen
+    bleibt; sonst ginge eine Einzelfreigabe stillschweigend ins Leere.
+    """
+    raw = plural if isinstance(plural, list) else []
+    if not raw and singular is not None:
+        raw = [singular]
+    result: list[int] = []
+    for value in raw:
+        number = _one_position(value)
+        if number is not None and number not in result:
+            result.append(number)
+    return result
+
+
+def _one_position(value: object) -> int | None:
+    """Einzelne Nummer aus Zahl oder String; bool ist explizit keine Zahl."""
     if isinstance(value, bool):
         return None
     if isinstance(value, int):
