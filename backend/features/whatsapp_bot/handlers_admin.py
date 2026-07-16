@@ -9,6 +9,8 @@ from __future__ import annotations
 import uuid
 
 from backend.core.models.entities import Property
+from backend.features.booking.entity_sync import _property_id
+from backend.features.cleaning.identity import cleaning_partner_id
 from backend.features.cleaning.models import CleaningPartner
 from backend.features.whatsapp_bot import messages
 from backend.features.whatsapp_bot.deps import BotDeps, HandlerResult
@@ -180,11 +182,18 @@ def execute_pending(
     """Führt eine bestätigte Schreiboperation aus (deterministisch)."""
     payload = pending.payload
     if pending.action == BotAction.MITARBEITER_ANLEGEN:
+        phone = str(payload.get("phone", "")).strip()
+        # Deterministisch aus der Nummer: dieselbe Person darf nicht je einmal
+        # pro Objekt bzw. je einmal für Chat und Web als Datensatz entstehen.
         partner = CleaningPartner(
-            partner_id=uuid.uuid4().hex,
+            partner_id=(
+                cleaning_partner_id(sender.account_id, phone)
+                if phone
+                else uuid.uuid4().hex
+            ),
             account_id=sender.account_id,
             name=str(payload.get("name", "")),
-            phone=str(payload.get("phone", "")) or None,
+            phone=phone or None,
             property_names=[str(p) for p in payload.get("properties", []) if p],
         )
         deps.cleaning_partner_repo.upsert(partner, account_id=sender.account_id)
@@ -202,9 +211,19 @@ def execute_pending(
             messages.action_confirmed(f"Mitarbeiter *{name}* deaktiviert.")
         )
     if pending.action == BotAction.OBJEKT_ANLEGEN:
-        name = str(payload.get("name", ""))
+        name = str(payload.get("name", "")).strip()
+        existing = {
+            p.name.strip().lower()
+            for p in deps.property_repo.list_all(account_id=sender.account_id)
+        }
+        if name.lower() in existing:
+            return BotReply.message(
+                messages.action_confirmed(f"Objekt *{name}* gibt es bereits.")
+            )
+        # Deterministische ID wie im Web-Pfad (entity_sync._property_id): dieselbe
+        # Unterkunft darf per Chat und per Web nicht zwei Datensätze erzeugen.
         prop = Property(
-            property_id=uuid.uuid4().hex,
+            property_id=_property_id(sender.account_id, name),
             name=name,
             account_id=sender.account_id,
         )

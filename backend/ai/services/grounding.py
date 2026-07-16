@@ -125,6 +125,10 @@ def _allowed_dates(hits: RetrievalHits) -> set[str]:
         for field_value in (reservation.check_in, reservation.check_out):
             if isinstance(field_value, date):
                 allowed.add(field_value.isoformat())
+    # Hausregeln sind eine erlaubte Faktenquelle: enthalten sie ein Datum
+    # ("Sauna vom 01.01.2027 bis 06.01.2027 geschlossen") und zitiert der
+    # Entwurf es korrekt, wäre das sonst ein Fehlalarm.
+    allowed |= set(_dates_in_text(hits.house_rules or ""))
     return allowed
 
 

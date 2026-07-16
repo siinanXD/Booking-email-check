@@ -74,6 +74,7 @@ from backend.infrastructure.repositories.platform_settings_repository import (
 from backend.infrastructure.repositories.property_recipient_repository import (
     PropertyRecipientRepository,
 )
+from backend.infrastructure.repositories.property_repository import PropertyRepository
 from backend.infrastructure.repositories.review_repository import ReviewRepository
 from backend.infrastructure.repositories.revoked_token_repository import (
     RevokedTokenRepository,
@@ -210,6 +211,7 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         alerts=alerts,
         llm_config_repo=platform_llm_config_repo,
         reranker=reranker,
+        property_repo=PropertyRepository(db),
     )
     response_gen = ResponseGenerationService(
         llm,

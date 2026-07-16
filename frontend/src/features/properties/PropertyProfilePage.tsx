@@ -38,6 +38,7 @@ export function PropertyProfilePage() {
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [houseRules, setHouseRules] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [whatsappLocale, setWhatsappLocale] = useState<EmployeeWhatsAppLocale>(
     DEFAULT_EMPLOYEE_WHATSAPP_LOCALE
@@ -52,6 +53,7 @@ export function PropertyProfilePage() {
     setContactPhone(profile.contact_phone ?? "");
     setContactEmail(profile.contact_email ?? "");
     setNotes(profile.notes ?? "");
+    setHouseRules(profile.house_rules ?? "");
     const employee = profile.whatsapp_employees[0];
     setWhatsappPhone(employee?.phone_e164 ?? profile.whatsapp_phones[0] ?? "");
     setWhatsappLocale(
@@ -68,6 +70,7 @@ export function PropertyProfilePage() {
         contact_phone: contactPhone.trim() || null,
         contact_email: contactEmail.trim() || null,
         notes: notes.trim() || null,
+        house_rules: houseRules.trim() || null,
         whatsapp_employees: whatsappPhone.trim()
           ? [{ phone_e164: whatsappPhone.trim(), locale: whatsappLocale }]
           : [],
@@ -172,6 +175,35 @@ export function PropertyProfilePage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
+            <p className="text-xs text-slate-500">
+              Interne Notizen — gehen nie an Gäste.
+            </p>
+            <div className="space-y-1 border-t border-slate-100 pt-4">
+              <label
+                className="text-sm font-medium text-slate-700"
+                htmlFor="house-rules"
+              >
+                Hausregeln
+              </label>
+              <textarea
+                id="house-rules"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                placeholder={
+                  "Parken: kostenlos direkt vor dem Haus.\n" +
+                  "Check-in ab 16:00, Check-out bis 11:00.\n" +
+                  "WLAN-Passwort liegt in der Wohnung aus.\n" +
+                  "Haustiere nach Absprache."
+                }
+                rows={6}
+                maxLength={4000}
+                value={houseRules}
+                onChange={(e) => setHouseRules(e.target.value)}
+              />
+              <p className="text-xs text-slate-500">
+                Antwortentwürfe dürfen sich hierauf berufen. Was hier nicht steht,
+                beantwortet der Entwurf nicht — er spielt die Frage an dich zurück.
+              </p>
+            </div>
             <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
               Speichern
             </Button>

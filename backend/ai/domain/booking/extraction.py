@@ -14,6 +14,12 @@ class BookingExtraction(BaseModel):
 
     intent: BookingIntent | None = None
     guest_name: str | None = None
+    # Die Frage/Mitteilung des Gastes im Wortlaut — ohne Portal-Rahmentext
+    # (Buttons, Antwortfristen, FAQ). Ohne dieses Feld existiert das eigentliche
+    # Anliegen nirgends als Datum: der Entwurf griff Stichworte auf, ohne sie als
+    # gestellte Frage zu erkennen ("welche Fragen hast du — z. B. Parkplätze?"
+    # an einen Gast, der genau danach gefragt hatte).
+    guest_message: str | None = None
     booking_number: str | None = None
     property_name: str | None = None
     # Zimmernummer bei Multi-Zimmer-Objekten (z. B. "3" aus "Zimmer Nr. 3").

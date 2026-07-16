@@ -176,3 +176,56 @@ def test_property_year_stats(
         i for i in list_resp.get_json()["items"] if i["property_id"] == prop.property_id
     )
     assert row["stats"]["booked_days"] == 5
+
+
+def test_house_rules_roundtrip(
+    client: Any,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+) -> None:
+    """Hausregeln müssen über die API pflegbar sein — sie sind die Wissensquelle
+    für Antwortentwürfe und werden nur über das Objektprofil gefüllt."""
+    created = client.post(
+        "/api/properties",
+        json={"name": "Villa Sonne"},
+        headers=auth_headers,
+    )
+    assert created.status_code in (200, 201), created.get_json()
+    property_id = created.get_json()["property_id"]
+    rules = "Parken: kostenlos vor dem Haus.\nCheck-in ab 16:00."
+
+    put_resp = client.put(
+        f"/api/properties/{property_id}",
+        json={"house_rules": rules},
+        headers=auth_headers,
+    )
+
+    assert put_resp.status_code == 200
+    assert put_resp.get_json()["house_rules"] == rules
+    profile = client.get(f"/api/properties/{property_id}", headers=auth_headers)
+    assert profile.get_json()["house_rules"] == rules
+
+
+def test_house_rules_und_notes_bleiben_getrennt(
+    client: Any,
+    auth_headers: dict[str, str],
+    tenant_account_id: str,
+) -> None:
+    """`notes` sind intern und dürfen nie in einen Gastentwurf fließen —
+    das eine darf das andere nicht überschreiben."""
+    created = client.post(
+        "/api/properties", json={"name": "Haus Meer"}, headers=auth_headers
+    )
+    property_id = created.get_json()["property_id"]
+
+    client.put(
+        f"/api/properties/{property_id}",
+        json={"notes": "INTERN: Tresorcode 4711", "house_rules": "Parken: kostenlos."},
+        headers=auth_headers,
+    )
+
+    profile = client.get(
+        f"/api/properties/{property_id}", headers=auth_headers
+    ).get_json()
+    assert profile["notes"] == "INTERN: Tresorcode 4711"
+    assert profile["house_rules"] == "Parken: kostenlos."

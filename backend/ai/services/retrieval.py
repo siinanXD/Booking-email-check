@@ -22,6 +22,7 @@ from backend.infrastructure.repositories.entity_repository import EntityReposito
 from backend.infrastructure.repositories.platform_llm_config_repository import (
     PlatformLlmConfigRepository,
 )
+from backend.infrastructure.repositories.property_repository import PropertyRepository
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,9 @@ class RetrievalHits:
     reservations: list[Reservation] = field(default_factory=list)
     thread_emails: list[StoredEmail] | None = None
     similar_cases: list[dict[str, object]] = field(default_factory=list)
+    # Hausregeln der erkannten Unterkunft — einzige erlaubte Wissensquelle für
+    # inhaltliche Gastfragen (Parken, Check-in, WLAN …).
+    house_rules: str | None = None
 
 
 class RetrievalService:
@@ -49,6 +53,7 @@ class RetrievalService:
         alerts: AlertService | None = None,
         llm_config_repo: PlatformLlmConfigRepository | None = None,
         reranker: RerankService | None = None,
+        property_repo: PropertyRepository | None = None,
     ) -> None:
         """Initialize the instance with its dependencies."""
         self._entities = entity_repo
@@ -60,6 +65,7 @@ class RetrievalService:
         self._alerts = alerts
         self._llm_config_repo = llm_config_repo
         self._reranker = reranker
+        self._properties = property_repo
 
     def retrieve(
         self,
@@ -160,7 +166,30 @@ class RetrievalService:
             reservations=reservations,
             thread_emails=thread_emails or None,
             similar_cases=similar,
+            house_rules=self._house_rules(extraction, account_id),
         )
+
+    def _house_rules(
+        self,
+        extraction: BookingExtraction | None,
+        account_id: str | None,
+    ) -> str | None:
+        """Hausregeln der erkannten Unterkunft (exakter Name, wie im Katalog).
+
+        Kein Fuzzy-Match: der property_name ist zu diesem Zeitpunkt bereits über
+        ``match_known_property_name`` auf den Katalog gezogen. Trifft er nicht,
+        gibt es lieber keine Regeln als die einer fremden Wohnung.
+        """
+        if self._properties is None or extraction is None or not account_id:
+            return None
+        name = (extraction.property_name or "").strip()
+        if not name:
+            return None
+        for prop in self._properties.list_all(account_id=account_id):
+            if prop.name.strip().lower() == name.lower():
+                rules = (prop.house_rules or "").strip()
+                return rules or None
+        return None
 
     @staticmethod
     def _similarity_query(

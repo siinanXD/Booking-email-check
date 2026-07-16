@@ -179,6 +179,7 @@ def seed_review(
     intent: str,
     guest: str,
     property_name: str,
+    guest_message: str | None = None,
 ) -> None:
     """Wartender Review-Eintrag samt zugehöriger Extraktion."""
     assert deps.review_repo is not None
@@ -195,6 +196,7 @@ def seed_review(
         f"msg-{correlation_id}",
         BookingExtraction(
             guest_name=guest,
+            guest_message=guest_message,
             property_name=property_name,
             check_in="2026-07-17",
             check_out="2026-07-18",

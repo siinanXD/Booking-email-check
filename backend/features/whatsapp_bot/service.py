@@ -51,6 +51,7 @@ _HANDLERS: dict[BotAction, Handler] = {
     BotAction.REVIEW_UEBERSICHT: handlers_review.handle_review_uebersicht,
     BotAction.REVIEW_LISTE: handlers_review.handle_review_liste,
     BotAction.REVIEW_DETAILS: handlers_review.handle_review_details,
+    BotAction.REVIEW_NACHRICHT: handlers_review.handle_review_nachricht,
     BotAction.REVIEW_FREIGEBEN: handlers_review.handle_review_freigeben,
     BotAction.REVIEW_ALLE_FREIGEBEN: handlers_review.handle_review_alle_freigeben,
 }

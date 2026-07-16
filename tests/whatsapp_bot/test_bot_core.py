@@ -24,6 +24,8 @@ _MATRIX_CASES = [
     (BotAction.BUCHUNG_DETAILS, True, True, False),
     (BotAction.MITARBEITER_LISTE, True, True, False),
     (BotAction.OBJEKT_LISTE, True, True, False),
+    # Gastnachrichten sind Review-Inhalt: lesen dürfen Owner und Manager.
+    (BotAction.REVIEW_NACHRICHT, True, True, False),
     # Ändern darf ausschließlich der Owner.
     (BotAction.MITARBEITER_ANLEGEN, True, False, False),
     (BotAction.MITARBEITER_BEARBEITEN, True, False, False),

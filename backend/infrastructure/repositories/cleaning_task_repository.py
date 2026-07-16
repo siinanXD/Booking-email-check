@@ -23,6 +23,7 @@ class CleaningTaskRepository:
         self._col.create_index([("account_id", 1), ("booking_number", 1)])
         self._col.create_index([("account_id", 1), ("status", 1)])
         self._col.create_index([("account_id", 1), ("cleaning_date", 1)])
+        self._col.create_index([("account_id", 1), ("correlation_id", 1)])
 
     def upsert(
         self,
@@ -69,6 +70,19 @@ class CleaningTaskRepository:
     ) -> CleaningTask | None:
         """Putzauftrag anhand Buchungsnummer (für Stornierungs-Verknüpfung)."""
         query = with_account_filter({"booking_number": booking_number}, account_id)
+        doc = self._col.find_one(query)
+        return None if doc is None else CleaningTask.from_mongo(doc)
+
+    def find_by_correlation_id(
+        self,
+        correlation_id: str,
+        *,
+        account_id: str | None = None,
+    ) -> CleaningTask | None:
+        """Putzauftrag anhand der Mail, aus der er entstand."""
+        if not correlation_id:
+            return None
+        query = with_account_filter({"correlation_id": correlation_id}, account_id)
         doc = self._col.find_one(query)
         return None if doc is None else CleaningTask.from_mongo(doc)
 
