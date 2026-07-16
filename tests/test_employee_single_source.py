@@ -173,3 +173,95 @@ def test_fremder_mandant_sieht_nichts(mock_db):
         )
         == []
     )
+
+
+def test_name_und_testmodus_sind_vom_objekt_aus_pflegbar(mock_db):
+    """Das Objektprofil ist seit dem Wegfall des Putzpartner-Bereichs der
+    einzige Editor — ohne diese Felder hiesse jeder neue Mitarbeiter fuer immer
+    wie seine Telefonnummer."""
+    recipients = PropertyRecipientRepository(mock_db)
+
+    recipients.upsert(
+        ACCOUNT,
+        "Villa Sonne",
+        [
+            PropertyWhatsAppEmployee(
+                phone_e164="+491701234567", name="Dennis", test_mode=True
+            )
+        ],
+    )
+
+    partner = CleaningPartnerRepository(mock_db).find_for_property(
+        "Villa Sonne", account_id=ACCOUNT
+    )[0]
+    assert partner.name == "Dennis"
+    assert partner.test_mode is True
+
+
+def test_neuer_mitarbeiter_ohne_namen_bekommt_die_nummer(mock_db):
+    recipients = PropertyRecipientRepository(mock_db)
+
+    recipients.upsert(
+        ACCOUNT, "Villa Sonne", [PropertyWhatsAppEmployee(phone_e164="+491701234567")]
+    )
+
+    partner = CleaningPartnerRepository(mock_db).find_for_property(
+        "Villa Sonne", account_id=ACCOUNT
+    )[0]
+    assert partner.name == "+491701234567"
+
+
+def test_aufrufer_ohne_name_loeschen_den_namen_nicht(mock_db):
+    """Die Einstellungsseite schickt Mitarbeiter ohne Name/Testmodus. `None`
+    muss "nicht anfassen" heissen, sonst radiert sie die Pflege vom Objekt aus."""
+    partners = CleaningPartnerRepository(mock_db)
+    partners.upsert(
+        _partner("p1", "+491701234567", ["Villa Sonne"], name="Dennis", test_mode=True),
+        account_id=ACCOUNT,
+    )
+
+    PropertyRecipientRepository(mock_db).upsert(
+        ACCOUNT, "Villa Sonne", ["+491701234567"]
+    )
+
+    partner = partners.get("p1", account_id=ACCOUNT)
+    assert partner is not None
+    assert partner.name == "Dennis"
+    assert partner.test_mode is True
+
+
+def test_mehrere_mitarbeiter_an_einem_objekt(mock_db):
+    """Der Putzpartner-Bereich konnte das; das Objektprofil muss es auch."""
+    recipients = PropertyRecipientRepository(mock_db)
+
+    recipients.upsert(
+        ACCOUNT,
+        "Villa Sonne",
+        [
+            PropertyWhatsAppEmployee(phone_e164="+491701234567", name="Dennis"),
+            PropertyWhatsAppEmployee(phone_e164="+491709999999", name="Anne"),
+        ],
+    )
+
+    employees = recipients.get_employees("Villa Sonne", account_id=ACCOUNT)
+    assert sorted(e.name or "" for e in employees) == ["Anne", "Dennis"]
+
+
+def test_name_wirkt_objektuebergreifend(mock_db):
+    """Gleiche Nummer = dieselbe Person. Am zweiten Objekt umbenannt heisst sie
+    auch am ersten so — sonst gaebe es sie wieder doppelt."""
+    recipients = PropertyRecipientRepository(mock_db)
+    recipients.upsert(
+        ACCOUNT,
+        "Villa Sonne",
+        [PropertyWhatsAppEmployee(phone_e164="+491701234567", name="D. Wasinski")],
+    )
+
+    recipients.upsert(
+        ACCOUNT,
+        "Haus Meer",
+        [PropertyWhatsAppEmployee(phone_e164="+491701234567", name="Dennis Wasinski")],
+    )
+
+    employees = recipients.get_employees("Villa Sonne", account_id=ACCOUNT)
+    assert [e.name for e in employees] == ["Dennis Wasinski"]

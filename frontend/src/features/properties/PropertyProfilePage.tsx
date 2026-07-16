@@ -6,13 +6,11 @@ import {
   fetchPropertyStats,
   updatePropertyProfile,
 } from "@/lib/api/properties";
-import {
-  DEFAULT_EMPLOYEE_WHATSAPP_LOCALE,
-  type EmployeeWhatsAppLocale,
-} from "@/lib/whatsappLocales";
+import type { PropertyWhatsAppEmployee } from "@/lib/types/api";
+import { DEFAULT_EMPLOYEE_WHATSAPP_LOCALE } from "@/lib/whatsappLocales";
+import { PropertyEmployeesCard } from "@/features/properties/PropertyEmployeesCard";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
-import { EmployeeWhatsAppField } from "@/shared/ui/EmployeeWhatsAppField";
 import { Input } from "@/shared/ui/Input";
 
 export function PropertyProfilePage() {
@@ -39,10 +37,7 @@ export function PropertyProfilePage() {
   const [contactEmail, setContactEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [houseRules, setHouseRules] = useState("");
-  const [whatsappPhone, setWhatsappPhone] = useState("");
-  const [whatsappLocale, setWhatsappLocale] = useState<EmployeeWhatsAppLocale>(
-    DEFAULT_EMPLOYEE_WHATSAPP_LOCALE
-  );
+  const [employees, setEmployees] = useState<PropertyWhatsAppEmployee[]>([]);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,10 +49,14 @@ export function PropertyProfilePage() {
     setContactEmail(profile.contact_email ?? "");
     setNotes(profile.notes ?? "");
     setHouseRules(profile.house_rules ?? "");
-    const employee = profile.whatsapp_employees[0];
-    setWhatsappPhone(employee?.phone_e164 ?? profile.whatsapp_phones[0] ?? "");
-    setWhatsappLocale(
-      (employee?.locale as EmployeeWhatsAppLocale) ?? DEFAULT_EMPLOYEE_WHATSAPP_LOCALE
+    // Altbestand: ältere Antworten liefern nur whatsapp_phones ohne Sprache.
+    setEmployees(
+      profile.whatsapp_employees.length
+        ? profile.whatsapp_employees
+        : profile.whatsapp_phones.map((phone) => ({
+            phone_e164: phone,
+            locale: DEFAULT_EMPLOYEE_WHATSAPP_LOCALE,
+          })),
     );
   }, [profile]);
 
@@ -71,13 +70,20 @@ export function PropertyProfilePage() {
         contact_email: contactEmail.trim() || null,
         notes: notes.trim() || null,
         house_rules: houseRules.trim() || null,
-        whatsapp_employees: whatsappPhone.trim()
-          ? [{ phone_e164: whatsappPhone.trim(), locale: whatsappLocale }]
-          : [],
+        // Zeilen ohne Nummer sind angefangene Eingaben — nicht speichern.
+        whatsapp_employees: employees
+          .filter((e) => e.phone_e164.trim())
+          .map((e) => ({
+            ...e,
+            phone_e164: e.phone_e164.trim(),
+            name: e.name?.trim() || null,
+          })),
       }),
     onSuccess: () => {
       setSaveMessage("Profil gespeichert.");
-      void queryClient.invalidateQueries({ queryKey: ["property-profile", propertyId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["property-profile", propertyId],
+      });
       void queryClient.invalidateQueries({ queryKey: ["properties"] });
       void queryClient.invalidateQueries({ queryKey: ["property-recipients"] });
     },
@@ -91,10 +97,15 @@ export function PropertyProfilePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/properties" className="text-sm text-indigo-600 hover:underline">
+        <Link
+          to="/properties"
+          className="text-sm text-indigo-600 hover:underline"
+        >
           ← Zurück
         </Link>
-        <h2 className="text-xl font-semibold text-slate-800">Unterkunftsprofil</h2>
+        <h2 className="text-xl font-semibold text-slate-800">
+          Unterkunftsprofil
+        </h2>
       </div>
 
       {isLoading ? (
@@ -157,17 +168,10 @@ export function PropertyProfilePage() {
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
             />
-            <EmployeeWhatsAppField
-              phone={whatsappPhone}
-              locale={whatsappLocale}
-              onPhoneChange={setWhatsappPhone}
-              onLocaleChange={setWhatsappLocale}
-              phonePlaceholder="WhatsApp Mitarbeiter +49…"
+            <PropertyEmployeesCard
+              employees={employees}
+              onChange={setEmployees}
             />
-            <p className="text-xs text-slate-500">
-              Sprache nur für Reinigungs-Aufträge an diese Mitarbeiterin — Storno &amp; Co.
-              bleiben Deutsch.
-            </p>
             <textarea
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               placeholder="Notizen"
@@ -200,14 +204,20 @@ export function PropertyProfilePage() {
                 onChange={(e) => setHouseRules(e.target.value)}
               />
               <p className="text-xs text-slate-500">
-                Antwortentwürfe dürfen sich hierauf berufen. Was hier nicht steht,
-                beantwortet der Entwurf nicht — er spielt die Frage an dich zurück.
+                Antwortentwürfe dürfen sich hierauf berufen. Was hier nicht
+                steht, beantwortet der Entwurf nicht — er spielt die Frage an
+                dich zurück.
               </p>
             </div>
-            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+            <Button
+              onClick={() => saveMut.mutate()}
+              disabled={saveMut.isPending}
+            >
               Speichern
             </Button>
-            {saveMessage && <p className="text-sm text-slate-600">{saveMessage}</p>}
+            {saveMessage && (
+              <p className="text-sm text-slate-600">{saveMessage}</p>
+            )}
           </Card>
         </>
       )}

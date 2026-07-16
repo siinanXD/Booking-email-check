@@ -211,6 +211,9 @@ export interface ReviewQueueResponse {
 export interface PropertyWhatsAppEmployee {
   phone_e164: string;
   locale: string;
+  /** null = unverändert lassen. Ein leerer Name würde sonst den gepflegten überschreiben. */
+  name?: string | null;
+  test_mode?: boolean | null;
 }
 
 export interface PropertyRecipientItem {
