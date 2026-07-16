@@ -56,6 +56,8 @@ def build_bot_service(
         extraction_repo=ctx.extraction_repo,
         conversation_repo=conversation_repo,
         audit_repo=audit_repo,
+        review_repo=getattr(ctx, "review_repo", None),
+        review_router=getattr(ctx, "review_router", None),
     )
     messenger = MetaBotMessenger(
         access_token=effective.whatsapp_access_token,

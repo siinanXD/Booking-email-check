@@ -53,7 +53,9 @@ def test_hilfe_zeigt_willkommen(
     bot = make_bot(bot_deps, user_repo, fake_messenger, {"action": "hilfe"})
     status = bot.handle(meta_text_payload("Hi", sender=_OWNER_PHONE), _ACC)
     assert status == "handled"
-    assert "Putzpläne erstellen" in fake_messenger.all_texts
+    # Die Hilfe nennt nur Formulierungen, die der Intent-Parser auch kennt.
+    assert "Putzplan für nächste Woche" in fake_messenger.all_texts
+    assert "Zeig mir alle Mitarbeiter" in fake_messenger.all_texts
 
 
 def test_duplikat_wird_verworfen(

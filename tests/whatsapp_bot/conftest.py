@@ -7,6 +7,8 @@ from typing import Any
 
 import pytest
 
+from backend.ai.domain.booking.extraction import BookingExtraction
+from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.ai.services.llm_types import LLMCompletion
 from backend.features.whatsapp_bot.deps import BotDeps
 from backend.features.whatsapp_bot.intent_service import IntentService
@@ -23,6 +25,7 @@ from backend.infrastructure.repositories.extraction_repository import (
     ExtractionRepository,
 )
 from backend.infrastructure.repositories.property_repository import PropertyRepository
+from backend.infrastructure.repositories.review_repository import ReviewRepository
 from backend.infrastructure.repositories.user_repository import UserRepository
 from backend.infrastructure.repositories.whatsapp_audit_repository import (
     WhatsAppAuditRepository,
@@ -79,6 +82,33 @@ class FakeMessenger:
         return "\n".join(parts)
 
 
+class FakeReviewRouter:
+    """Zeichnet Freigaben auf, statt den LangGraph-Workflow fortzusetzen."""
+
+    def __init__(self) -> None:
+        self.approved: list[str] = []
+        self.fail_on: set[str] = set()
+
+    def approve_draft(
+        self, correlation_id: str, approved_body: str | None = None
+    ) -> dict[str, Any]:
+        if correlation_id in self.fail_on:
+            raise RuntimeError("boom")
+        self.approved.append(correlation_id)
+        return {}
+
+    def reject_draft(
+        self, correlation_id: str, reason: str | None = None
+    ) -> dict[str, Any]:
+        return {}
+
+
+@pytest.fixture
+def router() -> FakeReviewRouter:
+    """Aufzeichnender Review-Router."""
+    return FakeReviewRouter()
+
+
 @pytest.fixture
 def bot_deps(mock_db: Any) -> BotDeps:
     """Alle Bot-Repositories über mongomock."""
@@ -99,9 +129,80 @@ def user_repo(mock_db: Any) -> UserRepository:
 
 
 @pytest.fixture
+def review_deps(bot_deps: BotDeps, mock_db: Any, router: FakeReviewRouter) -> BotDeps:
+    """Bot-Deps inklusive Review-Warteschlange und Router."""
+    bot_deps.review_repo = ReviewRepository(mock_db)
+    bot_deps.review_router = router  # type: ignore[assignment]
+    return bot_deps
+
+
+@pytest.fixture
 def fake_messenger() -> FakeMessenger:
     """Aufzeichnender Messenger."""
     return FakeMessenger()
+
+
+def seed_owner(user_repo: UserRepository, account_id: str, phone: str) -> None:
+    """Dashboard-Owner mit hinterlegter WhatsApp-Nummer."""
+    user = user_repo.create(
+        "owner@test.local",
+        "hash",
+        account_id=account_id,
+        role="owner",
+        first_name="Olaf",
+    )
+    user_repo.update_whatsapp_profile(
+        user.id, whatsapp_phone_e164=f"+{phone}", whatsapp_enabled=True
+    )
+
+
+def seed_manager(user_repo: UserRepository, account_id: str, phone: str) -> None:
+    """Dashboard-Member → Bot-Rolle "manager"."""
+    user = user_repo.create(
+        "member@test.local",
+        "hash",
+        account_id=account_id,
+        role="member",
+        first_name="Mara",
+    )
+    user_repo.update_whatsapp_profile(
+        user.id, whatsapp_phone_e164=f"+{phone}", whatsapp_enabled=True
+    )
+
+
+def seed_review(
+    deps: BotDeps,
+    mock_db: Any,
+    account_id: str,
+    *,
+    correlation_id: str,
+    intent: str,
+    guest: str,
+    property_name: str,
+) -> None:
+    """Wartender Review-Eintrag samt zugehöriger Extraktion."""
+    assert deps.review_repo is not None
+    deps.review_repo.upsert_pending(
+        correlation_id=correlation_id,
+        message_id=f"msg-{correlation_id}",
+        draft_body=f"Guten Tag {guest}, vielen Dank für Ihre Buchung.",
+        grounding_flag=False,
+        intent=intent,
+        account_id=account_id,
+    )
+    ExtractionRepository(mock_db).save(
+        correlation_id,
+        f"msg-{correlation_id}",
+        BookingExtraction(
+            guest_name=guest,
+            property_name=property_name,
+            check_in="2026-07-17",
+            check_out="2026-07-18",
+            booking_number=f"REF{correlation_id}",
+            intent=BookingIntent(intent),
+        ),
+        account_id=account_id,
+    )
 
 
 def make_bot(

@@ -26,12 +26,14 @@ def welcome(name: str, role: str) -> str:
         )
     return (
         f"\U0001f44b Hallo *{name}*!\n\n"
-        "Das kann ich für dich tun:\n"
-        "\U0001f9f9 Putzpläne erstellen\n"
-        "\U0001f4c5 Buchungen anzeigen\n"
-        "\U0001f465 Mitarbeiter verwalten\n"
-        "\U0001f3e0 Objekte verwalten\n\n"
-        'Schreib mir einfach, z. B.:\n_"Putzplan für nächste Woche"_'
+        "Schreib mir einfach, z. B.:\n"
+        '\U0001f4cb _"Review"_ — was zu prüfen ist\n'
+        '\U0001f9f9 _"Putzplan für nächste Woche"_\n'
+        '\U0001f4c5 _"Buchungen nächste Woche"_\n'
+        '\U0001f465 _"Zeig mir alle Mitarbeiter"_\n'
+        '\U0001f3e0 _"Zeig mir alle Objekte"_\n\n'
+        "Anlegen geht auch, z. B.:\n"
+        '_"Neue Reinigungskraft Anna, +4917012345678"_'
     )
 
 
@@ -175,6 +177,18 @@ def employee_deactivate_confirm(name: str) -> str:
     return f"\U0001f465 *Mitarbeiter deaktivieren?*\n\n\U0001f4db Name: *{name}*"
 
 
+def employee_update_confirm(
+    name: str, *, new_name: str | None, new_phone: str | None
+) -> str:
+    """Bestätigungsdialog: Mitarbeiter-Felder ändern."""
+    lines = ["\U0001f465 *Mitarbeiter ändern?*\n", f"\U0001f4db Bisher: *{name}*"]
+    if new_name:
+        lines.append(f"\U0001f4db Neuer Name: *{new_name}*")
+    if new_phone:
+        lines.append(f"\U0001f4f1 Neue Nummer: *{new_phone}*")
+    return "\n".join(lines)
+
+
 def employee_list(partners: list[CleaningPartner]) -> str:
     """Mitarbeiterliste."""
     if not partners:
@@ -203,6 +217,40 @@ def property_assign_confirm(employee: str, property_name: str) -> str:
     """Bestätigungsdialog: Objekt zuweisen."""
     return (
         "\U0001f517 *Objekt zuweisen?*\n\n"
+        f"\U0001f465 Mitarbeiter: *{employee}*\n"
+        f"\U0001f3e0 Objekt: *{property_name}*"
+    )
+
+
+def property_rename_confirm(old_name: str, new_name: str, *, affected: int) -> str:
+    """Bestätigungsdialog: Objekt umbenennen."""
+    hint = (
+        f"\n\nℹ️ {affected} Mitarbeiter-Zuordnung(en) werden mitgezogen."
+        if affected
+        else ""
+    )
+    return (
+        "\U0001f3e0 *Objekt umbenennen?*\n\n"
+        f"\U0001f4db Bisher: *{old_name}*\n"
+        f"\U0001f4db Neu: *{new_name}*{hint}"
+    )
+
+
+def property_delete_confirm(name: str, *, affected: int) -> str:
+    """Bestätigungsdialog: Objekt archivieren (Soft-Delete)."""
+    hint = f"\nℹ️ {affected} Mitarbeiter verlieren die Zuordnung." if affected else ""
+    return (
+        "\U0001f3e0 *Objekt löschen?*\n\n"
+        f"\U0001f4db Name: *{name}*\n"
+        "Bestehende Buchungen und Putzaufträge bleiben erhalten."
+        f"{hint}"
+    )
+
+
+def property_unassign_confirm(employee: str, property_name: str) -> str:
+    """Bestätigungsdialog: Zuordnung entfernen."""
+    return (
+        "\U0001f517 *Zuordnung entfernen?*\n\n"
         f"\U0001f465 Mitarbeiter: *{employee}*\n"
         f"\U0001f3e0 Objekt: *{property_name}*"
     )

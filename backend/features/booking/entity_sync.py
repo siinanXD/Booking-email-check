@@ -32,8 +32,11 @@ def ensure_property_from_extraction(
     if not name:
         return
     prop_repo = PropertyRepository(db)
+    # Auch archivierte Objekte zählen: ein bewusst gelöschtes Objekt darf
+    # nicht durch die nächste Buchungsmail wieder auferstehen.
     existing = {
-        p.name.strip().lower() for p in prop_repo.list_all(account_id=account_id)
+        p.name.strip().lower()
+        for p in prop_repo.list_all(account_id=account_id, include_inactive=True)
     }
     if name.lower() in existing:
         return

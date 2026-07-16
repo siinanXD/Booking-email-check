@@ -7,7 +7,13 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from backend.features.whatsapp_bot import handlers_admin, handlers_read, messages
+from backend.features.whatsapp_bot import (
+    handlers_admin,
+    handlers_edit,
+    handlers_read,
+    handlers_review,
+    messages,
+)
 from backend.features.whatsapp_bot.deps import BotDeps, HandlerResult
 from backend.features.whatsapp_bot.intent_service import IntentService
 from backend.features.whatsapp_bot.messenger import BotMessenger, deliver_reply
@@ -35,10 +41,30 @@ _HANDLERS: dict[BotAction, Handler] = {
     BotAction.MITARBEITER_LISTE: handlers_admin.handle_mitarbeiter_liste,
     BotAction.MITARBEITER_ANLEGEN: handlers_admin.handle_mitarbeiter_anlegen,
     BotAction.MITARBEITER_BEARBEITEN: handlers_admin.handle_mitarbeiter_bearbeiten,
+    BotAction.MITARBEITER_AENDERN: handlers_edit.handle_mitarbeiter_aendern,
     BotAction.OBJEKT_LISTE: handlers_admin.handle_objekt_liste,
     BotAction.OBJEKT_ANLEGEN: handlers_admin.handle_objekt_anlegen,
     BotAction.OBJEKT_ZUWEISEN: handlers_admin.handle_objekt_zuweisen,
+    BotAction.OBJEKT_ENTZIEHEN: handlers_edit.handle_objekt_entziehen,
+    BotAction.OBJEKT_BEARBEITEN: handlers_edit.handle_objekt_bearbeiten,
+    BotAction.OBJEKT_LOESCHEN: handlers_edit.handle_objekt_loeschen,
+    BotAction.REVIEW_UEBERSICHT: handlers_review.handle_review_uebersicht,
+    BotAction.REVIEW_LISTE: handlers_review.handle_review_liste,
+    BotAction.REVIEW_DETAILS: handlers_review.handle_review_details,
+    BotAction.REVIEW_FREIGEBEN: handlers_review.handle_review_freigeben,
+    BotAction.REVIEW_ALLE_FREIGEBEN: handlers_review.handle_review_alle_freigeben,
 }
+
+
+def _execute_pending(
+    deps: BotDeps, sender: ResolvedSender, pending: PendingAction
+) -> BotReply:
+    """Routet eine bestätigte Schreiboperation ans zuständige Modul."""
+    if pending.action in handlers_edit.EDIT_ACTIONS:
+        return handlers_edit.execute_pending(deps, sender, pending)
+    if pending.action in handlers_review.REVIEW_ACTIONS:
+        return handlers_review.execute_pending(deps, sender, pending)
+    return handlers_admin.execute_pending(deps, sender, pending)
 
 
 @dataclass
@@ -226,7 +252,7 @@ class WhatsAppBotService:
             return BotReply.message(messages.action_cancelled())
         if not is_allowed(sender.role, pending.action):
             return BotReply.message(messages.permission_denied())
-        reply = handlers_admin.execute_pending(self._deps, sender, pending)
+        reply = _execute_pending(self._deps, sender, pending)
         self._deps.audit_repo.append(
             account_id=sender.account_id,
             wa_id=sender.wa_id,

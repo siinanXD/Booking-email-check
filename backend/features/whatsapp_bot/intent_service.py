@@ -31,6 +31,10 @@ Gib NUR ein JSON-Objekt zurück (kein Markdown) mit diesen Feldern:
 - person_name: Name einer erwähnten Person, sonst null
 - person_phone: Telefonnummer einer erwähnten Person, sonst null
 - property_name: Name eines erwähnten Objekts/einer Wohnung, sonst null
+- neuer_name: bei Umbenennungen der ZIEL-Name; person_name bzw.
+  property_name bleiben dabei der bisherige Name. Sonst null.
+- position: Nummer eines Eintrags aus der zuletzt gezeigten Liste, sonst null
+- review_intent: Intent-Filter einer Review-Auflistung, sonst null
 - booking_ref: erwähnte Buchungsnummer, sonst null
 - freitext: sonstiger relevanter Kontext, sonst null
 
@@ -39,11 +43,33 @@ Hinweise:
 - Eigene Termine einer Reinigungskraft → putzplan_eigener_abruf
 - "Buchungen"/"Wer kommt" → buchungen_anzeigen; konkrete Buchung →
   buchung_details
-- Neue Reinigungskraft/Mitarbeiter → mitarbeiter_anlegen; entfernen oder
-  ändern → mitarbeiter_bearbeiten; "wer arbeitet" → mitarbeiter_liste
+- Neue Reinigungskraft/Mitarbeiter → mitarbeiter_anlegen; "wer arbeitet" →
+  mitarbeiter_liste
+- Mitarbeiter entfernen/deaktivieren/kündigen → mitarbeiter_bearbeiten
+- Name oder Telefonnummer eines Mitarbeiters ändern ("Anna heißt jetzt
+  Anna Müller", "Annas Nummer ist +49…") → mitarbeiter_aendern
 - Neue Wohnung/Objekt → objekt_anlegen; Objekt-Übersicht → objekt_liste;
   Objekt einer Person zuordnen → objekt_zuweisen
-- Gruß/Fähigkeitsfrage → hilfe; alles andere Unklare → unklar
+- Zuordnung lösen ("nimm Anna die Wohnung X weg") → objekt_entziehen
+- Objekt umbenennen ("Wohnung X heißt jetzt Y") → objekt_bearbeiten
+- Objekt löschen/entfernen → objekt_loeschen
+- "Review", "Was liegt an", "Was muss ich prüfen" → review_uebersicht
+- Wartende Einträge auflisten ("zeig mir alle neuen Buchungen", "zeig mir
+  die Stornos") → review_liste; setze review_intent auf new_booking,
+  cancellation, change, guest_inquiry oder complaint, sonst null
+- Einen Eintrag ansehen ("zeig mir Buchung 2") → review_details
+- Einen Eintrag freigeben ("Buchung 1 freigeben", "gib Nummer 3 frei") →
+  review_freigeben
+- Alle freigeben ("alle neuen Buchungen freigeben") → review_alle_freigeben
+- position: die genannte Nummer aus der Liste (1, 2, 3 …), sonst null.
+  "Buchung eins" → position 1. Nicht mit booking_ref verwechseln: eine
+  lange Ziffernfolge wie 89790382 ist booking_ref, nicht position.
+- Sammelbegriffe ohne konkreten Auftrag ("Mitarbeiter", "Mitarbeiter
+  verwalten", "Personal") → mitarbeiter_liste; ebenso "Objekte",
+  "Objekte verwalten", "Wohnungen" → objekt_liste. Eine Liste ist die
+  Antwort auf unspezifische Verwaltungsanfragen, nicht hilfe.
+- Nur Gruß ("Hallo") oder ausdrückliche Fähigkeitsfrage ("Hilfe", "was
+  kannst du") → hilfe; alles andere Unklare → unklar
 
 Bekannte Objekte: {properties}
 
@@ -119,9 +145,24 @@ def _validate_intent(data: dict[str, object], *, fallback_text: str) -> UserInte
         person_phone=_opt("person_phone"),
         person_role=_opt("person_role"),
         property_name=_opt("property_name"),
+        neuer_name=_opt("neuer_name"),
         booking_ref=_opt("booking_ref"),
+        position=_position(data.get("position")),
+        review_intent=_opt("review_intent"),
         freitext=_opt("freitext") or fallback_text[:200],
     )
+
+
+def _position(value: object) -> int | None:
+    """LLM liefert die Nummer mal als Zahl, mal als String — defensiv lesen."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str) and value.strip().isdigit():
+        number = int(value.strip())
+        return number if number > 0 else None
+    return None
 
 
 def _resolve_dates(intent: UserIntent, *, timezone: str) -> UserIntent:
