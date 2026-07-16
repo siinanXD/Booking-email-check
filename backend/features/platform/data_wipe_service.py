@@ -8,6 +8,9 @@ from typing import Any
 from pymongo.database import Database
 
 from backend.infrastructure.observability.langfuse_wipe import LangfuseWipeService
+from backend.infrastructure.repositories.cleaning_partner_repository import (
+    CleaningPartnerRepository,
+)
 from backend.infrastructure.repositories.domain_collections import (
     BOOKINGS,
     CHUNKS,
@@ -29,9 +32,6 @@ from backend.infrastructure.repositories.notification_repository import (
 from backend.infrastructure.repositories.platform_settings_repository import (
     PlatformSettingsRepository,
 )
-from backend.infrastructure.repositories.property_recipient_repository import (
-    PropertyRecipientRepository,
-)
 from backend.infrastructure.repositories.review_repository import ReviewRepository
 from backend.infrastructure.repositories.subscription_repository import (
     SubscriptionRepository,
@@ -46,7 +46,12 @@ WIPE_COLLECTIONS = (
     ReviewRepository.COLLECTION,
     MailMetricsRepository.COLLECTION,
     NotificationRepository.COLLECTION,
-    PropertyRecipientRepository.COLLECTION,
+    # Mitarbeiter/Putzpartner: eine Quelle (`cleaning_partners`). Die alte
+    # `property_whatsapp_recipients` bleibt bis zur Migration in der Liste,
+    # damit ein Wipe keine Telefonnummern von Altbeständen zurücklässt.
+    CleaningPartnerRepository.COLLECTION,
+    "property_whatsapp_recipients",
+    "cleaning_tasks",
     PlatformSettingsRepository.COLLECTION,
     SubscriptionRepository.COLLECTION,
     "mail_connections",

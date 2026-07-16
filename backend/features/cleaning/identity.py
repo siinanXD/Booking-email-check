@@ -30,6 +30,16 @@ def cleaning_task_id(
     return hashlib.sha1(seed.encode("utf-8")).hexdigest()  # noqa: S324
 
 
+def cleaning_partner_id(account_id: str, phone: str) -> str:
+    """Stabile partner_id aus der Telefonnummer — eine Nummer, eine Person.
+
+    Bot und Weboberfläche legen denselben Mitarbeiter sonst unter zwei IDs an;
+    im Bestand stand dieselbe Putzkraft dadurch doppelt, je einmal pro Objekt.
+    """
+    seed = f"{(account_id or '').strip().lower()}:{phone.strip()}"
+    return "cp_" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:24]
+
+
 def cleaning_date_for(check_out: date | None, offset_days: int) -> date | None:
     """Putztermin = Check-out + konfigurierbarer Offset (0 = Abreisetag)."""
     if check_out is None:

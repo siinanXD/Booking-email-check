@@ -28,9 +28,12 @@ def _to_profile(
     account_id: str,
     prop: Property,
 ) -> PropertyProfileResponse:
+    # include_test_mode: die Oberfläche soll Testmodus-Partner anzeigen — gesendet
+    # wird an sie ohnehin nicht (CleaningNotifier prüft das beim Versand).
     employees = ctx.property_recipient_repo.get_employees(
         prop.name,
         account_id=account_id,
+        include_test_mode=True,
     )
     return PropertyProfileResponse(
         property_id=prop.property_id,
@@ -108,7 +111,6 @@ def create_property(
         account_id=account_id,
     )
     repo.upsert(prop, account_id=account_id)
-    ctx.property_recipient_repo.upsert(account_id, name, [])
     return _to_profile(ctx, account_id, prop)
 
 
@@ -142,6 +144,11 @@ def update_property_profile(
         updates["name"] = new_name
     prop = prop.model_copy(update=updates)
     repo.upsert(prop, account_id=account_id)
+    # Umbenennung zuerst durchziehen: sonst hinge der Mitarbeiter anschließend
+    # am alten UND am neuen Namen (bzw. bliebe am alten hängen und bekäme für
+    # das umbenannte Objekt nichts mehr).
+    if prop.name != old_name:
+        ctx.property_recipient_repo.rename_property(account_id, old_name, prop.name)
     if body.whatsapp_employees is not None:
         ctx.property_recipient_repo.upsert(
             account_id,
@@ -153,9 +160,4 @@ def update_property_profile(
             PropertyWhatsAppEmployee(phone_e164=phone) for phone in body.whatsapp_phones
         ]
         ctx.property_recipient_repo.upsert(account_id, prop.name, employees)
-    elif "name" in updates and updates["name"] != old_name:
-        old_employees = ctx.property_recipient_repo.get_employees(
-            old_name, account_id=account_id
-        )
-        ctx.property_recipient_repo.upsert(account_id, prop.name, old_employees)
     return _to_profile(ctx, account_id, prop)
