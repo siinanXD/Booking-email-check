@@ -44,6 +44,10 @@ class Property(BaseModel):
     contact_phone: str | None = None
     contact_email: str | None = None
     notes: str | None = None
+    # Hausregeln/Objektwissen für Gastantworten: Parken, Check-in-Zeiten, WLAN,
+    # Haustiere … Der Antwortentwurf darf sich ausschließlich hierauf berufen.
+    # Bewusst getrennt von `notes`: die sind intern und dürfen nie an Gäste.
+    house_rules: str | None = None
     # Soft-Delete: archivierte Objekte bleiben für historische Buchungen und
     # Putzaufträge auflösbar, tauchen aber in Listen nicht mehr auf.
     active: bool = True

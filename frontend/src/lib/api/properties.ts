@@ -75,6 +75,7 @@ export type PropertyProfile = {
   contact_phone: string | null;
   contact_email: string | null;
   notes: string | null;
+  house_rules: string | null;
   whatsapp_phones: string[];
   whatsapp_employees: PropertyWhatsAppEmployee[];
 };
@@ -131,6 +132,7 @@ export async function updatePropertyProfile(
       | "contact_phone"
       | "contact_email"
       | "notes"
+      | "house_rules"
       | "whatsapp_phones"
       | "whatsapp_employees"
     >

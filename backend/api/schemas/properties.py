@@ -67,6 +67,7 @@ class PropertyProfileResponse(BaseModel):
     contact_phone: str | None = None
     contact_email: str | None = None
     notes: str | None = None
+    house_rules: str | None = None
     whatsapp_phones: list[str] = Field(default_factory=list)
     whatsapp_employees: list[PropertyWhatsAppEmployee] = Field(default_factory=list)
 
@@ -91,6 +92,9 @@ class PropertyUpdateRequest(BaseModel):
     contact_phone: str | None = None
     contact_email: str | None = None
     notes: str | None = None
+    # Gastgerichtetes Objektwissen für Antwortentwürfe. Getrennt von `notes`,
+    # die intern bleiben und nie in einen Entwurf an den Gast fließen dürfen.
+    house_rules: str | None = Field(default=None, max_length=4000)
     whatsapp_phones: list[str] | None = None
     whatsapp_employees: list[PropertyWhatsAppEmployee] | None = None
 

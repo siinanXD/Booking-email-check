@@ -172,6 +172,9 @@ class ResponseGenerationService:
                 r.model_dump(mode="json") for r in (hits.reservations or [])
             ],
             "guest": hits.guest.model_dump(mode="json") if hits.guest else None,
+            # Einzige Wissensquelle für inhaltliche Gastfragen. Fehlt sie, soll
+            # der Entwurf die Frage an den Host zurückspielen statt zu raten.
+            "hausregeln": hits.house_rules,
             "aehnliche_faelle_nur_stil": _compact_similar_cases(
                 hits.similar_cases or []
             ),

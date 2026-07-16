@@ -44,6 +44,7 @@ def _to_profile(
         contact_phone=prop.contact_phone,
         contact_email=prop.contact_email,
         notes=prop.notes,
+        house_rules=prop.house_rules,
         whatsapp_phones=[employee.phone_e164 for employee in employees],
         whatsapp_employees=employees,
     )
