@@ -83,6 +83,18 @@ def handle_review_details(
     return HandlerResult(reply=BotReply.message(messages_review.details(entry)))
 
 
+def handle_review_nachricht(
+    deps: BotDeps, sender: ResolvedSender, intent: UserIntent
+) -> HandlerResult:
+    """Nur die Nachricht des Gastes im Wortlaut ("Nachricht zu Buchung 1")."""
+    if deps.review_repo is None:
+        return _unavailable()
+    entry, error = resolve_position(deps, sender, intent)
+    if entry is None:
+        return HandlerResult(reply=BotReply.message(error or ""))
+    return HandlerResult(reply=BotReply.message(messages_review.guest_message(entry)))
+
+
 def handle_review_freigeben(
     deps: BotDeps, sender: ResolvedSender, intent: UserIntent
 ) -> HandlerResult:

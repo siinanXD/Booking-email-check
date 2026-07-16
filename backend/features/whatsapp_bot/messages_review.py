@@ -11,6 +11,9 @@ if TYPE_CHECKING:
 
 _MAX_LIST_ITEMS = 10
 _DRAFT_PREVIEW_CHARS = 600
+# Grosszügiger als der Entwurf: die Gastfrage ist der Anlass und meist kurz —
+# sie abzuschneiden würde genau die Information kosten, um die es geht.
+_MESSAGE_PREVIEW_CHARS = 900
 
 # Anzeigenamen der Intents (Reihenfolge = Reihenfolge in der Übersicht).
 _INTENT_LABELS: list[tuple[str, str]] = [
@@ -120,8 +123,36 @@ def listing(entries: list[ReviewEntry], *, intent_filter: str | None = None) -> 
     return "\n".join(lines)
 
 
+def _quoted_message(entry: ReviewEntry) -> str:
+    """Gasttext gekürzt und zitiert — leer, wenn es keinen gibt.
+
+    Kürzen gehört hierher und nicht in die Aufrufer: WhatsApp hat ein
+    Textlimit, und ein ungekürzt durchgereichter Gasttext würde die Nachricht
+    sprengen statt sie nur abzuschneiden.
+    """
+    text = (entry.guest_message or "").strip()
+    if not text:
+        return ""
+    if len(text) > _MESSAGE_PREVIEW_CHARS:
+        text = text[:_MESSAGE_PREVIEW_CHARS].rstrip() + " …"
+    # WhatsApp-Zitat: '> ' macht den fremden Text als solchen kenntlich.
+    return "\n".join(f"> {line}" if line.strip() else ">" for line in text.splitlines())
+
+
+def _message_block(entry: ReviewEntry) -> str:
+    """Die Nachricht des Gastes — vor dem Entwurf.
+
+    Sie ist der Anlass und steht deshalb über der Antwort: ohne sie liest man
+    einen Entwurf, ohne die Frage zu kennen, auf die er antwortet.
+    """
+    quoted = _quoted_message(entry)
+    if not quoted:
+        return ""
+    return f"\n\n\U0001f4ac *Nachricht vom Gast:*\n{quoted}"
+
+
 def details(entry: ReviewEntry) -> str:
-    """Detailkarte inklusive Antwortentwurf."""
+    """Detailkarte inklusive Gastnachricht und Antwortentwurf."""
     kind = _INTENT_SINGULAR.get(entry.intent or "", "Eintrag")
     ref = f"\n\U0001f516 Ref: *{entry.booking_number}*" if entry.booking_number else ""
     prop = (
@@ -140,9 +171,22 @@ def details(entry: ReviewEntry) -> str:
     return (
         f"\U0001f4cb *{kind}*\n"
         f"\U0001f464 Gast: *{entry.guest_name or 'Unbekannt'}*"
-        f"{prop}{dates}{ref}{flag}\n\n"
+        f"{prop}{dates}{ref}{flag}"
+        f"{_message_block(entry)}\n\n"
         f"✍️ *Entwurf:*\n{draft}"
     )
+
+
+def guest_message(entry: ReviewEntry) -> str:
+    """Nur die Nachricht des Gastes ("Nachricht zu Buchung 1")."""
+    quoted = _quoted_message(entry)
+    if not quoted:
+        return (
+            f"\U0001f4ac *{entry.short_label()}*\n\n"
+            "Zu diesem Eintrag gibt es keine Nachricht vom Gast — "
+            "die Mail enthält nur Buchungsdaten."
+        )
+    return f"\U0001f4ac *Nachricht von {entry.guest_name or 'Gast'}*\n\n{quoted}"
 
 
 def _recipient_line(recipients: list[str]) -> str:

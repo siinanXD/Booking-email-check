@@ -32,6 +32,7 @@ class BotAction(StrEnum):
     REVIEW_UEBERSICHT = "review_uebersicht"
     REVIEW_LISTE = "review_liste"
     REVIEW_DETAILS = "review_details"
+    REVIEW_NACHRICHT = "review_nachricht"
     REVIEW_FREIGEBEN = "review_freigeben"
     REVIEW_ALLE_FREIGEBEN = "review_alle_freigeben"
     HILFE = "hilfe"

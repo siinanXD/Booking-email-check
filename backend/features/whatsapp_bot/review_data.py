@@ -26,6 +26,7 @@ class ReviewEntry:
     draft_body: str
     grounding_flag: bool
     guest_name: str | None = None
+    guest_message: str | None = None
     property_name: str | None = None
     booking_number: str | None = None
     check_in: date | None = None
@@ -67,6 +68,7 @@ def load_entries(
                 draft_body=record.draft_body,
                 grounding_flag=record.grounding_flag,
                 guest_name=getattr(extraction, "guest_name", None),
+                guest_message=getattr(extraction, "guest_message", None),
                 property_name=getattr(extraction, "property_name", None),
                 booking_number=getattr(extraction, "booking_number", None),
                 check_in=getattr(extraction, "check_in", None),

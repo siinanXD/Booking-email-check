@@ -58,6 +58,8 @@ Hinweise:
   die Stornos") → review_liste; setze review_intent auf new_booking,
   cancellation, change, guest_inquiry oder complaint, sonst null
 - Einen Eintrag ansehen ("zeig mir Buchung 2") → review_details
+- Nur den Text des Gastes sehen ("was hat der Gast geschrieben", "Nachricht
+  zu Buchung 1", "was will er") → review_nachricht
 - Einen Eintrag freigeben ("Buchung 1 freigeben", "gib Nummer 3 frei") →
   review_freigeben
 - Alle freigeben ("alle neuen Buchungen freigeben") → review_alle_freigeben
