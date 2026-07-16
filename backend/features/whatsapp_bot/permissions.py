@@ -5,19 +5,29 @@ from __future__ import annotations
 from backend.features.whatsapp_bot.models import BotAction, BotRole
 
 # Welche Rollen dürfen welche Aktion ausführen (Spec: docs/WHATSAPP_BOT_SPEC.md).
+# Regel: Ändern darf ausschließlich der Owner. Manager dürfen lesen und planen,
+# Reinigungskräfte ausschließlich ihre eigenen Putztermine abrufen.
+_READ = frozenset({"owner", "manager"})
+_WRITE = frozenset({"owner"})
+_ALL = frozenset({"owner", "manager", "cleaner"})
+
 _MATRIX: dict[BotAction, frozenset[str]] = {
-    BotAction.PUTZPLAN_ERSTELLEN: frozenset({"owner", "manager"}),
-    BotAction.PUTZPLAN_EIGENER_ABRUF: frozenset({"owner", "manager", "cleaner"}),
-    BotAction.BUCHUNGEN_ANZEIGEN: frozenset({"owner", "manager"}),
-    BotAction.BUCHUNG_DETAILS: frozenset({"owner", "manager"}),
-    BotAction.MITARBEITER_ANLEGEN: frozenset({"owner"}),
-    BotAction.MITARBEITER_BEARBEITEN: frozenset({"owner", "manager"}),
-    BotAction.MITARBEITER_LISTE: frozenset({"owner", "manager"}),
-    BotAction.OBJEKT_ANLEGEN: frozenset({"owner", "manager"}),
-    BotAction.OBJEKT_LISTE: frozenset({"owner", "manager"}),
-    BotAction.OBJEKT_ZUWEISEN: frozenset({"owner", "manager"}),
-    BotAction.HILFE: frozenset({"owner", "manager", "cleaner"}),
-    BotAction.UNKLAR: frozenset({"owner", "manager", "cleaner"}),
+    BotAction.PUTZPLAN_ERSTELLEN: _READ,
+    BotAction.PUTZPLAN_EIGENER_ABRUF: _ALL,
+    BotAction.BUCHUNGEN_ANZEIGEN: _READ,
+    BotAction.BUCHUNG_DETAILS: _READ,
+    BotAction.MITARBEITER_LISTE: _READ,
+    BotAction.OBJEKT_LISTE: _READ,
+    BotAction.MITARBEITER_ANLEGEN: _WRITE,
+    BotAction.MITARBEITER_BEARBEITEN: _WRITE,
+    BotAction.MITARBEITER_AENDERN: _WRITE,
+    BotAction.OBJEKT_ANLEGEN: _WRITE,
+    BotAction.OBJEKT_ZUWEISEN: _WRITE,
+    BotAction.OBJEKT_ENTZIEHEN: _WRITE,
+    BotAction.OBJEKT_BEARBEITEN: _WRITE,
+    BotAction.OBJEKT_LOESCHEN: _WRITE,
+    BotAction.HILFE: _ALL,
+    BotAction.UNKLAR: _ALL,
 }
 
 

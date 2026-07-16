@@ -44,6 +44,9 @@ class Property(BaseModel):
     contact_phone: str | None = None
     contact_email: str | None = None
     notes: str | None = None
+    # Soft-Delete: archivierte Objekte bleiben für historische Buchungen und
+    # Putzaufträge auflösbar, tauchen aber in Listen nicht mehr auf.
+    active: bool = True
 
     def to_mongo(self) -> dict[str, Any]:
         """Execute the operation."""

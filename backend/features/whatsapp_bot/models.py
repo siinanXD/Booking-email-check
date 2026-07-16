@@ -19,11 +19,16 @@ class BotAction(StrEnum):
     BUCHUNGEN_ANZEIGEN = "buchungen_anzeigen"
     BUCHUNG_DETAILS = "buchung_details"
     MITARBEITER_ANLEGEN = "mitarbeiter_anlegen"
+    # Deaktivieren (Soft-Delete). Feld-Änderungen: MITARBEITER_AENDERN.
     MITARBEITER_BEARBEITEN = "mitarbeiter_bearbeiten"
+    MITARBEITER_AENDERN = "mitarbeiter_aendern"
     MITARBEITER_LISTE = "mitarbeiter_liste"
     OBJEKT_ANLEGEN = "objekt_anlegen"
     OBJEKT_LISTE = "objekt_liste"
     OBJEKT_ZUWEISEN = "objekt_zuweisen"
+    OBJEKT_ENTZIEHEN = "objekt_entziehen"
+    OBJEKT_BEARBEITEN = "objekt_bearbeiten"
+    OBJEKT_LOESCHEN = "objekt_loeschen"
     HILFE = "hilfe"
     UNKLAR = "unklar"
 
@@ -39,6 +44,8 @@ class UserIntent(BaseModel):
     person_phone: str | None = None
     person_role: str | None = None
     property_name: str | None = None
+    # Zielwert bei Umbenennungen; person_name/property_name bleiben der Ist-Wert.
+    neuer_name: str | None = None
     booking_ref: str | None = None
     freitext: str | None = None
 

@@ -11,6 +11,9 @@ from backend.infrastructure.repositories.domain_collections import PROPERTIES
 from backend.infrastructure.repositories.mongo import Db
 from backend.infrastructure.repositories.tenant_scope import with_account_filter
 
+# Altbestände haben kein `active`-Feld – `$ne: False` zählt sie als aktiv.
+_ACTIVE: dict[str, Any] = {"active": {"$ne": False}}
+
 
 class PropertyRepository:
     """Collection `properties`."""
@@ -54,15 +57,33 @@ class PropertyRepository:
         return Property.from_mongo(doc)
 
     def count_for_account(self, account_id: str) -> int:
-        """Anzahl Unterkünfte eines Mandanten."""
-        query = with_account_filter({}, account_id)
+        """Anzahl aktiver Unterkünfte eines Mandanten (zählt fürs Kontingent)."""
+        query = with_account_filter(_ACTIVE, account_id)
         return int(self._col.count_documents(query))
 
     def list_all(
         self,
         *,
         account_id: str | None = None,
+        include_inactive: bool = False,
     ) -> list[Property]:
-        """Alle Unterkünfte eines Mandanten."""
-        query = with_account_filter({}, account_id)
+        """Unterkünfte eines Mandanten; archivierte nur auf Wunsch.
+
+        ``include_inactive=True`` braucht, wer gegen den Gesamtbestand prüft
+        (z. B. entity_sync), damit archivierte Objekte nicht aus Buchungs-
+        mails neu angelegt werden.
+        """
+        base: dict[str, Any] = {} if include_inactive else dict(_ACTIVE)
+        query = with_account_filter(base, account_id)
         return [Property.from_mongo(doc) for doc in self._col.find(query)]
+
+    def deactivate(
+        self,
+        property_id: str,
+        *,
+        account_id: str | None = None,
+    ) -> bool:
+        """Soft-Delete: archiviert das Objekt (historische Daten bleiben)."""
+        query = with_account_filter({"_id": property_id}, account_id)
+        result = self._col.update_one(query, {"$set": {"active": False}})
+        return result.matched_count > 0

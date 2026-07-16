@@ -22,12 +22,17 @@ _MATRIX_CASES = [
     (BotAction.PUTZPLAN_EIGENER_ABRUF, True, True, True),
     (BotAction.BUCHUNGEN_ANZEIGEN, True, True, False),
     (BotAction.BUCHUNG_DETAILS, True, True, False),
-    (BotAction.MITARBEITER_ANLEGEN, True, False, False),
-    (BotAction.MITARBEITER_BEARBEITEN, True, True, False),
     (BotAction.MITARBEITER_LISTE, True, True, False),
-    (BotAction.OBJEKT_ANLEGEN, True, True, False),
     (BotAction.OBJEKT_LISTE, True, True, False),
-    (BotAction.OBJEKT_ZUWEISEN, True, True, False),
+    # Ändern darf ausschließlich der Owner.
+    (BotAction.MITARBEITER_ANLEGEN, True, False, False),
+    (BotAction.MITARBEITER_BEARBEITEN, True, False, False),
+    (BotAction.MITARBEITER_AENDERN, True, False, False),
+    (BotAction.OBJEKT_ANLEGEN, True, False, False),
+    (BotAction.OBJEKT_ZUWEISEN, True, False, False),
+    (BotAction.OBJEKT_ENTZIEHEN, True, False, False),
+    (BotAction.OBJEKT_BEARBEITEN, True, False, False),
+    (BotAction.OBJEKT_LOESCHEN, True, False, False),
     (BotAction.HILFE, True, True, True),
 ]
 
@@ -37,6 +42,23 @@ def test_role_matrix_complete() -> None:
         assert is_allowed("owner", action) is owner, action
         assert is_allowed("manager", action) is manager, action
         assert is_allowed("cleaner", action) is cleaner, action
+
+
+def test_jede_aktion_ist_in_der_matrix() -> None:
+    """Kein Intent darf ohne Rollen-Eintrag durchrutschen."""
+    for action in BotAction:
+        assert any(
+            is_allowed(role, action) for role in ("owner", "manager", "cleaner")
+        ), action
+
+
+def test_cleaner_darf_ausschliesslich_putzplan() -> None:
+    erlaubt = {action for action in BotAction if is_allowed("cleaner", action)}
+    assert erlaubt == {
+        BotAction.PUTZPLAN_EIGENER_ABRUF,
+        BotAction.HILFE,
+        BotAction.UNKLAR,
+    }
 
 
 # --- Deterministische Datums-Auflösung --------------------------------------
@@ -67,9 +89,7 @@ def test_resolve_kw_in_vergangenheit_rutscht_ins_naechste_jahr() -> None:
 
 
 def test_resolve_explizite_daten_als_bereich() -> None:
-    start, end = resolve_period(
-        "vom 12.08. bis 15.08.", today=_TODAY
-    )  # type: ignore[misc]
+    start, end = resolve_period("vom 12.08. bis 15.08.", today=_TODAY)  # type: ignore[misc]
     assert start == date(2026, 8, 12)
     assert end == date(2026, 8, 15)
 
