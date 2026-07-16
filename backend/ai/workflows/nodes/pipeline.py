@@ -21,6 +21,7 @@ from backend.ai.services.tenant_workflow_runtime import (
     WorkflowRouter,
 )
 from backend.ai.services.validation import ValidationService
+from backend.ai.workflows.nodes.cleaning_hook import schedule_cleaning_on_detect
 from backend.ai.workflows.nodes.pipeline_review import PipelineReviewMixin
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.email import IncomingEmail, ProcessingState, StoredEmail
@@ -260,6 +261,7 @@ class WorkflowNodes(PipelineReviewMixin):
                 self._notification_service.dispatch_on_detect_if_enabled(
                     email.correlation_id, extraction, account_id=email.account_id
                 )
+            schedule_cleaning_on_detect(self._cleaning_service, email, extraction)
         return {"validation_errors": result.errors}
 
     def retrieve(self, state: EmailWorkflowState) -> EmailWorkflowState:

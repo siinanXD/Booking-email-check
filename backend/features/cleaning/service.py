@@ -58,15 +58,11 @@ class CleaningScheduleService:
         self._entitlement_service = entitlement_service
 
     def is_enabled(self, account_id: str | None) -> bool:
-        """True, wenn der Putzplan für den Account freigeschaltet ist.
-
-        Muss dieselbe Wahrheit liefern wie die API (api/services/
-        cleaning_queries.feature_enabled): Plan-Features ∪ Admin-Toggles.
-        Sonst zeigt die Oberfläche einen Putzplan, für den nie Aufträge
-        entstehen (Pro/Business bringen das Feature per Plan mit).
-        """
+        """True, wenn der Putzplan freigeschaltet ist (Plan-Features ∪ Toggles)."""
         if not account_id:
             return False
+        # Gleiche Quelle wie cleaning_queries.feature_enabled – sonst zeigt die
+        # UI einen Putzplan, für den nie Aufträge entstehen.
         if self._entitlement_service is not None:
             return FEATURE_CLEANING_SCHEDULE in (
                 self._entitlement_service.effective_features(account_id)
@@ -141,6 +137,7 @@ class CleaningScheduleService:
                 partners,
                 intent,
                 correlation_id=correlation_id,
+                notify=notify,
             )
         primary = partners[0] if partners else None
         task = CleaningTask(
@@ -184,6 +181,7 @@ class CleaningScheduleService:
         intent: BookingIntent | None,
         *,
         correlation_id: str,
+        notify: bool = False,
     ) -> CleaningTask:
         """Aktualisiert einen bestehenden Auftrag ohne manuelle Edits zu kippen."""
         primary = partners[0] if partners else None
@@ -235,6 +233,10 @@ class CleaningScheduleService:
                     account_id,
                     correlation_id=correlation_id,
                 )
+        if notify:
+            self._notifier.notify_once(
+                task, extraction, partners, account_id, correlation_id=correlation_id
+            )
         task.updated_at = datetime.now(UTC)
         self._task_repo.upsert(task, account_id=account_id)
         return task

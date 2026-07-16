@@ -56,6 +56,31 @@ class CleaningNotifier:
             property_name, account_id=account_id
         )
 
+    def notify_once(
+        self,
+        task: CleaningTask,
+        extraction: BookingExtraction,
+        partners: list[CleaningPartner],
+        account_id: str,
+        *,
+        correlation_id: str,
+    ) -> None:
+        """Putzauftrag-Versand, sofern für diesen Auftrag noch nie gesendet wurde.
+
+        Der Auftrag entsteht bereits beim Erkennen der Buchung (ohne Versand);
+        die Freigabe holt die Benachrichtigung genau einmal nach.
+        """
+        if task.notified_at is not None:
+            return
+        self.notify(
+            task,
+            extraction,
+            partners,
+            NotificationKind.BOOKING_CLEANING_TASK,
+            account_id,
+            correlation_id=correlation_id,
+        )
+
     def notify(
         self,
         task: CleaningTask,
