@@ -18,6 +18,12 @@ _MATRIX: dict[BotAction, frozenset[str]] = {
     BotAction.BUCHUNG_DETAILS: _READ,
     BotAction.MITARBEITER_LISTE: _READ,
     BotAction.OBJEKT_LISTE: _READ,
+    BotAction.REVIEW_UEBERSICHT: _READ,
+    BotAction.REVIEW_LISTE: _READ,
+    BotAction.REVIEW_DETAILS: _READ,
+    # Freigeben löst Benachrichtigungen aus → wie jede Schreibaktion Owner-only.
+    BotAction.REVIEW_FREIGEBEN: _WRITE,
+    BotAction.REVIEW_ALLE_FREIGEBEN: _WRITE,
     BotAction.MITARBEITER_ANLEGEN: _WRITE,
     BotAction.MITARBEITER_BEARBEITEN: _WRITE,
     BotAction.MITARBEITER_AENDERN: _WRITE,

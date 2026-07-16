@@ -11,6 +11,7 @@ from backend.features.whatsapp_bot import (
     handlers_admin,
     handlers_edit,
     handlers_read,
+    handlers_review,
     messages,
 )
 from backend.features.whatsapp_bot.deps import BotDeps, HandlerResult
@@ -47,6 +48,11 @@ _HANDLERS: dict[BotAction, Handler] = {
     BotAction.OBJEKT_ENTZIEHEN: handlers_edit.handle_objekt_entziehen,
     BotAction.OBJEKT_BEARBEITEN: handlers_edit.handle_objekt_bearbeiten,
     BotAction.OBJEKT_LOESCHEN: handlers_edit.handle_objekt_loeschen,
+    BotAction.REVIEW_UEBERSICHT: handlers_review.handle_review_uebersicht,
+    BotAction.REVIEW_LISTE: handlers_review.handle_review_liste,
+    BotAction.REVIEW_DETAILS: handlers_review.handle_review_details,
+    BotAction.REVIEW_FREIGEBEN: handlers_review.handle_review_freigeben,
+    BotAction.REVIEW_ALLE_FREIGEBEN: handlers_review.handle_review_alle_freigeben,
 }
 
 
@@ -56,6 +62,8 @@ def _execute_pending(
     """Routet eine bestätigte Schreiboperation ans zuständige Modul."""
     if pending.action in handlers_edit.EDIT_ACTIONS:
         return handlers_edit.execute_pending(deps, sender, pending)
+    if pending.action in handlers_review.REVIEW_ACTIONS:
+        return handlers_review.execute_pending(deps, sender, pending)
     return handlers_admin.execute_pending(deps, sender, pending)
 
 

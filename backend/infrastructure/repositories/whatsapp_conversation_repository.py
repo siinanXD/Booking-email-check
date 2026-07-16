@@ -81,6 +81,55 @@ class WhatsAppConversationRepository:
             upsert=True,
         )
 
+    def set_last_listing(
+        self,
+        *,
+        account_id: str,
+        wa_id: str,
+        correlation_ids: list[str],
+        ttl_minutes: int = 60,
+    ) -> None:
+        """Merkt die zuletzt gezeigte, nummerierte Liste für Folgebefehle.
+
+        "Buchung eins freigeben" bezieht sich auf die Reihenfolge der letzten
+        Auflistung — nicht auf eine live neu sortierte Warteschlange, die sich
+        zwischen zwei Nachrichten verschieben könnte.
+        """
+        now = datetime.now(UTC)
+        self._col.update_one(
+            self._key(account_id, wa_id),
+            {
+                "$set": {
+                    "last_listing": {
+                        "correlation_ids": correlation_ids,
+                        "expires_at": (
+                            now + timedelta(minutes=ttl_minutes)
+                        ).isoformat(),
+                    },
+                    "updated_at": now.isoformat(),
+                    "expires_at": now + timedelta(hours=24),
+                }
+            },
+            upsert=True,
+        )
+
+    def get_last_listing(self, *, account_id: str, wa_id: str) -> list[str]:
+        """Correlation-IDs der letzten Auflistung; leer wenn keine/abgelaufen."""
+        query = with_account_filter({"wa_id": wa_id}, account_id)
+        doc = self._col.find_one(query)
+        listing = (doc or {}).get("last_listing")
+        if not isinstance(listing, dict):
+            return []
+        expires = listing.get("expires_at")
+        if isinstance(expires, str):
+            try:
+                if datetime.fromisoformat(expires) < datetime.now(UTC):
+                    return []
+            except ValueError:
+                return []
+        ids = listing.get("correlation_ids")
+        return [str(cid) for cid in ids] if isinstance(ids, list) else []
+
     def mark_message_processed(
         self, *, account_id: str, wa_id: str, message_id: str
     ) -> bool:

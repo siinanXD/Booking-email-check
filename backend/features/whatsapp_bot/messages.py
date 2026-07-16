@@ -27,6 +27,7 @@ def welcome(name: str, role: str) -> str:
     return (
         f"\U0001f44b Hallo *{name}*!\n\n"
         "Schreib mir einfach, z. B.:\n"
+        '\U0001f4cb _"Review"_ — was zu prüfen ist\n'
         '\U0001f9f9 _"Putzplan für nächste Woche"_\n'
         '\U0001f4c5 _"Buchungen nächste Woche"_\n'
         '\U0001f465 _"Zeig mir alle Mitarbeiter"_\n'
