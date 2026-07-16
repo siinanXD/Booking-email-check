@@ -59,6 +59,9 @@ class UserIntent(BaseModel):
     positions: list[int] = Field(default_factory=list)
     # Review: Intent-Filter einer Auflistung (new_booking, cancellation, …).
     review_intent: str | None = None
+    # Freigabe: Infotext für den Putzplan ("… und Schlüssel beim Nachbarn").
+    # Landet als Bemerkung am Putzauftrag und damit in Excel und Kalender.
+    notiz: str | None = None
     freitext: str | None = None
 
     @property

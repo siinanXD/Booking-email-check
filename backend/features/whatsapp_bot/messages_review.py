@@ -189,65 +189,6 @@ def guest_message(entry: ReviewEntry) -> str:
     return f"\U0001f4ac *Nachricht von {entry.guest_name or 'Gast'}*\n\n{quoted}"
 
 
-def _recipient_line(recipients: list[str]) -> str:
-    if not recipients:
-        return "\n\nEs wird niemand benachrichtigt."
-    who = ", ".join(recipients)
-    return f"\n\n\U0001f4f2 Bekommt eine WhatsApp: *{who}*"
-
-
-def approve_confirm(entry: ReviewEntry, *, recipients: list[str]) -> str:
-    """Bestätigungsdialog: einzelne Freigabe."""
-    kind = _INTENT_SINGULAR.get(entry.intent or "", "Eintrag")
-    return (
-        f"✅ *Freigeben?*\n\n"
-        f"{kind}: *{entry.short_label()}*"
-        f"{_recipient_line(recipients)}\n"
-        "An den Gast geht nichts raus."
-    )
-
-
-def approve_selection_confirm(
-    entries: list[ReviewEntry], *, recipients: list[str]
-) -> str:
-    """Bestätigungsdialog: mehrere ausgewählte Einträge ("1 und 3 freigeben").
-
-    Die Einträge werden namentlich aufgeführt: Wer per Nummer auswählt, muss vor
-    dem Klick sehen, welche Buchungen gemeint sind — eine Zahl allein ist nicht
-    nachprüfbar.
-    """
-    lines = [f"✅ *Diese {len(entries)} freigeben?*\n"]
-    for entry in entries:
-        kind = _INTENT_SINGULAR.get(entry.intent or "", "Eintrag")
-        lines.append(f"• {kind}: *{entry.short_label()}*")
-    return "".join(
-        [
-            "\n".join(lines),
-            _recipient_line(recipients),
-            "\nAn den Gast geht nichts raus.",
-        ]
-    )
-
-
-def approve_all_confirm(entries: list[ReviewEntry], *, recipients: list[str]) -> str:
-    """Bestätigungsdialog: Sammelfreigabe."""
-    return (
-        f"✅ *Alle {len(entries)} freigeben?*"
-        f"{_recipient_line(recipients)}\n"
-        "An die Gäste geht nichts raus."
-    )
-
-
-def approved(done: int, failed: int) -> str:
-    """Ergebnismeldung."""
-    if done and not failed:
-        suffix = "Eintrag freigegeben." if done == 1 else "Einträge freigegeben."
-        return f"✅ {done} {suffix}"
-    if done and failed:
-        return f"⚠️ {done} freigegeben, {failed} fehlgeschlagen."
-    return "⚠️ Freigabe fehlgeschlagen. Bitte in der Weboberfläche prüfen."
-
-
 def which_entry() -> str:
     """Rückfrage: keine Position genannt."""
     return (
@@ -266,11 +207,3 @@ def position_out_of_range(position: int, total: int) -> str:
 def unknown_booking(ref: str) -> str:
     """Rückfrage: Buchungsnummer nicht in der Warteschlange."""
     return f"❓ Ich habe keine wartende Buchung *{ref}* gefunden."
-
-
-def too_many(count: int) -> str:
-    """Sammelfreigabe über dem Limit."""
-    return (
-        f"⚠️ {count} Einträge sind mir für eine Sammelfreigabe zu viele.\n"
-        "Bitte grenz die Liste ein oder nutz die Weboberfläche."
-    )

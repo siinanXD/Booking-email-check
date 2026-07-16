@@ -36,6 +36,9 @@ Gib NUR ein JSON-Objekt zurück (kein Markdown) mit diesen Feldern:
 - positions: Liste der genannten Eintrags-Nummern aus der zuletzt gezeigten
   Liste, sonst []
 - review_intent: Intent-Filter einer Review-Auflistung, sonst null
+- notiz: bei einer Freigabe der Infotext für den Putzplan im Wortlaut
+  ("… und schreib dazu: Schlüssel beim Nachbarn" → "Schlüssel beim Nachbarn").
+  Nur der Hinweis selbst, ohne den Befehlsteil. Sonst null.
 - booking_ref: erwähnte Buchungsnummer, sonst null
 - freitext: sonstiger relevanter Kontext, sonst null
 
@@ -62,7 +65,10 @@ Hinweise:
 - Nur den Text des Gastes sehen ("was hat der Gast geschrieben", "Nachricht
   zu Buchung 1", "was will er") → review_nachricht
 - Einträge freigeben ("Buchung 1 freigeben", "gib Nummer 3 frei", "Buchung 1
-  und 3 freigeben", "1-3 freigeben") → review_freigeben
+  und 3 freigeben", "1-3 freigeben") → review_freigeben. Ein angehängter
+  Hinweis für die Reinigung ("… und Notiz: früh anreisen", "… und schreib der
+  Putzkraft dazu, dass der Schlüssel beim Nachbarn liegt") gehört nach notiz —
+  er ändert die Aktion nicht.
 - Alle freigeben ("alle neuen Buchungen freigeben") → review_alle_freigeben
 - positions: alle genannten Nummern aus der Liste, sonst [].
   "Buchung eins" → [1]. "Buchung 1 und 3" → [1, 3]. "1, 2 und 5" → [1, 2, 5].
@@ -154,6 +160,7 @@ def _validate_intent(data: dict[str, object], *, fallback_text: str) -> UserInte
         booking_ref=_opt("booking_ref"),
         positions=_positions(data.get("positions"), data.get("position")),
         review_intent=_opt("review_intent"),
+        notiz=_opt("notiz"),
         freitext=_opt("freitext") or fallback_text[:200],
     )
 

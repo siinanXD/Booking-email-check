@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import uuid
 
-from backend.features.whatsapp_bot import messages_review
+from backend.features.whatsapp_bot import messages_approve, messages_review
 from backend.features.whatsapp_bot.deps import BotDeps, HandlerResult
 from backend.features.whatsapp_bot.handlers_admin import _confirm_buttons
 from backend.features.whatsapp_bot.models import (
@@ -37,6 +37,8 @@ REVIEW_ACTIONS = frozenset(
 )
 
 _MAX_APPROVE_ALL = 20
+# Passend zum Limit des Bemerkungsfelds in der API (TaskUpdateRequest.note).
+_MAX_NOTE_CHARS = 1000
 
 
 def _unavailable() -> HandlerResult:
@@ -113,18 +115,22 @@ def handle_review_freigeben(
     recipients = sorted(
         {name for entry in entries for name in _recipient_hint(deps, sender, entry)}
     )
+    note = (intent.notiz or "").strip()[:_MAX_NOTE_CHARS] or None
     pending = PendingAction(
         action_id=uuid.uuid4().hex,
         action=BotAction.REVIEW_FREIGEBEN,
         payload={
             "correlation_ids": [e.correlation_id for e in entries],
             "label": _label(entries),
+            "note": note,
         },
     )
     text = (
-        messages_review.approve_confirm(entries[0], recipients=recipients)
+        messages_approve.approve_confirm(entries[0], recipients=recipients, note=note)
         if len(entries) == 1
-        else messages_review.approve_selection_confirm(entries, recipients=recipients)
+        else messages_approve.approve_selection_confirm(
+            entries, recipients=recipients, note=note
+        )
     )
     return HandlerResult(
         reply=BotReply(text=text, buttons=_confirm_buttons(pending.action_id)),
@@ -150,7 +156,7 @@ def handle_review_alle_freigeben(
         return HandlerResult(reply=BotReply.message(messages_review.nothing_pending()))
     if len(entries) > _MAX_APPROVE_ALL:
         return HandlerResult(
-            reply=BotReply.message(messages_review.too_many(len(entries)))
+            reply=BotReply.message(messages_approve.too_many(len(entries)))
         )
     partners = {
         name for entry in entries for name in _recipient_hint(deps, sender, entry)
@@ -164,7 +170,7 @@ def handle_review_alle_freigeben(
         },
     )
     reply = BotReply(
-        text=messages_review.approve_all_confirm(entries, recipients=sorted(partners)),
+        text=messages_approve.approve_all_confirm(entries, recipients=sorted(partners)),
         buttons=_confirm_buttons(pending.action_id),
     )
     return HandlerResult(reply=reply, pending=pending)
@@ -191,11 +197,43 @@ def execute_pending(
         return BotReply.message(messages_review.review_unavailable())
     raw = pending.payload.get("correlation_ids")
     correlation_ids = [str(c) for c in raw] if isinstance(raw, list) else []
-    done, failed = 0, 0
+    raw_note = pending.payload.get("note")
+    note = raw_note if isinstance(raw_note, str) and raw_note.strip() else None
+    done, failed, noted = 0, 0, 0
     for correlation_id in correlation_ids:
         try:
             router.approve_draft(correlation_id)
             done += 1
         except Exception:  # noqa: BLE001
             failed += 1
-    return BotReply.message(messages_review.approved(done, failed))
+            continue
+        if note:
+            noted += _attach_note(deps, sender, correlation_id, note)
+    return BotReply.message(
+        messages_approve.approved(
+            done, failed, note_wanted=note is not None, noted=noted
+        )
+    )
+
+
+def _attach_note(
+    deps: BotDeps, sender: ResolvedSender, correlation_id: str, note: str
+) -> int:
+    """Schreibt den Infotext an den Putzauftrag. 1, wenn er angekommen ist.
+
+    Der Auftrag entsteht schon beim Erkennen der Buchung, existiert bei der
+    Freigabe also bereits. Gibt es keinen (Storno, Putzplan nicht gebucht),
+    ist das kein Fehler — die Freigabe selbst hat geklappt.
+
+    Als `manually_edited` markiert, damit spätere Buchungsmails den Status nicht
+    zurücksetzen: der Text ist eine bewusste Anweisung des Gastgebers.
+    """
+    task = deps.cleaning_task_repo.find_by_correlation_id(
+        correlation_id, account_id=sender.account_id
+    )
+    if task is None:
+        return 0
+    task.note = note
+    task.manually_edited = True
+    deps.cleaning_task_repo.upsert(task, account_id=sender.account_id)
+    return 1
