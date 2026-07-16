@@ -139,7 +139,9 @@ def build_app_context(settings: Settings | None = None) -> AppContext:
         platform_settings_repo,
     )
     cleaning_partner_repo, cleaning_task_repo, cleaning_service = (
-        build_cleaning_service(db, platform_settings_repo, notification_service)
+        build_cleaning_service(
+            db, platform_settings_repo, notification_service, entitlement_service
+        )
     )
 
     alerts, tracing, langfuse_tracer, feedback_tracker = build_observability_stack(cfg)

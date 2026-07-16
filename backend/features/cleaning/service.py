@@ -30,6 +30,7 @@ from backend.infrastructure.repositories.platform_settings_repository import (
 )
 
 if TYPE_CHECKING:
+    from backend.features.billing.entitlement_service import EntitlementService
     from backend.features.notifications.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
@@ -47,17 +48,29 @@ class CleaningScheduleService:
         task_repo: CleaningTaskRepository,
         platform_settings_repo: PlatformSettingsRepository,
         notifier: NotificationService | None = None,
+        entitlement_service: EntitlementService | None = None,
     ) -> None:
         """Initialize the instance with its dependencies."""
         self._partner_repo = partner_repo
         self._task_repo = task_repo
         self._platform_settings_repo = platform_settings_repo
         self._notifier = CleaningNotifier(notifier, partner_repo)
+        self._entitlement_service = entitlement_service
 
     def is_enabled(self, account_id: str | None) -> bool:
-        """True, wenn der Putzplan für den Account freigeschaltet ist."""
+        """True, wenn der Putzplan für den Account freigeschaltet ist.
+
+        Muss dieselbe Wahrheit liefern wie die API (api/services/
+        cleaning_queries.feature_enabled): Plan-Features ∪ Admin-Toggles.
+        Sonst zeigt die Oberfläche einen Putzplan, für den nie Aufträge
+        entstehen (Pro/Business bringen das Feature per Plan mit).
+        """
         if not account_id:
             return False
+        if self._entitlement_service is not None:
+            return FEATURE_CLEANING_SCHEDULE in (
+                self._entitlement_service.effective_features(account_id)
+            )
         settings = self._platform_settings_repo.get(account_id)
         return settings is not None and settings.feature_enabled(
             FEATURE_CLEANING_SCHEDULE

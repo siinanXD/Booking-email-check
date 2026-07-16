@@ -13,6 +13,7 @@ from backend.infrastructure.repositories.cleaning_task_repository import (
 )
 
 if TYPE_CHECKING:
+    from backend.features.billing.entitlement_service import EntitlementService
     from backend.features.notifications.notification_service import NotificationService
     from backend.infrastructure.repositories.mongo import Db
     from backend.infrastructure.repositories.platform_settings_repository import (
@@ -24,6 +25,7 @@ def build_cleaning_service(
     db: Db,
     platform_settings_repo: PlatformSettingsRepository,
     notifier: NotificationService | None = None,
+    entitlement_service: EntitlementService | None = None,
 ) -> tuple[CleaningPartnerRepository, CleaningTaskRepository, CleaningScheduleService]:
     """Erzeugt Putzpartner-/Auftrag-Repos und den Putzplan-Service."""
     partner_repo = CleaningPartnerRepository(db)
@@ -33,5 +35,6 @@ def build_cleaning_service(
         task_repo,
         platform_settings_repo,
         notifier,
+        entitlement_service,
     )
     return partner_repo, task_repo, service
