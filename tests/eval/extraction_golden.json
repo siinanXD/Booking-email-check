@@ -6,8 +6,14 @@
     "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 3 - Mi 9 Sep 2026: 88902627 - Dai - Booking.com",
     "received_at": "2026-09-09T05:18:00Z",
     "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 3\nBuchungsnummer: 88902627\nPersonen 2\nPreis €345.46\n\nCheck-in Mi 9 Sep 2026\nLetzte Übernachtung Fr 11 Sep 2026\nCheck-out Sa 12 Sep 2026\n\nBooking.com 5628649148\n\nName Yue Dai\nEmail: ydai_543285@guest.booking.com\n",
-    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
-    "expected": { "room_number": "3", "channel": "Booking.com" }
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Münzbach Ferienzimmer"
+    },
+    "expected": {
+      "room_number": "3",
+      "channel": "Booking.com"
+    }
   },
   {
     "id": "anetta_banks",
@@ -16,8 +22,14 @@
     "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 1 - 88738356 - Booking.com",
     "received_at": "2026-07-09T18:05:00Z",
     "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 1\nBuchungsnummer: 88738356\nPersonen 2\n\nCheck-in Do 9 Jul 2026\nCheck-out Fr 10 Jul 2026\n\nBooking.com 5611112222\n\nName Anetta Maria Kasperowicz Banks\nEmail: abanks_99@guest.booking.com\n",
-    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
-    "expected": { "room_number": "1", "channel": "Booking.com" }
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Münzbach Ferienzimmer"
+    },
+    "expected": {
+      "room_number": "1",
+      "channel": "Booking.com"
+    }
   },
   {
     "id": "tobias_haffke_storno",
@@ -26,8 +38,14 @@
     "subject": "Stornierung: Münzbach Ferienzimmer : Zimmer Nr. 1 - 86710654 - Booking.com",
     "received_at": "2026-06-20T17:44:00Z",
     "body_text": "Stornierungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 1\nBuchungsnummer: 86710654\nPersonen 2\n\nCheck-in Mo 22 Jun 2026\nCheck-out Mi 24 Jun 2026\n\nBooking.com 5283999999\n\nName Tobias Haffke\nEmail: thaffke_12@guest.booking.com\n",
-    "base": { "intent": "cancellation", "property_name": "Münzbach Ferienzimmer - Zimmer Nr. 3" },
-    "expected": { "room_number": "1", "channel": "Booking.com" }
+    "base": {
+      "intent": "cancellation",
+      "property_name": "Münzbach Ferienzimmer - Zimmer Nr. 3"
+    },
+    "expected": {
+      "room_number": "1",
+      "channel": "Booking.com"
+    }
   },
   {
     "id": "rebenglueck",
@@ -36,8 +54,14 @@
     "subject": "Buchung: Ferienwohnung RebenGlück - 88585174 - Booking.com",
     "received_at": "2026-08-23T12:21:00Z",
     "body_text": "Neue Buchungsbenachrichtigung.\n\nFerienwohnung RebenGlück\n\nApartment mit 2 Schlafzimmern und Balkon\nBuchungsnummer: 88585174\nPersonen 2\n\nCheck-in So 23 Aug 2026\nCheck-out Fr 28 Aug 2026\n\nBooking.com 5283424454\n\nName Wolfgang Engelhardt\nEmail: wengel_77@guest.booking.com\n",
-    "base": { "intent": "new_booking", "property_name": "Ferienwohnung RebenGlück" },
-    "expected": { "room_number": null, "channel": "Booking.com" }
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Ferienwohnung RebenGlück"
+    },
+    "expected": {
+      "room_number": null,
+      "channel": "Booking.com"
+    }
   },
   {
     "id": "airbnb_example",
@@ -46,8 +70,14 @@
     "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 2 - 77001122 - Airbnb",
     "received_at": "2026-05-12T09:30:00Z",
     "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 2\nBuchungsnummer: 77001122\nPersonen 2\n\nCheck-in Di 12 Mai 2026\nCheck-out Do 14 Mai 2026\n\nAirbnb HMABCDEFGH\n\nName John Smith\nEmail: john-abcd@guest.airbnb.com\n",
-    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
-    "expected": { "room_number": "2", "channel": "Airbnb" }
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Münzbach Ferienzimmer"
+    },
+    "expected": {
+      "room_number": "2",
+      "channel": "Airbnb"
+    }
   },
   {
     "id": "direkt_example",
@@ -56,7 +86,146 @@
     "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 4 - 90011 - Direkt",
     "received_at": "2026-04-01T08:00:00Z",
     "body_text": "Neue Buchungsbenachrichtigung.\n\nMünzbach Ferienzimmer\n\nZimmer Nr. 4\nBuchungsnummer: 90011\nPersonen 2\n\nCheck-in Mi 1 Apr 2026\nCheck-out Fr 3 Apr 2026\n\nDirektbuchung\n\nName Erika Mustermann\nEmail: erika.mustermann@gmx.de\n",
-    "base": { "intent": "new_booking", "property_name": "Münzbach Ferienzimmer" },
-    "expected": { "room_number": "4", "channel": null }
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Münzbach Ferienzimmer"
+    },
+    "expected": {
+      "room_number": "4",
+      "channel": null
+    }
+  },
+  {
+    "id": "rebenglueck_unit_ohne_zimmer",
+    "_warum": "Unit heisst 'Rebenglück Air BNB' - Marketingname, KEIN Zimmer. Kanal ist Booking.com (Gast-Domain), nicht Airbnb aus dem Unit-Namen.",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Ferienwohnung RebenGlück: Rebenglück Air BNB - Sa 19 Sep 2026: 88518931 - Jutta - Booking.com",
+    "received_at": "2026-06-18T19:25:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung. Ferienwohnung RebenGlück Rebenglück Air BNB Buchungsnummer: 88518931 Personen 4 Preis 245.68€ Check-in Sa 19 Sep 2026 Letzte Übernachtung Sa 19 Sep 2026 Check-out So 20 Sep 2026 Booking.com 6567973473 Name Testgast Beispiel Email tg.000000@guest.booking.com +49 170 0000000",
+    "known_properties": [
+      "Münzbach Ferienzimmer",
+      "Ferienwohnung RebenGlück"
+    ],
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Ferienwohnung RebenGlück"
+    },
+    "expected": {
+      "room_number": null,
+      "channel": "Booking.com",
+      "property_name": "Ferienwohnung RebenGlück"
+    }
+  },
+  {
+    "id": "rebenglueck_storno_unit_ohne_zimmer",
+    "_warum": "Storno derselben Buchung - darf ebenfalls kein Zimmer erfinden.",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung storniert: Ferienwohnung RebenGlück: Rebenglück Air BNB - Sa 19 Sep 2026: 88518931 - Jutta - Booking.com",
+    "received_at": "2026-06-22T19:25:00Z",
+    "body_text": "Diese Buchung wurde durch den Gast storniert. Ferienwohnung RebenGlück Rebenglück Air BNB Buchungsnummer: 88518931 Personen 4 Preis 0.00€ Check-in Sa 19 Sep 2026 Letzte Übernachtung Sa 19 Sep 2026 Check-out So 20 Sep 2026 Booking.com 6567973473 Name Testgast Beispiel Email tg.000000@guest.booking.com",
+    "known_properties": [
+      "Münzbach Ferienzimmer",
+      "Ferienwohnung RebenGlück"
+    ],
+    "base": {
+      "intent": "cancellation",
+      "property_name": "Ferienwohnung RebenGlück"
+    },
+    "expected": {
+      "room_number": null,
+      "channel": "Booking.com",
+      "property_name": "Ferienwohnung RebenGlück"
+    }
+  },
+  {
+    "id": "muenzbach_zimmer_nr1_ohne_leerzeichen",
+    "_warum": "'Zimmer Nr.1' ohne Leerzeichen nach dem Punkt.",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr.1 - Fr 17 Jul 2026: 89790382 - An - Booking.com",
+    "received_at": "2026-07-16T19:22:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung. Münzbach Ferienzimmer Zimmer Nr.1 Buchungsnummer: 89790382 Personen 2 Preis €140.86 Check-in Fr 17 Jul 2026 Letzte Übernachtung Fr 17 Jul 2026 Check-out Sa 18 Jul 2026 Booking.com 6312407259 Name Testgast Beispiel Email tg.000001@guest.booking.com be Gesamtpreis €140.86 ** THIS RESERVATION HAS BEEN PRE-PAID ** BOOKING NOTE : Payment charge is EUR 1.94404",
+    "known_properties": [
+      "Münzbach Ferienzimmer",
+      "Ferienwohnung RebenGlück"
+    ],
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Münzbach Ferienzimmer"
+    },
+    "expected": {
+      "room_number": "1",
+      "channel": "Booking.com",
+      "property_name": "Münzbach Ferienzimmer"
+    }
+  },
+  {
+    "id": "muenzbach_zimmer_nur_in_html",
+    "_warum": "REGRESSION: beds24-Mails sind oft HTML; der Text-Teil kann die Zimmer-Zeile verlieren. Genau dieser Pfad war im Golden-Set nie getestet.",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Münzbach Ferienzimmer : Zimmer Nr. 4 - Do 7 Jan 2027: 87000970 - Auekarn - Booking.com",
+    "received_at": "2027-01-06T10:00:00Z",
+    "body_text": "",
+    "body_html": "<html><body><p>Neue Buchungsbenachrichtigung.</p><p>Münzbach Ferienzimmer</p><p>Zimmer Nr. 4</p><p>Buchungsnummer: 87000970</p><p>Booking.com 6312407260</p><p>Name Testgast Beispiel</p><p>Email tg.000002@guest.booking.com</p></body></html>",
+    "known_properties": [
+      "Münzbach Ferienzimmer",
+      "Ferienwohnung RebenGlück"
+    ],
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Münzbach Ferienzimmer"
+    },
+    "expected": {
+      "room_number": "4",
+      "channel": "Booking.com",
+      "property_name": "Münzbach Ferienzimmer"
+    }
+  },
+  {
+    "id": "muenzbach_einzelzimmer_ohne_nummer",
+    "_warum": "Unit 'Einzelzimmer' hat keine Nummer. room_number bleibt None - bewusst so entschieden (Zimmernummern genuegen, keine Unit-Modellierung).",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung: Münzbach Ferienzimmer : Einzelzimmer - Di 11 Aug 2026: 88689262 - Rehak - Airbnb",
+    "received_at": "2026-08-10T10:00:00Z",
+    "body_text": "Neue Buchungsbenachrichtigung. Münzbach Ferienzimmer Einzelzimmer Buchungsnummer: 88689262 Personen 1 Preis €280.00 Check-in Di 11 Aug 2026 Letzte Übernachtung Fr 14 Aug 2026 Check-out Sa 15 Aug 2026 Airbnb 1234567890 Name Testgast Beispiel Email tg.000003@guest.airbnb.com",
+    "known_properties": [
+      "Münzbach Ferienzimmer",
+      "Ferienwohnung RebenGlück"
+    ],
+    "base": {
+      "intent": "new_booking",
+      "property_name": "Münzbach Ferienzimmer"
+    },
+    "expected": {
+      "room_number": null,
+      "channel": "Airbnb",
+      "property_name": "Münzbach Ferienzimmer"
+    }
+  },
+  {
+    "id": "muenzbach_zimmer_im_objektnamen_wird_entfaltet",
+    "_warum": "REGRESSION Phantom-Objekt: das LLM faltet das Zimmer in den property_name. Der Katalog muss es auf das echte Objekt zurueckziehen, das Zimmer kommt aus dem Body - hier Nr.1, NICHT die 3 aus dem Namen.",
+    "channel_group": "booking.com",
+    "from_address": "bookings@beds24.com",
+    "subject": "Buchung storniert: Münzbach Ferienzimmer : Zimmer Nr.1 - Mo 22 Jun 2026: 86710654 - Haffke - Booking.com",
+    "received_at": "2026-06-21T10:00:00Z",
+    "body_text": "Diese Buchung wurde durch den Gast storniert. Münzbach Ferienzimmer Zimmer Nr.1 Buchungsnummer: 86710654 Personen 2 Preis €0.00 Check-in Mo 22 Jun 2026 Letzte Übernachtung Mo 22 Jun 2026 Check-out Di 23 Jun 2026 Booking.com 6312407261 Name Testgast Beispiel Email tg.000004@guest.booking.com",
+    "known_properties": [
+      "Münzbach Ferienzimmer",
+      "Ferienwohnung RebenGlück"
+    ],
+    "base": {
+      "intent": "cancellation",
+      "property_name": "Münzbach Ferienzimmer - Zimmer Nr. 3"
+    },
+    "expected": {
+      "room_number": "1",
+      "channel": "Booking.com",
+      "property_name": "Münzbach Ferienzimmer"
+    }
   }
 ]

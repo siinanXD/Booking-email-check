@@ -10,6 +10,7 @@ from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.core.models.notification import NotificationKind
 from backend.features.cleaning.identity import cleaning_date_for, cleaning_task_id
+from backend.features.cleaning.master_data import refresh_master_data
 from backend.features.cleaning.models import (
     SOURCE_BOOKING_EMAIL,
     SOURCE_CANCELLATION_EMAIL,
@@ -193,6 +194,7 @@ class CleaningScheduleService:
         if cleaning_date is not None:
             task.cleaning_date = cleaning_date
         date_changed = cleaning_date is not None and cleaning_date != prev_cleaning
+        refresh_master_data(task, extraction)
 
         if task.status == CleaningTaskStatus.CANCELLED:
             # Re-Buchung nach Storno: Auftrag wieder aktivieren.

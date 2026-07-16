@@ -132,6 +132,10 @@ def _email_from_case(case: dict[str, Any]) -> StoredEmail:
         from_address=str(case.get("from_address", "")),
         subject=str(case.get("subject", "")),
         body_text=str(case.get("body_text", "")),
+        # beds24-Mails sind oft HTML; der Text-Teil kann die Zimmer-Zeile
+        # verlieren. `_enrich_room_and_channel` liest deshalb body_html mit —
+        # ohne Durchreichen hier bliebe genau dieser Pfad ungetestet.
+        body_html=case.get("body_html"),
         received_at=received,
         correlation_id=str(case.get("id", "case")),
         platform=case.get("platform"),
@@ -157,7 +161,15 @@ def evaluate_deterministic(cases: list[dict[str, Any]]) -> FieldAccuracyReport:
             continue
         report.cases += 1
         channel = str(case.get("channel_group", "unbekannt"))
-        enriched = enrich_extraction(_email_from_case(case), _base_extraction(case))
+        # `known_properties` optional pro Fall: ohne Katalog läuft das
+        # Property-Matching gar nicht — genau dort entstanden die Phantom-
+        # Objekte ("Münzbach Ferienzimmer Zimmer Nr. 3").
+        known = [str(n) for n in (case.get("known_properties") or [])] or None
+        enriched = enrich_extraction(
+            _email_from_case(case),
+            _base_extraction(case),
+            known_property_names=known,
+        )
         dumped = enriched.model_dump(mode="json")
         for fname, exp in expected.items():
             actual = dumped.get(fname)
