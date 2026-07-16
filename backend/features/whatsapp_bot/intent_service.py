@@ -31,6 +31,8 @@ Gib NUR ein JSON-Objekt zurück (kein Markdown) mit diesen Feldern:
 - person_name: Name einer erwähnten Person, sonst null
 - person_phone: Telefonnummer einer erwähnten Person, sonst null
 - property_name: Name eines erwähnten Objekts/einer Wohnung, sonst null
+- neuer_name: bei Umbenennungen der ZIEL-Name; person_name bzw.
+  property_name bleiben dabei der bisherige Name. Sonst null.
 - booking_ref: erwähnte Buchungsnummer, sonst null
 - freitext: sonstiger relevanter Kontext, sonst null
 
@@ -39,11 +41,22 @@ Hinweise:
 - Eigene Termine einer Reinigungskraft → putzplan_eigener_abruf
 - "Buchungen"/"Wer kommt" → buchungen_anzeigen; konkrete Buchung →
   buchung_details
-- Neue Reinigungskraft/Mitarbeiter → mitarbeiter_anlegen; entfernen oder
-  ändern → mitarbeiter_bearbeiten; "wer arbeitet" → mitarbeiter_liste
+- Neue Reinigungskraft/Mitarbeiter → mitarbeiter_anlegen; "wer arbeitet" →
+  mitarbeiter_liste
+- Mitarbeiter entfernen/deaktivieren/kündigen → mitarbeiter_bearbeiten
+- Name oder Telefonnummer eines Mitarbeiters ändern ("Anna heißt jetzt
+  Anna Müller", "Annas Nummer ist +49…") → mitarbeiter_aendern
 - Neue Wohnung/Objekt → objekt_anlegen; Objekt-Übersicht → objekt_liste;
   Objekt einer Person zuordnen → objekt_zuweisen
-- Gruß/Fähigkeitsfrage → hilfe; alles andere Unklare → unklar
+- Zuordnung lösen ("nimm Anna die Wohnung X weg") → objekt_entziehen
+- Objekt umbenennen ("Wohnung X heißt jetzt Y") → objekt_bearbeiten
+- Objekt löschen/entfernen → objekt_loeschen
+- Sammelbegriffe ohne konkreten Auftrag ("Mitarbeiter", "Mitarbeiter
+  verwalten", "Personal") → mitarbeiter_liste; ebenso "Objekte",
+  "Objekte verwalten", "Wohnungen" → objekt_liste. Eine Liste ist die
+  Antwort auf unspezifische Verwaltungsanfragen, nicht hilfe.
+- Nur Gruß ("Hallo") oder ausdrückliche Fähigkeitsfrage ("Hilfe", "was
+  kannst du") → hilfe; alles andere Unklare → unklar
 
 Bekannte Objekte: {properties}
 
@@ -119,6 +132,7 @@ def _validate_intent(data: dict[str, object], *, fallback_text: str) -> UserInte
         person_phone=_opt("person_phone"),
         person_role=_opt("person_role"),
         property_name=_opt("property_name"),
+        neuer_name=_opt("neuer_name"),
         booking_ref=_opt("booking_ref"),
         freitext=_opt("freitext") or fallback_text[:200],
     )
