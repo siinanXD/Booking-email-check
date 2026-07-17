@@ -195,7 +195,6 @@ class CleaningScheduleService:
             task.cleaning_date = cleaning_date
         date_changed = cleaning_date is not None and cleaning_date != prev_cleaning
         refresh_master_data(task, extraction)
-
         if task.status == CleaningTaskStatus.CANCELLED:
             # Re-Buchung nach Storno: Auftrag wieder aktivieren.
             task.cancelled_at = None

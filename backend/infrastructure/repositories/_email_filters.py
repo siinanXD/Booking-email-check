@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from pymongo.collection import Collection
+
 
 def build_base_match(
     *,
@@ -119,3 +121,45 @@ def build_intent_pipeline(
             }
         },
     ]
+
+
+def run_filtered_query(
+    col: Collection[dict[str, Any]],
+    base_match: dict[str, Any],
+    *,
+    intent_filter: list[str],
+    booking_related: bool,
+    skip: int,
+    limit: int,
+) -> tuple[list[dict[str, Any]], int]:
+    """Führt die Listen-Query aus und gibt (Dokumente, Gesamtzahl) zurück.
+
+    Drei Pfade, absichtlich getrennt:
+    - booking_related: rein über vorberechnete Felder (kein $lookup, kein
+      Python-Loop). Muss deckungsgleich zu ``count_booking_intents`` bleiben.
+    - intent ohne booking_related: Aggregations-Pipeline mit $facet.
+    - sonst: einfacher find, sortiert nach updated_at.
+    """
+    if booking_related:
+        if intent_filter:
+            base_match["effective_intent"] = (
+                intent_filter[0] if len(intent_filter) == 1 else {"$in": intent_filter}
+            )
+        total = int(col.count_documents(base_match))
+        cursor = col.find(base_match).sort("received_at", -1).skip(skip).limit(limit)
+        return list(cursor), total
+
+    if intent_filter:
+        pipeline = build_intent_pipeline(
+            base_match, intent_filter, skip, limit, booking_related=booking_related
+        )
+        agg = list(col.aggregate(pipeline))
+        if not agg:
+            return [], 0
+        total_arr = agg[0].get("total", [])
+        total = int(total_arr[0]["count"]) if total_arr else 0
+        return list(agg[0].get("items", [])), total
+
+    total = int(col.count_documents(base_match))
+    cursor = col.find(base_match).sort("updated_at", -1).skip(skip).limit(limit)
+    return list(cursor), total

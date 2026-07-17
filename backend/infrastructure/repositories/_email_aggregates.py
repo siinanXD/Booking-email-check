@@ -41,3 +41,40 @@ def list_stuck(
     )
     cursor = col.find(match).sort("updated_at", 1).limit(limit)
     return [StoredEmail.from_mongo(doc) for doc in cursor]
+
+
+def count_booking_intents(
+    col: Collection[dict[str, Any]],
+    *,
+    account_id: str | None,
+    received_since: str | None,
+    received_until: str | None,
+) -> dict[str, int]:
+    """Buchungsmails je ``effective_intent`` — die Quelle der Navigations-Zähler.
+
+    Nutzt bewusst dasselbe ``build_base_match`` wie ``EmailRepository.list_filtered``:
+    Zähler und Liste müssen strukturell dieselbe Frage stellen, nicht nur zufällig
+    dieselbe Antwort geben. Vorher klassifizierten die Zähler bei jedem Request
+    live in Python, während die Liste die vorberechneten Felder las — eine Mail
+    ohne ``is_booking`` wurde gezählt, war aber über die Liste unauffindbar.
+    """
+    from backend.infrastructure.repositories._email_filters import build_base_match
+
+    match = build_base_match(
+        account_id=account_id,
+        status=None,
+        platform=None,
+        search=None,
+        booking_related=True,
+        received_since=received_since,
+        received_until=received_until,
+    )
+    pipeline: list[dict[str, Any]] = [
+        {"$match": match},
+        {"$group": {"_id": "$effective_intent", "count": {"$sum": 1}}},
+    ]
+    return {
+        str(row["_id"]): int(row["count"])
+        for row in col.aggregate(pipeline)
+        if row.get("_id")
+    }
