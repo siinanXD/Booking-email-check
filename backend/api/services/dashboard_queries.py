@@ -17,8 +17,8 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
     now = datetime.now(UTC)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=7)
-    # Matches the booking lists' default date filter (last 30 days) so the
-    # sidebar nav badges agree with what the list shows by default.
+    # Deckungsgleich mit dem Standard-Datumsfilter der Listen (30 Tage), damit
+    # die Nav-Badges zeigen, was die Liste beim Öffnen auch zeigt.
     window_start = today_start - timedelta(days=30)
     today_iso = today_start.isoformat()
     week_iso = week_start.isoformat()
@@ -53,6 +53,13 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
         today_iso=today_iso,
         week_iso=week_iso,
         window_iso=window_iso,
+    )
+    # Nav-Badges aus derselben Quelle wie die Listen (vorberechnete Felder),
+    # nicht aus der Live-Klassifikation in `booking_stats`. Sonst zeigt der
+    # Zähler Mails, die die Liste nicht findet.
+    nav_intents = email_repo.count_booking_intents(
+        account_id=account_id,
+        received_since=window_iso,
     )
     nav_completed = ctx.review_repo.count_by_status_since(
         ["completed"],
@@ -104,16 +111,15 @@ def dashboard_stats(ctx: AppContext, account_id: str) -> DashboardStats:
         last_email_received_at=last_email_received_at,
         last_booking_detected_at=last_booking_detected_at,
         mail_fetch_unread_only=ctx.settings.outlook_fetch_unread_only,
-        nav_bookings=booking_stats.intents_window.get(
-            BookingIntent.NEW_BOOKING.value, 0
-        ),
-        nav_cancellations=booking_stats.intents_window.get(
-            BookingIntent.CANCELLATION.value, 0
-        ),
-        nav_changes=booking_stats.intents_window.get(BookingIntent.CHANGE.value, 0),
+        nav_bookings=nav_intents.get(BookingIntent.NEW_BOOKING.value, 0),
+        nav_cancellations=nav_intents.get(BookingIntent.CANCELLATION.value, 0),
+        nav_changes=nav_intents.get(BookingIntent.CHANGE.value, 0),
+        # Beschwerden zählen mit — der "Nachrichten"-Tab filtert beide Intents,
+        # sonst hätte eine Beschwerde den Zähler erhöht und wäre nirgends
+        # auffindbar gewesen (es gibt keinen eigenen Beschwerden-Tab).
         nav_messages=(
-            booking_stats.intents_window.get(BookingIntent.GUEST_INQUIRY.value, 0)
-            + booking_stats.intents_window.get(BookingIntent.COMPLAINT.value, 0)
+            nav_intents.get(BookingIntent.GUEST_INQUIRY.value, 0)
+            + nav_intents.get(BookingIntent.COMPLAINT.value, 0)
         ),
         nav_ground_zero=nav_ground_zero(ctx, account_id),
         nav_completed=nav_completed,
