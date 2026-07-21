@@ -101,6 +101,37 @@ def test_resolve_vergangenes_datum_ohne_jahr_naechstes_jahr() -> None:
     assert start == date(2027, 2, 1) and end == start
 
 
+def test_resolve_bereich_ohne_schlusspunkt() -> None:
+    """ "24.07" ohne Schlusspunkt fiel früher weg — der Bereich schrumpfte."""
+    start, end = resolve_period(  # type: ignore[misc]
+        "Gibt es Buchungen in dem Zeitraum von 24.07 - 27.07.2026", today=_TODAY
+    )
+    assert start == date(2026, 7, 24)
+    assert end == date(2026, 7, 27)
+
+
+def test_resolve_jahr_wird_vom_partner_datum_geerbt() -> None:
+    start, end = resolve_period("vom 24.07 bis 27.07.2027", today=_TODAY)  # type: ignore[misc]
+    assert start == date(2027, 7, 24)
+    assert end == date(2027, 7, 27)
+
+
+def test_resolve_bereich_ueber_jahreswechsel() -> None:
+    start, end = resolve_period("28.12 - 03.01.2027", today=_TODAY)  # type: ignore[misc]
+    assert start == date(2026, 12, 28)
+    assert end == date(2027, 1, 3)
+
+
+def test_resolve_uhrzeit_ist_kein_datum() -> None:
+    assert resolve_period("wir treffen uns um 12.08 Uhr", today=_TODAY) is None
+
+
+def test_resolve_verdrehter_bereich_wird_sortiert() -> None:
+    start, end = resolve_period("vom 15.08. bis 12.08.", today=_TODAY)  # type: ignore[misc]
+    assert start == date(2026, 8, 12)
+    assert end == date(2026, 8, 15)
+
+
 def test_resolve_unbekanntes_liefert_none() -> None:
     assert resolve_period("irgendwann demnächst mal", today=_TODAY) is None
     assert resolve_period(None, today=_TODAY) is None
