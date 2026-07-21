@@ -162,6 +162,7 @@ class PipelineReviewMixin:
                         email.correlation_id,
                         extraction,
                         account_id=email.account_id,
+                        event_at=email.received_at,
                     )
                 except Exception:  # noqa: BLE001
                     logger.exception(

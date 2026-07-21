@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.core.models.notification import NotificationKind
+from backend.features.cleaning.cancellation import find_for_cancellation, may_reopen
 from backend.features.cleaning.identity import cleaning_date_for, task_id_for
 from backend.features.cleaning.master_data import refresh_master_data
 from backend.features.cleaning.migration import get_or_adopt
@@ -82,8 +83,13 @@ class CleaningScheduleService:
         account_id: str | None = None,
         notify: bool = True,
         source: str = SOURCE_BOOKING_EMAIL,
+        event_at: datetime | None = None,
     ) -> CleaningTask | None:
-        """Verarbeitet ein freigegebenes Event, wenn das Feature aktiv ist."""
+        """Verarbeitet ein freigegebenes Event, wenn das Feature aktiv ist.
+
+        ``event_at`` ist der Eingangszeitpunkt der auslösenden Mail. Fehlt er,
+        bleibt ein stornierter Auftrag storniert (siehe ``may_reopen``).
+        """
         if not account_id or not self.is_enabled(account_id):
             return None
         settings = self._platform_settings_repo.get(account_id)
@@ -102,6 +108,7 @@ class CleaningScheduleService:
                 intent,
                 notify=notify,
                 source=source,
+                event_at=event_at,
             )
         return None
 
@@ -115,6 +122,7 @@ class CleaningScheduleService:
         *,
         notify: bool = True,
         source: str = SOURCE_BOOKING_EMAIL,
+        event_at: datetime | None = None,
     ) -> CleaningTask:
         """Legt einen Putzauftrag an oder aktualisiert einen bestehenden."""
         task_id = task_id_for(extraction, account_id)
@@ -131,6 +139,7 @@ class CleaningScheduleService:
                 intent,
                 correlation_id=correlation_id,
                 notify=notify,
+                event_at=event_at,
             )
         primary = partners[0] if partners else None
         task = CleaningTask(
@@ -175,6 +184,7 @@ class CleaningScheduleService:
         *,
         correlation_id: str,
         notify: bool = False,
+        event_at: datetime | None = None,
     ) -> CleaningTask:
         """Aktualisiert einen bestehenden Auftrag ohne manuelle Edits zu kippen."""
         primary = partners[0] if partners else None
@@ -188,6 +198,10 @@ class CleaningScheduleService:
         date_changed = cleaning_date is not None and cleaning_date != prev_cleaning
         refresh_master_data(task, extraction)
         if task.status == CleaningTaskStatus.CANCELLED:
+            if not may_reopen(task.cancelled_at, event_at):
+                logger.info("Storno bleibt bestehen (%s)", task.task_id)
+                self._task_repo.upsert(task, account_id=account_id)
+                return task
             # Re-Buchung nach Storno: Auftrag wieder aktivieren.
             task.cancelled_at = None
             if primary and not task.partner_id:
@@ -244,7 +258,7 @@ class CleaningScheduleService:
         notify: bool = True,
     ) -> CleaningTask:
         """Storniert den verknüpften Auftrag (oder legt einen Storno-Stub an)."""
-        task = self._find_for_cancellation(extraction, account_id)
+        task = find_for_cancellation(self._task_repo, extraction, account_id)
         if task is None:
             task = CleaningTask(
                 task_id=task_id_for(extraction, account_id),
@@ -277,16 +291,3 @@ class CleaningScheduleService:
         self._task_repo.upsert(task, account_id=account_id)
         logger.info("Putzauftrag storniert (%s)", task.task_id)
         return task
-
-    def _find_for_cancellation(
-        self, extraction: BookingExtraction, account_id: str
-    ) -> CleaningTask | None:
-        if extraction.booking_number:
-            by_number = self._task_repo.find_by_booking_number(
-                extraction.booking_number, account_id=account_id
-            )
-            if by_number is not None:
-                return by_number
-        return self._task_repo.get(
-            task_id_for(extraction, account_id), account_id=account_id
-        )
