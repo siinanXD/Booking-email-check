@@ -54,6 +54,11 @@ class CleaningTaskRepository:
         doc = self._col.find_one(query)
         return None if doc is None else CleaningTask.from_mongo(doc)
 
+    def delete(self, task_id: str, *, account_id: str | None = None) -> bool:
+        """Putzauftrag entfernen (Migration alter Schlüssel)."""
+        query = with_account_filter({"_id": task_id}, account_id)
+        return self._col.delete_one(query).deleted_count > 0
+
     def count_open_tasks(self, *, account_id: str) -> int:
         """Offene Aufträge (unassigned/scheduled/notified) eines Accounts."""
         query = with_account_filter(
