@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 
+from backend.ai.domain.booking.beds24_fields import strip_room_designation
 from backend.ai.domain.booking.booking_relevance import classify_booking_mail
 from backend.ai.domain.booking.extraction import BookingExtraction
+from backend.ai.domain.booking.property_match import match_known_property_name
 from backend.core.models.email import StoredEmail
 from backend.core.models.entities import Property
 from backend.infrastructure.repositories.mongo import Db
@@ -28,17 +30,22 @@ def ensure_property_from_extraction(
         return
     if not classify_booking_mail(email, extraction).is_booking:
         return
-    name = (extraction.property_name or "").strip()
+    # Die Zimmerangabe gehört nach `room_number`, nicht in den Objektnamen —
+    # sonst wird aus jeder Schreibweise desselben Listings ein eigenes Objekt.
+    name = strip_room_designation(extraction.property_name)
     if not name:
         return
     prop_repo = PropertyRepository(db)
     # Auch archivierte Objekte zählen: ein bewusst gelöschtes Objekt darf
     # nicht durch die nächste Buchungsmail wieder auferstehen.
-    existing = {
-        p.name.strip().lower()
+    existing = [
+        p.name.strip()
         for p in prop_repo.list_all(account_id=account_id, include_inactive=True)
-    }
-    if name.lower() in existing:
+        if p.name and p.name.strip()
+    ]
+    # Wortgenauer Abgleich statt Exact-Match: eine Namensvariante, die ein
+    # bekanntes Objekt als ganze Wortfolge enthält, ist dasselbe Objekt.
+    if match_known_property_name(name, existing):
         return
     prop_repo.upsert(
         Property(
