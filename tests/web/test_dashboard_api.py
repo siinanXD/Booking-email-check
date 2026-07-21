@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from backend.ai.domain.booking.booking_relevance import relevance_fields
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.core.models.email import ProcessingState, StoredEmail
@@ -45,11 +46,18 @@ def test_dashboard_stats_with_mail(
         account_id=tenant_account_id,
     )
     email_repo.upsert_by_message_id(email)
-    extraction_repo.save(
-        "corr-1",
+    extraction = BookingExtraction(
+        intent=BookingIntent.NEW_BOOKING, booking_number="AB1"
+    )
+    extraction_repo.save("corr-1", "m1@test", extraction, account_id=tenant_account_id)
+    # Wie der Extract-Node (workflows/nodes/pipeline.py): ohne diese Felder ist
+    # die Mail für die Listen unsichtbar — und darf dann auch nicht gezählt
+    # werden, sonst zeigt der Posteingang eine Zahl ohne zugehörigen Eintrag.
+    email_repo.update_processing_state(
         "m1@test",
-        BookingExtraction(intent=BookingIntent.NEW_BOOKING, booking_number="AB1"),
+        ProcessingState.PENDING_REVIEW,
         account_id=tenant_account_id,
+        **relevance_fields(email, extraction),
     )
     resp = client.get("/api/dashboard/stats", headers=auth_headers)
     assert resp.status_code == 200

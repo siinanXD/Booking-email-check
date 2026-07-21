@@ -9,12 +9,13 @@ from pymongo.collection import Collection
 
 from backend.core.models.email import ProcessingState, StoredEmail
 from backend.infrastructure.repositories._email_aggregates import (
+    count_booking_intents,
     count_states,
     list_stuck,
 )
 from backend.infrastructure.repositories._email_filters import (
     build_base_match,
-    build_intent_pipeline,
+    run_filtered_query,
 )
 from backend.infrastructure.repositories._email_gdpr import (
     delete_emails_by_sender,
@@ -196,7 +197,13 @@ class EmailRepository:
         received_since: str | None = None,
         received_until: str | None = None,
     ) -> tuple[list[StoredEmail], int]:
-        """Paginierte Liste mit optionalen Filtern."""
+        """Paginierte Liste mit optionalen Filtern.
+
+        Zum Zählen derselben Mails gibt es ``count_booking_intents`` — bitte
+        keinen zweiten Weg bauen. Die Zähler rechneten früher live in Python,
+        während diese Liste die vorberechneten Felder las; die Zahlen liefen
+        auseinander und der Posteingang zeigte "Nachrichten: 1" mit leerer Liste.
+        """
         base_match = build_base_match(
             account_id=account_id,
             status=status,
@@ -206,44 +213,30 @@ class EmailRepository:
             received_since=received_since,
             received_until=received_until,
         )
-        skip = max(page - 1, 0) * limit
-        intent_filter: list[str] = intents or ([intent] if intent else [])
-
-        if booking_related:
-            # Booking-Pfad filtert/paginiert rein über vorberechnete Felder
-            # auf der emails-Collection (kein $lookup, kein Python-Loop).
-            if intent_filter:
-                base_match["effective_intent"] = (
-                    intent_filter[0]
-                    if len(intent_filter) == 1
-                    else {"$in": intent_filter}
-                )
-            total = int(self._col.count_documents(base_match))
-            cursor = (
-                self._col.find(base_match)
-                .sort("received_at", -1)
-                .skip(skip)
-                .limit(limit)
-            )
-            return [StoredEmail.from_mongo(doc) for doc in cursor], total
-
-        if intent_filter:
-            pipeline = build_intent_pipeline(
-                base_match, intent_filter, skip, limit, booking_related=booking_related
-            )
-            agg = list(self._col.aggregate(pipeline))
-            if not agg:
-                return [], 0
-            items_raw = agg[0].get("items", [])
-            total_arr = agg[0].get("total", [])
-            total = int(total_arr[0]["count"]) if total_arr else 0
-            return [StoredEmail.from_mongo(doc) for doc in items_raw], total
-
-        total = int(self._col.count_documents(base_match))
-        cursor = (
-            self._col.find(base_match).sort("updated_at", -1).skip(skip).limit(limit)
+        docs, total = run_filtered_query(
+            self._col,
+            base_match,
+            intent_filter=intents or ([intent] if intent else []),
+            booking_related=booking_related,
+            skip=max(page - 1, 0) * limit,
+            limit=limit,
         )
-        return [StoredEmail.from_mongo(doc) for doc in cursor], total
+        return [StoredEmail.from_mongo(doc) for doc in docs], total
+
+    def count_booking_intents(
+        self,
+        *,
+        account_id: str | None = None,
+        received_since: str | None = None,
+        received_until: str | None = None,
+    ) -> dict[str, int]:
+        """Buchungsmails je ``effective_intent`` — Quelle der Navigations-Zähler."""
+        return count_booking_intents(
+            self._col,
+            account_id=account_id,
+            received_since=received_since,
+            received_until=received_until,
+        )
 
     def count_by_state_since(
         self,

@@ -18,6 +18,8 @@ type InboxTab = {
   intent: string;
   label: string;
   countKey?: keyof DashboardStats;
+  /** Mehrere Intents unter einem Tab; ohne Angabe gilt `intent`. */
+  intents?: string[];
 };
 
 const TABS: InboxTab[] = [
@@ -25,7 +27,14 @@ const TABS: InboxTab[] = [
   { intent: "new_booking", label: "Buchungen", countKey: "nav_bookings" },
   { intent: "cancellation", label: "Stornos", countKey: "nav_cancellations" },
   { intent: "change", label: "Änderungen", countKey: "nav_changes" },
-  { intent: "guest_inquiry", label: "Nachrichten", countKey: "nav_messages" },
+  // Beschwerden gehören mit hierher: nav_messages zählt sie, und einen eigenen
+  // Tab gibt es nicht — sonst erhöhen sie den Badge und sind nirgends zu finden.
+  {
+    intent: "guest_inquiry",
+    label: "Nachrichten",
+    countKey: "nav_messages",
+    intents: ["guest_inquiry", "complaint"],
+  },
 ];
 
 export function InboxPage() {
@@ -52,8 +61,16 @@ export function InboxPage() {
     );
   };
 
+  const activeTab = TABS.find((t) => t.intent === intent && t.intent);
   const queryParams: EmailListParams = {
-    ...(intent ? { intent, booking_related: true } : {}),
+    ...(intent
+      ? {
+          booking_related: true,
+          ...(activeTab?.intents
+            ? { intents: activeTab.intents.join(",") }
+            : { intent }),
+        }
+      : {}),
     ...dateRangeQueryParams(dateRange),
     search: debouncedSearch || undefined,
     page,
