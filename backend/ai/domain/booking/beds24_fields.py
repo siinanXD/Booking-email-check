@@ -98,6 +98,25 @@ def parse_room_number(*texts: str | None) -> str | None:
     return None
 
 
+def strip_room_designation(name: str | None) -> str:
+    """Entfernt die Zimmerangabe aus einem Objektnamen.
+
+    Booking-Listings heißen "Münzbach Ferienzimmer - Zimmer Nr. 3"; die
+    Zimmerangabe gehört aber in ``room_number``, nicht in den Objektnamen.
+    Bleibt sie stehen, entsteht pro Schreibweise ein eigenes Objekt im Katalog.
+
+    Besteht der Name **nur** aus der Zimmerangabe, bleibt er unverändert —
+    ein leerer Objektname wäre schlechter als ein ungenauer.
+    """
+    raw = (name or "").strip()
+    if not raw:
+        return ""
+    stripped = _ROOM_RE.sub(" ", raw)
+    # Trenner, die vor der entfernten Zimmerangabe standen, bleiben zurück.
+    stripped = " ".join(stripped.split()).strip(" -:,;/|")
+    return stripped or raw
+
+
 def expects_room(property_name: str | None, *texts: str | None) -> bool:
     """True, wenn der Kontext ein Multi-Zimmer-Objekt nahelegt (für fail-loud)."""
     haystack = " ".join(t for t in (property_name, *texts) if t)

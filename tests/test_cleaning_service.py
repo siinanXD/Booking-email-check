@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
@@ -185,17 +185,53 @@ def test_rebooking_after_cancel_reopens(
     partner_repo: CleaningPartnerRepository,
     settings_repo: PlatformSettingsRepository,
 ) -> None:
-    """Storniert → erneut gebucht reaktiviert den Auftrag."""
+    """Storniert → später erneut gebucht reaktiviert den Auftrag."""
     _enable(settings_repo)
     _partner(partner_repo)
     service.process_booking_event("c1", _booking(), account_id=ACCOUNT)
     service.process_booking_event(
         "c2", _booking(BookingIntent.CANCELLATION), account_id=ACCOUNT
     )
-    reopened = service.process_booking_event("c3", _booking(), account_id=ACCOUNT)
+    reopened = service.process_booking_event(
+        "c3",
+        _booking(),
+        account_id=ACCOUNT,
+        event_at=datetime.now(UTC) + timedelta(hours=1),
+    )
     assert reopened is not None
     assert reopened.status == CleaningTaskStatus.SCHEDULED
     assert reopened.cancelled_at is None
+
+
+def test_stale_event_does_not_reopen_cancelled(
+    service: CleaningScheduleService,
+    partner_repo: CleaningPartnerRepository,
+    settings_repo: PlatformSettingsRepository,
+) -> None:
+    """Eine erneut verarbeitete ältere Mail weckt den Storno nicht auf.
+
+    Genau das passierte in Produktion: der Backfill spielte die Änderungsmail
+    von vor dem Storno noch einmal ein, der Auftrag stand wieder auf
+    ``scheduled`` und die Putzkraft wurde zu einem stornierten Zimmer geschickt.
+    """
+    _enable(settings_repo)
+    _partner(partner_repo)
+    stale = datetime.now(UTC) - timedelta(hours=1)
+    service.process_booking_event("c1", _booking(), account_id=ACCOUNT, event_at=stale)
+    service.process_booking_event(
+        "c2", _booking(BookingIntent.CANCELLATION), account_id=ACCOUNT
+    )
+
+    replayed = service.process_booking_event(
+        "c1", _booking(), account_id=ACCOUNT, event_at=stale
+    )
+    assert replayed is not None
+    assert replayed.status == CleaningTaskStatus.CANCELLED
+
+    # Auch ohne Zeitstempel (Backfill) bleibt der Storno bestehen.
+    backfilled = service.process_booking_event("c1", _booking(), account_id=ACCOUNT)
+    assert backfilled is not None
+    assert backfilled.status == CleaningTaskStatus.CANCELLED
 
 
 def test_manual_edit_not_clobbered_by_change(

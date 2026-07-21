@@ -29,6 +29,8 @@ def backfill_account(
     )
     count = 0
     for correlation_id, extraction in pairs:
+        # Bewusst ohne `event_at`: der Backfill spielt Bestandsmails erneut ein.
+        # Ein stornierter Auftrag darf dadurch nicht wieder aktiv werden.
         service.process_booking_event(
             correlation_id,
             extraction,

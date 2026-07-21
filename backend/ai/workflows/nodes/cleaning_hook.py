@@ -36,6 +36,7 @@ def schedule_cleaning_on_detect(
             account_id=email.account_id,
             notify=False,
             source=SOURCE_BOOKING_EMAIL,
+            event_at=email.received_at,
         )
     except Exception:  # noqa: BLE001
         logger.exception(

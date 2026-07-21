@@ -7,6 +7,7 @@ Buchung stand in der Liste, die Reinigung fehlte.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -67,6 +68,7 @@ class FakeNotifications:
 class FakeEmail:
     correlation_id = "corr-1"
     account_id = ACCOUNT
+    received_at = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 @pytest.fixture
