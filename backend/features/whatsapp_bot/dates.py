@@ -148,3 +148,28 @@ def _parse_explicit_dates(text: str, today: date) -> tuple[date, date] | None:
 def format_date(value: date | None) -> str:
     """Deutsches Kurzformat (TT.MM.JJJJ)."""
     return value.strftime("%d.%m.%Y") if value else "—"
+
+
+def is_calendar_week(start: date, end: date) -> bool:
+    """True, wenn der Bereich exakt eine Kalenderwoche (Mo–So) ist."""
+    return start.weekday() == 0 and (end - start).days == 6
+
+
+def period_heading(start: date, end: date) -> str:
+    """Überschrift eines Zeitraums — "KW" nur, wenn es wirklich eine ist.
+
+    Ein rollierendes 7-Tage-Fenster ab heute trug früher die KW-Nummer seines
+    Starttags. Fragte jemand sonntags, stand "KW 29" über einem Bereich, der zu
+    sechs Siebteln in KW 30 lag — und die Abreisen am Fensterrand schienen zu
+    fehlen.
+    """
+    if is_calendar_week(start, end):
+        return f"KW {start.isocalendar()[1]}"
+    return f"{format_date(start)} – {format_date(end)}"
+
+
+def period_slug(start: date, end: date) -> str:
+    """Dateinamens-Baustein für einen Zeitraum (ohne Sonderzeichen)."""
+    if is_calendar_week(start, end):
+        return f"KW{start.isocalendar()[1]}"
+    return f"{start.strftime('%d-%m')}_bis_{end.strftime('%d-%m-%Y')}"

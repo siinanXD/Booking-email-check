@@ -11,7 +11,11 @@ from datetime import date
 
 from backend.features.cleaning.export import status_label
 from backend.features.cleaning.models import CleaningPartner, CleaningTask
-from backend.features.whatsapp_bot.dates import format_date
+from backend.features.whatsapp_bot.dates import (
+    format_date,
+    is_calendar_week,
+    period_heading,
+)
 
 _MAX_LIST_ITEMS = 10
 
@@ -80,18 +84,31 @@ def putzplan_summary(
     end: date,
 ) -> str:
     """Zusammenfassung eines erstellten Putzplans."""
+    # Das Kriterium gehoert sichtbar dazu: gelistet wird nach Putztermin
+    # (= Abreise + Offset), nicht nach Anreise. Ohne diesen Hinweis wirken
+    # Buchungen, die kurz hinter dem Zeitraum abreisen, wie verschluckt.
+    # Bei einer KW nennt die Ueberschrift nur die Nummer - dann gehoeren
+    # die konkreten Tage darunter. Steht der Bereich schon im Titel, nicht.
+    period = (
+        f"\U0001f4c6 {format_date(start)} – {format_date(end)}\n"
+        if is_calendar_week(start, end)
+        else ""
+    )
+    basis = "\U0001f6eb Grundlage: Reinigungen nach Abreise in diesem Zeitraum"
     if not tasks:
         return (
-            f"\U0001f9f9 *Putzplan {format_date(start)} – {format_date(end)}*\n\n"
-            "\u2705 Keine Reinigungen in diesem Zeitraum."
+            f"\U0001f9f9 *Putzplan {period_heading(start, end)}*\n"
+            f"{period}\n"
+            "\u2705 Keine Reinigungen in diesem Zeitraum.\n"
+            f"{basis}"
         )
     properties = {t.property_name for t in tasks if t.property_name}
-    week = start.isocalendar()[1]
     return (
-        f"\U0001f9f9 *Putzplan KW {week}*\n"
-        f"\U0001f4c6 {format_date(start)} – {format_date(end)}\n\n"
+        f"\U0001f9f9 *Putzplan {period_heading(start, end)}*\n"
+        f"{period}\n"
         f"\u2705 *{len(tasks)} Reinigungen* geplant\n"
-        f"\U0001f3e0 {len(properties)} Objekte\n\n"
+        f"\U0001f3e0 {len(properties)} Objekte\n"
+        f"{basis}\n\n"
         "\U0001f4ce Die Excel-Datei kommt gleich als Anhang."
     )
 

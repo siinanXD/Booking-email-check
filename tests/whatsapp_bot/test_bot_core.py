@@ -5,8 +5,14 @@ from __future__ import annotations
 from datetime import date
 
 from backend.features.cleaning.models import CleaningPartner
-from backend.features.whatsapp_bot.dates import resolve_period
+from backend.features.whatsapp_bot.dates import (
+    is_calendar_week,
+    period_heading,
+    period_slug,
+    resolve_period,
+)
 from backend.features.whatsapp_bot.deps import BotDeps
+from backend.features.whatsapp_bot.messages import putzplan_summary
 from backend.features.whatsapp_bot.models import BotAction, parse_button_id
 from backend.features.whatsapp_bot.permissions import is_allowed
 from backend.features.whatsapp_bot.sender_resolver import SenderResolver
@@ -130,6 +136,33 @@ def test_resolve_verdrehter_bereich_wird_sortiert() -> None:
     start, end = resolve_period("vom 15.08. bis 12.08.", today=_TODAY)  # type: ignore[misc]
     assert start == date(2026, 8, 12)
     assert end == date(2026, 8, 15)
+
+
+def test_kw_label_nur_fuer_echte_kalenderwochen() -> None:
+    """Ein rollierendes 7-Tage-Fenster darf keine KW-Nummer tragen.
+
+    Fragte jemand sonntags, stand "KW 29" über einem Bereich, der zu sechs
+    Siebteln in KW 30 lag — Abreisen am Fensterrand wirkten dadurch verschluckt.
+    """
+    sonntag, plus6 = date(2026, 7, 19), date(2026, 7, 25)
+    assert not is_calendar_week(sonntag, plus6)
+    assert period_heading(sonntag, plus6) == "19.07.2026 – 25.07.2026"
+
+    montag, sonntag_30 = date(2026, 7, 20), date(2026, 7, 26)
+    assert is_calendar_week(montag, sonntag_30)
+    assert period_heading(montag, sonntag_30) == "KW 30"
+
+
+def test_putzplan_dateiname_folgt_dem_zeitraum() -> None:
+    assert period_slug(date(2026, 7, 20), date(2026, 7, 26)) == "KW30"
+    assert period_slug(date(2026, 7, 19), date(2026, 7, 25)) == "19-07_bis_25-07-2026"
+
+
+def test_putzplan_summary_nennt_das_kriterium() -> None:
+    """Ohne "nach Abreise" wirken Buchungen am Rand wie verschluckt."""
+    text = putzplan_summary([], start=date(2026, 7, 19), end=date(2026, 7, 25))
+    assert "nach Abreise" in text
+    assert "KW" not in text  # kein falsches Kalenderwochen-Label
 
 
 def test_resolve_unbekanntes_liefert_none() -> None:
