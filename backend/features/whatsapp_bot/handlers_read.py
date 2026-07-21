@@ -6,7 +6,11 @@ from datetime import date, timedelta
 
 from backend.features.cleaning.export import build_cleaning_xlsx
 from backend.features.whatsapp_bot import messages
-from backend.features.whatsapp_bot.dates import format_date, today_in_tz
+from backend.features.whatsapp_bot.dates import (
+    format_date,
+    period_slug,
+    today_in_tz,
+)
 from backend.features.whatsapp_bot.deps import BotDeps, HandlerResult
 from backend.features.whatsapp_bot.models import (
     BotDocument,
@@ -45,8 +49,8 @@ def handle_putzplan(
     partners_by_id = {p.partner_id: p for p in partners}
     listing = messages.putzplan_tasks_list(tasks, partners_by_id)
     xlsx = build_cleaning_xlsx(tasks, partners_by_id)
-    week = start.isocalendar()[1]
-    document = BotDocument(filename=f"Putzplan_KW{week}.xlsx", content=xlsx)
+    slug = period_slug(start, end)
+    document = BotDocument(filename=f"Putzplan_{slug}.xlsx", content=xlsx)
     return HandlerResult(
         reply=BotReply(text=f"{summary}\n\n{listing}", document=document)
     )
