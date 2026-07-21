@@ -47,6 +47,9 @@ Hinweise:
 - Eigene Termine einer Reinigungskraft → putzplan_eigener_abruf
 - "Buchungen"/"Wer kommt" → buchungen_anzeigen; konkrete Buchung →
   buchung_details
+- Eine Buchung ist auch über den Gast ansprechbar ("zeig mir die Buchung von
+  Stefan Blass", "was hat Müller gebucht") → buchung_details mit dem Gastnamen
+  in person_name; booking_ref bleibt dann null
 - Neue Reinigungskraft/Mitarbeiter → mitarbeiter_anlegen; "wer arbeitet" →
   mitarbeiter_liste
 - Mitarbeiter entfernen/deaktivieren/kündigen → mitarbeiter_bearbeiten

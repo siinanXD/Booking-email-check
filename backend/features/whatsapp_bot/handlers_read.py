@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.features.cleaning.export import build_cleaning_xlsx
-from backend.features.whatsapp_bot import messages
+from backend.features.whatsapp_bot import messages, messages_booking
 from backend.features.whatsapp_bot.dates import (
     format_date,
     period_slug,
@@ -117,31 +118,67 @@ def handle_buchungen(
     return HandlerResult(reply=BotReply.message(text))
 
 
+def _lookup_by_guest(
+    deps: BotDeps, sender: ResolvedSender, guest_name: str
+) -> BookingExtraction | HandlerResult | None:
+    """Genau ein Treffer → Extraktion; mehrere → Auswahlliste; keiner → None."""
+    matches = deps.extraction_repo.find_bookings_by_guest_name(
+        guest_name, account_id=sender.account_id
+    )
+    if not matches:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+    rows = [
+        (
+            m.booking_number or "",
+            m.guest_name or "Unbekannt",
+            m.property_name or "",
+            m.check_in,
+            m.check_out,
+        )
+        for m in matches
+    ]
+    text = messages_booking.booking_matches(rows, guest_name=guest_name)
+    return HandlerResult(reply=BotReply.message(text))
+
+
 def handle_buchung_details(
     deps: BotDeps, sender: ResolvedSender, intent: UserIntent
 ) -> HandlerResult:
-    """Detailkarte einer Buchung anhand der Buchungsnummer."""
-    if not intent.booking_ref:
+    """Detailkarte einer Buchung — per Buchungsnummer oder Gastname.
+
+    Der Gastname ist der zweite Weg hinein: in Fremdsystemen, gegen die der
+    Kunde abgleicht, taucht die Buchungsnummer nicht auf.
+    """
+    if not intent.booking_ref and not intent.person_name:
         return HandlerResult(
             reply=BotReply.message(
                 messages.clarification(
-                    "Welche Buchung meinst du? Bitte nenn mir die Buchungsnummer."
+                    "Welche Buchung meinst du? Nenn mir die Buchungsnummer "
+                    "oder den Namen des Gastes."
                 )
             )
         )
-    extraction = deps.extraction_repo.find_booking_by_number(
-        intent.booking_ref, account_id=sender.account_id
-    )
+    extraction: BookingExtraction | None
+    if intent.booking_ref:
+        extraction = deps.extraction_repo.find_booking_by_number(
+            intent.booking_ref, account_id=sender.account_id
+        )
+    else:
+        found = _lookup_by_guest(deps, sender, intent.person_name or "")
+        if isinstance(found, HandlerResult):
+            return found  # mehrdeutig: Auswahlliste statt Detailkarte
+        extraction = found
+    gesucht = intent.booking_ref or intent.person_name or ""
     if extraction is None:
         return HandlerResult(
             reply=BotReply.message(
-                messages.clarification(
-                    f"Ich habe keine Buchung *{intent.booking_ref}* gefunden."
-                )
+                messages.clarification(f"Ich habe keine Buchung *{gesucht}* gefunden.")
             )
         )
     text = messages.booking_details(
-        ref=extraction.booking_number or intent.booking_ref,
+        ref=extraction.booking_number or gesucht,
         guest_name=extraction.guest_name or "Unbekannt",
         property_name=extraction.property_name or "—",
         check_in=extraction.check_in,

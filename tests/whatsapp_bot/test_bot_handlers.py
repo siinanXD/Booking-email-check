@@ -160,6 +160,59 @@ def test_buchung_details(bot_deps: BotDeps) -> None:
 def test_buchung_details_ohne_ref_rueckfrage(bot_deps: BotDeps) -> None:
     result = handle_buchung_details(bot_deps, _OWNER, UserIntent())
     assert "Buchungsnummer" in result.reply.text
+    assert "Namen des Gastes" in result.reply.text
+
+
+def test_buchung_details_ueber_gastnamen(bot_deps: BotDeps) -> None:
+    """Der Kunde gleicht mit einem System ab, in dem die Nummer fehlt."""
+    _seed_booking(bot_deps)
+    result = handle_buchung_details(
+        bot_deps, _OWNER, UserIntent(person_name="Max Mustermann")
+    )
+    assert "*Buchung AB123*" in result.reply.text
+    assert "Booking.com" in result.reply.text
+
+
+def test_buchung_details_gastname_teiltreffer(bot_deps: BotDeps) -> None:
+    """Nachname genügt, Groß/Kleinschreibung egal."""
+    _seed_booking(bot_deps)
+    result = handle_buchung_details(
+        bot_deps, _OWNER, UserIntent(person_name="mustermann")
+    )
+    assert "*Buchung AB123*" in result.reply.text
+
+
+def test_buchung_details_gastname_mehrdeutig_listet_auf(bot_deps: BotDeps) -> None:
+    """Zwei Buchungen desselben Gastes: auflisten statt willkürlich wählen."""
+    _seed_booking(bot_deps, cid="c1", booking_number="AB123")
+    _seed_booking(bot_deps, cid="c2", booking_number="AB124")
+    result = handle_buchung_details(
+        bot_deps, _OWNER, UserIntent(person_name="Max Mustermann")
+    )
+    assert "2 Buchungen" in result.reply.text
+    assert "AB123" in result.reply.text
+    assert "AB124" in result.reply.text
+
+
+def test_buchung_details_gastname_unbekannt(bot_deps: BotDeps) -> None:
+    _seed_booking(bot_deps)
+    result = handle_buchung_details(bot_deps, _OWNER, UserIntent(person_name="Niemand"))
+    assert "keine Buchung" in result.reply.text
+
+
+def test_buchung_details_gastname_tenant_isolation(bot_deps: BotDeps) -> None:
+    _seed_booking(bot_deps, account_id="acc-2", cid="fremd")
+    result = handle_buchung_details(
+        bot_deps, _OWNER, UserIntent(person_name="Max Mustermann")
+    )
+    assert "keine Buchung" in result.reply.text
+
+
+def test_gastname_wird_nicht_als_regex_ausgewertet(bot_deps: BotDeps) -> None:
+    """Nutzereingabe ist Wert, nie Ausdruck — sonst matcht ".*" alles."""
+    _seed_booking(bot_deps)
+    result = handle_buchung_details(bot_deps, _OWNER, UserIntent(person_name=".*"))
+    assert "keine Buchung" in result.reply.text
 
 
 def test_buchung_details_fremder_tenant_nicht_sichtbar(bot_deps: BotDeps) -> None:
