@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any
@@ -207,6 +208,39 @@ class ExtractionRepository:
         if account_id and doc.get("account_id") not in (None, account_id):
             return None
         return BookingExtraction.model_validate(doc["extraction"])
+
+    def find_bookings_by_guest_name(
+        self,
+        guest_name: str,
+        *,
+        account_id: str | None = None,
+        limit: int = 10,
+    ) -> list[BookingExtraction]:
+        """Buchungen anhand des Gastnamens (Teiltreffer, Groß/klein egal).
+
+        Der Gastname ist der gemeinsame Schlüssel zu Fremdsystemen, in denen
+        die Buchungsnummer fehlt. Die Eingabe wird escaped und ausschließlich
+        als Wert eingesetzt — nie als Regex-Ausdruck des Nutzers.
+        """
+        cleaned = guest_name.strip()
+        if not cleaned:
+            return []
+        pattern = {"$regex": re.escape(cleaned), "$options": "i"}
+        base: dict[str, Any] = {
+            "extraction.guest_name": pattern,
+            "extraction.intent": {"$in": ["new_booking", "change"]},
+        }
+        query = with_account_filter(base, account_id)
+        result: list[BookingExtraction] = []
+        for doc in self._col.find(query).sort("extraction.check_in", 1):
+            if account_id and doc.get("account_id") not in (None, account_id):
+                continue
+            if "extraction" not in doc:
+                continue
+            result.append(BookingExtraction.model_validate(doc["extraction"]))
+            if len(result) >= limit:
+                break
+        return result
 
     def get_workflow_id(
         self,
