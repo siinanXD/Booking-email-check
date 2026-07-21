@@ -14,7 +14,7 @@
     "screenshots:production": "node scripts/capture_readme_screenshots.mjs --production"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.101.4",
     "axios": "^1.18.1",
     "lucide-react": "^1.24.0",
     "react": "^19.2.0",
