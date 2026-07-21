@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.core.models.notification import NotificationKind
-from backend.features.cleaning.identity import cleaning_date_for, cleaning_task_id
+from backend.features.cleaning.identity import cleaning_date_for, task_id_for
 from backend.features.cleaning.master_data import refresh_master_data
+from backend.features.cleaning.migration import get_or_adopt
 from backend.features.cleaning.models import (
     SOURCE_BOOKING_EMAIL,
     SOURCE_CANCELLATION_EMAIL,
@@ -104,15 +105,6 @@ class CleaningScheduleService:
             )
         return None
 
-    def _identity(self, extraction: BookingExtraction, account_id: str) -> str:
-        return cleaning_task_id(
-            account_id=account_id,
-            booking_number=extraction.booking_number,
-            property_name=extraction.property_name,
-            check_out=extraction.check_out,
-            guest_name=extraction.guest_name,
-        )
-
     def _upsert_task(
         self,
         correlation_id: str,
@@ -125,10 +117,10 @@ class CleaningScheduleService:
         source: str = SOURCE_BOOKING_EMAIL,
     ) -> CleaningTask:
         """Legt einen Putzauftrag an oder aktualisiert einen bestehenden."""
-        task_id = self._identity(extraction, account_id)
+        task_id = task_id_for(extraction, account_id)
         cleaning_date = cleaning_date_for(extraction.check_out, offset)
         partners = self._notifier.partners_for(extraction.property_name, account_id)
-        existing = self._task_repo.get(task_id, account_id=account_id)
+        existing = get_or_adopt(self._task_repo, extraction, account_id, task_id)
         if existing is not None:
             return self._update_existing(
                 existing,
@@ -255,7 +247,7 @@ class CleaningScheduleService:
         task = self._find_for_cancellation(extraction, account_id)
         if task is None:
             task = CleaningTask(
-                task_id=self._identity(extraction, account_id),
+                task_id=task_id_for(extraction, account_id),
                 account_id=account_id,
                 booking_number=extraction.booking_number,
                 correlation_id=correlation_id,
@@ -296,5 +288,5 @@ class CleaningScheduleService:
             if by_number is not None:
                 return by_number
         return self._task_repo.get(
-            self._identity(extraction, account_id), account_id=account_id
+            task_id_for(extraction, account_id), account_id=account_id
         )
