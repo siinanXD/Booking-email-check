@@ -31,7 +31,7 @@ dependencies = [
     "langdetect==1.0.9",               # robuste Sprach-Erkennung (Antwortsprache)
     "openpyxl==3.1.5",                 # Excel-Export Putzplan
     "cryptography==49.0.0",            # Fernet: Credentials at rest verschlüsseln
-    "stripe==11.6.0",                  # Billing: Checkout + Customer Portal + Webhooks
+    "stripe==15.3.1",                  # Billing: Checkout + Customer Portal + Webhooks
 ]
 
 [project.optional-dependencies]
