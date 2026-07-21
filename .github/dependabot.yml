@@ -24,14 +24,21 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "langgraph"
         update-types: ["version-update:semver-major"]
+      # 0.x package: 0.2 -> 0.4 counts as semver-minor, so the major rule
+      # never fires. 0.4 requires langgraph>=1 (ResolutionImpossible, PR #141)
+      # — block minors too until the coordinated langchain-1.0 migration.
       - dependency-name: "langgraph-checkpoint-mongodb"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "langfuse"
         update-types: ["version-update:semver-major"]
-      # mypy 2.x is a major with much stricter type rules (untyped-decorator,
-      # generics) — adopt via a dedicated cleanup pass, not a weekly auto-bump.
+      # Newer mypy minors already enforce stricter rules (1.20 flags every
+      # langfuse @observe / locust @task as untyped-decorator plus stale
+      # type: ignore comments, PR #142) — adopt via a dedicated cleanup pass,
+      # not a weekly auto-bump.
       - dependency-name: "mypy"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          ["version-update:semver-major", "version-update:semver-minor"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
@@ -40,6 +47,13 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
+    # react and react-dom must stay on the exact same version — a solo bump
+    # fails the test suite ("Incompatible React versions", PR #151).
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
 
   - package-ecosystem: "github-actions"
     directory: "/"
