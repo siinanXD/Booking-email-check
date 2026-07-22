@@ -60,6 +60,10 @@ _HEADER_FONT = Font(bold=True, color="FFFFFF")
 _ZEBRA_FILL = PatternFill("solid", fgColor="F2F2F2")
 _WARN_FILL = PatternFill("solid", fgColor="FFC7CE")
 _WARN_FONT = Font(color="9C0006")
+# Stornierte Zeilen bleiben sichtbar (grau + durchgestrichen) statt zu
+# verschwinden — sonst liest der Kunde "da fehlt eine Buchung", wo in
+# Wahrheit ein Storno vorliegt.
+_CANCELLED_FONT = Font(color="808080", strike=True)
 
 
 def status_label(status: CleaningTaskStatus) -> str:
@@ -83,6 +87,9 @@ def _next_checkins(tasks: list[CleaningTask]) -> dict[str, date | None]:
             other.check_in
             for other in tasks
             if other.task_id != task.task_id
+            # Ein stornierter Gast reist nicht an — er darf weder ein
+            # Zeitfenster verengen noch eine Same-Day-Warnung auslösen.
+            and other.status != CleaningTaskStatus.CANCELLED
             and other.property_name == task.property_name
             and other.check_in is not None
             and task.cleaning_date is not None
@@ -122,9 +129,16 @@ def build_cleaning_xlsx(
 
     next_checkin = _next_checkins(tasks)
     for row_idx, task in enumerate(tasks, start=2):
-        partner = partners_by_id.get(task.partner_id or "")
-        checkin_next = next_checkin.get(task.task_id)
+        cancelled = task.status == CleaningTaskStatus.CANCELLED
+        # Storno: Zeitfenster, Partner und Checkbox bleiben leer \u2014 die Zeile
+        # dokumentiert die entfallene Reinigung, sie beauftragt niemanden.
+        partner = None if cancelled else partners_by_id.get(task.partner_id or "")
+        checkin_next = None if cancelled else next_checkin.get(task.task_id)
         window = _window_label(task.cleaning_date, checkin_next)
+        if task.status == CleaningTaskStatus.DONE:
+            checkbox = "\u2611"
+        else:
+            checkbox = "" if cancelled else "\u2610"
         ws.append(
             [
                 _fmt_date(task.cleaning_date),
@@ -139,12 +153,14 @@ def build_cleaning_xlsx(
                 partner.phone if partner else "",
                 status_label(task.status),
                 task.note or "",
-                "\u2611" if task.status == CleaningTaskStatus.DONE else "\u2610",
+                checkbox,
             ]
         )
         same_day = window.startswith("\u26a0")
         for cell in ws[row_idx]:
-            if same_day:
+            if cancelled:
+                cell.font = _CANCELLED_FONT
+            elif same_day:
                 cell.fill = _WARN_FILL
                 cell.font = _WARN_FONT
             elif row_idx % 2 == 0:

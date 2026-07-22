@@ -119,6 +119,49 @@ def test_zeitfenster_in_tagen() -> None:
     assert [c.value for c in ws[2]][7] == "3 Tage"
 
 
+def test_stornierte_zeile_durchgestrichen_und_ohne_auftrag() -> None:
+    """Storno bleibt sichtbar dokumentiert, beauftragt aber niemanden."""
+    ws = _load(
+        [
+            _task(
+                "t1",
+                cleaning_date=date(2026, 7, 15),
+                status=CleaningTaskStatus.CANCELLED,
+            )
+        ]
+    )
+    row = [c.value for c in ws[2]]
+    assert row[2] == "FeWo Seeblick"
+    assert row[10] == "Storniert"
+    assert row[8] is None or row[8] == ""  # kein Partner beauftragt
+    assert row[12] is None or row[12] == ""  # keine Erledigt-Checkbox
+    assert ws[2][0].font.strike is True
+    assert ws[2][0].font.color.rgb.endswith("808080")
+
+
+def test_stornierter_gast_loest_keine_same_day_warnung_aus() -> None:
+    """Ein stornierter Anreise-Gast verengt kein Zeitfenster."""
+    tasks = [
+        _task(
+            "t1",
+            cleaning_date=date(2026, 7, 15),
+            check_out=date(2026, 7, 15),
+        ),
+        _task(
+            "t2",
+            cleaning_date=date(2026, 7, 20),
+            check_in=date(2026, 7, 15),  # Same-Day, aber storniert
+            check_out=date(2026, 7, 20),
+            status=CleaningTaskStatus.CANCELLED,
+        ),
+    ]
+    ws = _load(tasks)
+    row = [c.value for c in ws[2]]
+    assert row[6] in (None, "")  # kein "nächster Check-in" vom Storno-Gast
+    assert row[7] in (None, "")
+    assert not ws[2][0].fill.fgColor.rgb.endswith("FFC7CE")
+
+
 def test_fusszeile_mit_erstellungszeit() -> None:
     ws = _load([_task("t1", cleaning_date=date(2026, 7, 15))])
     footer = ws.cell(row=4, column=1).value

@@ -88,12 +88,32 @@ def test_putzplan_tenant_isolation(bot_deps: BotDeps) -> None:
     assert "Keine Reinigungen" in result.reply.text
 
 
-def test_putzplan_stornierte_ausgeblendet(bot_deps: BotDeps) -> None:
+def test_putzplan_stornierte_sichtbar_statt_verschwiegen(bot_deps: BotDeps) -> None:
+    """Der Kundenfall: Buchung storniert → nicht wortlos weglassen.
+
+    "Keine Reinigungen" allein las der Kunde als "da fehlt eine Buchung" und
+    meldete einen Fehler. Der Storno wird deshalb genannt und die Excel mit
+    der durchgestrichenen Zeile haengt an.
+    """
     _seed_task(bot_deps, status=CleaningTaskStatus.CANCELLED)
     result = handle_putzplan(
         bot_deps, _OWNER, _intent(date(2026, 7, 13), date(2026, 7, 19))
     )
     assert "Keine Reinigungen" in result.reply.text
+    assert "1 stornierte Buchung" in result.reply.text
+    assert result.reply.document is not None
+
+
+def test_putzplan_zaehlt_stornos_neben_aktiven(bot_deps: BotDeps) -> None:
+    """Aktive Auftraege zaehlen als geplant, Stornos separat."""
+    _seed_task(bot_deps, task_id="aktiv")
+    _seed_task(bot_deps, task_id="storno", status=CleaningTaskStatus.CANCELLED)
+    result = handle_putzplan(
+        bot_deps, _OWNER, _intent(date(2026, 7, 13), date(2026, 7, 19))
+    )
+    assert "*1 Reinigungen*" in result.reply.text
+    assert "1 storniert" in result.reply.text
+    assert "— storniert" in result.reply.text  # Terminliste markiert den Storno
 
 
 def test_eigene_termine_nur_eigener_partner(bot_deps: BotDeps) -> None:
@@ -103,6 +123,42 @@ def test_eigene_termine_nur_eigener_partner(bot_deps: BotDeps) -> None:
         bot_deps, _CLEANER, _intent(date(2026, 7, 13), date(2026, 7, 19))
     )
     assert result.reply.text.count("\U0001f9fd") == 1
+
+
+def test_eigene_termine_storno_nach_benachrichtigung_sichtbar(
+    bot_deps: BotDeps,
+) -> None:
+    """Wer die Auftrags-Nachricht bekam, muss auch den Storno sehen.
+
+    Sonst faehrt die Putzkraft zu einem Zimmer, das nie belegt war
+    (Vorfall vom 19.07.: Auftrag benachrichtigt, danach storniert).
+    """
+    task = CleaningTask(
+        task_id="t-strn",
+        account_id="acc-1",
+        property_name="FeWo Seeblick",
+        guest_name="Max",
+        cleaning_date=date(2026, 7, 15),
+        partner_id="p1",
+    )
+    task.record_status(CleaningTaskStatus.NOTIFIED)
+    task.record_status(CleaningTaskStatus.CANCELLED)
+    bot_deps.cleaning_task_repo.upsert(task)
+    result = handle_putzplan_eigene(
+        bot_deps, _CLEANER, _intent(date(2026, 7, 13), date(2026, 7, 19))
+    )
+    assert "storniert, Reinigung entfällt" in result.reply.text
+
+
+def test_eigene_termine_storno_ohne_benachrichtigung_unsichtbar(
+    bot_deps: BotDeps,
+) -> None:
+    """Nie beauftragt → Storno ist fuer die Putzkraft irrelevant."""
+    _seed_task(bot_deps, task_id="t-strn", status=CleaningTaskStatus.CANCELLED)
+    result = handle_putzplan_eigene(
+        bot_deps, _CLEANER, _intent(date(2026, 7, 13), date(2026, 7, 19))
+    )
+    assert "Keine Termine" in result.reply.text
 
 
 def _seed_booking(

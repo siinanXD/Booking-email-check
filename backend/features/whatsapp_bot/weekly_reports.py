@@ -173,22 +173,23 @@ class WeeklyReportService:
         self, account_id: str, recipients: list[str], effective: Settings, today: date
     ) -> int:
         start, end = _week_bounds(today)
-        tasks = [
-            t
-            for t in self._task_repo.list_tasks(
-                account_id=account_id, date_from=start, date_to=end
-            )
-            if t.status.value != "cancelled"
-        ]
+        # Stornierte bleiben in der Excel sichtbar (durchgestrichen);
+        # als "geplant" zählen nur aktive Aufträge.
+        tasks = self._task_repo.list_tasks(
+            account_id=account_id, date_from=start, date_to=end
+        )
+        active = [t for t in tasks if t.status.value != "cancelled"]
         partners = {
             p.partner_id: p
             for p in self._partner_repo.list_partners(account_id=account_id)
         }
         week = start.isocalendar()[1]
+        n_storno = len(tasks) - len(active)
+        storno = f"\n❌ {n_storno} storniert" if n_storno else ""
         text = (
             f"\U0001f9f9 *Putzplan KW {week}*\n"
             f"\U0001f4c6 {format_date(start)} – {format_date(end)}\n\n"
-            f"\u2705 *{len(tasks)} Reinigungen* geplant"
+            f"\u2705 *{len(active)} Reinigungen* geplant{storno}"
         )
         document = None
         if tasks:
@@ -208,7 +209,7 @@ class WeeklyReportService:
                     effective,
                     phone,
                     effective.whatsapp_template_weekly_putzplan,
-                    [str(week), str(len(tasks))],
+                    [str(week), str(len(active))],
                 )
             count += 1 if ok else 0
         return count

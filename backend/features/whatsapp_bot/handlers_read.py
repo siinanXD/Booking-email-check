@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.features.cleaning.export import build_cleaning_xlsx
-from backend.features.whatsapp_bot import messages, messages_booking
+from backend.features.whatsapp_bot import messages, messages_booking, messages_putzplan
 from backend.features.whatsapp_bot.dates import (
     format_date,
     period_slug,
@@ -33,7 +33,12 @@ def _effective_period(intent: UserIntent, deps: BotDeps) -> tuple[date, date]:
 def handle_putzplan(
     deps: BotDeps, sender: ResolvedSender, intent: UserIntent
 ) -> HandlerResult:
-    """Putzplan für den Zeitraum: Zusammenfassung + Excel-Anhang."""
+    """Putzplan für den Zeitraum: Zusammenfassung + Excel-Anhang.
+
+    Stornierte Aufträge bleiben sichtbar (gezählt, gelistet, im Excel
+    durchgestrichen) statt kommentarlos zu fehlen — sonst liest der Kunde
+    "da fehlt eine Buchung", wo in Wahrheit ein Storno vorliegt.
+    """
     start, end = _effective_period(intent, deps)
     tasks = deps.cleaning_task_repo.list_tasks(
         account_id=sender.account_id,
@@ -41,14 +46,17 @@ def handle_putzplan(
         date_from=start,
         date_to=end,
     )
-    tasks = [t for t in tasks if t.status.value != "cancelled"]
-    summary = messages.putzplan_summary(tasks, start=start, end=end)
+    active = [t for t in tasks if t.status.value != "cancelled"]
+    cancelled = len(tasks) - len(active)
+    summary = messages_putzplan.putzplan_summary(
+        active, start=start, end=end, cancelled=cancelled
+    )
     if not tasks:
         return HandlerResult(reply=BotReply.message(summary))
 
     partners = deps.cleaning_partner_repo.list_partners(account_id=sender.account_id)
     partners_by_id = {p.partner_id: p for p in partners}
-    listing = messages.putzplan_tasks_list(tasks, partners_by_id)
+    listing = messages_putzplan.putzplan_tasks_list(tasks, partners_by_id)
     xlsx = build_cleaning_xlsx(tasks, partners_by_id)
     slug = period_slug(start, end)
     document = BotDocument(filename=f"Putzplan_{slug}.xlsx", content=xlsx)
@@ -60,7 +68,12 @@ def handle_putzplan(
 def handle_putzplan_eigene(
     deps: BotDeps, sender: ResolvedSender, intent: UserIntent
 ) -> HandlerResult:
-    """Eigene Termine einer Reinigungskraft (nur deren Aufträge)."""
+    """Eigene Termine einer Reinigungskraft (nur deren Aufträge).
+
+    Stornierte Aufträge erscheinen mit, wenn die Putzkraft bereits
+    benachrichtigt war (``notified_at``) — sie weiß sonst nicht, dass der
+    Termin entfällt, und fährt zu einem leeren Zimmer.
+    """
     start, end = _effective_period(intent, deps)
     tasks = deps.cleaning_task_repo.list_tasks(
         account_id=sender.account_id,
@@ -69,7 +82,9 @@ def handle_putzplan_eigene(
     )
     if sender.partner_id:
         tasks = [t for t in tasks if t.partner_id == sender.partner_id]
-    tasks = [t for t in tasks if t.status.value != "cancelled"]
+    tasks = [
+        t for t in tasks if t.status.value != "cancelled" or t.notified_at is not None
+    ]
     if not tasks:
         text = (
             f"\U0001f9f9 *Deine Termine {format_date(start)} – {format_date(end)}*"
@@ -78,6 +93,12 @@ def handle_putzplan_eigene(
         return HandlerResult(reply=BotReply.message(text))
     lines = [f"\U0001f9f9 *Deine Termine {format_date(start)} – {format_date(end)}*\n"]
     for task in tasks[:10]:
+        if task.status.value == "cancelled":
+            lines.append(
+                f"❌ {format_date(task.cleaning_date)} "
+                f"*{task.property_name or '—'}* — storniert, Reinigung entfällt"
+            )
+            continue
         note = f"\n   \U0001f4dd {task.note}" if task.note else ""
         lines.append(
             f"\U0001f9fd {format_date(task.cleaning_date)} "
