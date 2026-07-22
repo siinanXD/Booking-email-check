@@ -12,7 +12,7 @@ from backend.features.whatsapp_bot.dates import (
     resolve_period,
 )
 from backend.features.whatsapp_bot.deps import BotDeps
-from backend.features.whatsapp_bot.messages import putzplan_summary
+from backend.features.whatsapp_bot.messages_putzplan import putzplan_summary
 from backend.features.whatsapp_bot.models import BotAction, parse_button_id
 from backend.features.whatsapp_bot.permissions import is_allowed
 from backend.features.whatsapp_bot.sender_resolver import SenderResolver

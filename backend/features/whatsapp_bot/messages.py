@@ -10,11 +10,12 @@ from __future__ import annotations
 from datetime import date
 
 from backend.features.cleaning.export import status_label
-from backend.features.cleaning.models import CleaningPartner, CleaningTask
+from backend.features.cleaning.models import (
+    CleaningPartner,
+    CleaningTask,
+)
 from backend.features.whatsapp_bot.dates import (
     format_date,
-    is_calendar_week,
-    period_heading,
 )
 
 _MAX_LIST_ITEMS = 10
@@ -75,60 +76,6 @@ def error_generic() -> str:
     return (
         "\u26a0\ufe0f Da ist etwas schiefgelaufen. Bitte versuch es gleich noch einmal."
     )
-
-
-def putzplan_summary(
-    tasks: list[CleaningTask],
-    *,
-    start: date,
-    end: date,
-) -> str:
-    """Zusammenfassung eines erstellten Putzplans."""
-    # Das Kriterium gehoert sichtbar dazu: gelistet wird nach Putztermin
-    # (= Abreise + Offset), nicht nach Anreise. Ohne diesen Hinweis wirken
-    # Buchungen, die kurz hinter dem Zeitraum abreisen, wie verschluckt.
-    # Bei einer KW nennt die Ueberschrift nur die Nummer - dann gehoeren
-    # die konkreten Tage darunter. Steht der Bereich schon im Titel, nicht.
-    period = (
-        f"\U0001f4c6 {format_date(start)} – {format_date(end)}\n"
-        if is_calendar_week(start, end)
-        else ""
-    )
-    basis = "\U0001f6eb Grundlage: Reinigungen nach Abreise in diesem Zeitraum"
-    if not tasks:
-        return (
-            f"\U0001f9f9 *Putzplan {period_heading(start, end)}*\n"
-            f"{period}\n"
-            "\u2705 Keine Reinigungen in diesem Zeitraum.\n"
-            f"{basis}"
-        )
-    properties = {t.property_name for t in tasks if t.property_name}
-    return (
-        f"\U0001f9f9 *Putzplan {period_heading(start, end)}*\n"
-        f"{period}\n"
-        f"\u2705 *{len(tasks)} Reinigungen* geplant\n"
-        f"\U0001f3e0 {len(properties)} Objekte\n"
-        f"{basis}\n\n"
-        "\U0001f4ce Die Excel-Datei kommt gleich als Anhang."
-    )
-
-
-def putzplan_tasks_list(
-    tasks: list[CleaningTask],
-    partners_by_id: dict[str, CleaningPartner],
-) -> str:
-    """Kompakte Terminliste (max. 10 Einträge)."""
-    lines = []
-    for task in tasks[:_MAX_LIST_ITEMS]:
-        partner = partners_by_id.get(task.partner_id or "")
-        who = f" → {partner.name}" if partner else ""
-        lines.append(
-            f"\U0001f9fd {format_date(task.cleaning_date)} "
-            f"*{task.property_name or '—'}*{who}"
-        )
-    if len(tasks) > _MAX_LIST_ITEMS:
-        lines.append(f"… und {len(tasks) - _MAX_LIST_ITEMS} weitere")
-    return "\n".join(lines)
 
 
 def bookings_list(
