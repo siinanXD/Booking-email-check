@@ -32,6 +32,7 @@ dependencies = [
     "openpyxl==3.1.5",                 # Excel-Export Putzplan
     "cryptography==49.0.0",            # Fernet: Credentials at rest verschlüsseln
     "stripe==11.6.0",                  # Billing: Checkout + Customer Portal + Webhooks
+    "tzdata==2026.3",                  # IANA-Zeitzonen fuer zoneinfo — Windows bringt keine mit
 ]
 
 [project.optional-dependencies]
