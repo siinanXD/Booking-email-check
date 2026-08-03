@@ -1,0 +1,18 @@
+# Modellwahl fuer Booking-email-check
+#
+# Erbt von C:\Dev\AI\Model-Routing\routing-rules.yaml.
+# Hier stehen nur Abweichungen.
+
+version: 1
+inherits: C:\Dev\AI-Workspace\AGENT-SYSTEM\model-routing\routing-rules.yaml
+
+overrides: {}
+
+privacy_level: personal
+privacy_reason: >
+  Verarbeitet Mailadressen, Namen und Buchungsdaten. Personenbezogene Daten gehen nicht ohne geklaerte Rechtsgrundlage in einen Modellaufruf.
+
+local_model_candidates: []
+  # Nur eintragen nach Pruefung gegen
+  # C:\Dev\AI\Model-Routing\local-models.yaml.
+  # 8 GB VRAM ist die Grenze. Kein automatischer Download.

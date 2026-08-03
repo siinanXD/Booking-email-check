@@ -1,0 +1,55 @@
+_hinweis: Erzeugt von bootstrap_project.py aus dem tatsaechlich vorhandenen Bestand (Manifestdateien,
+  Lockfiles, Git). Nicht geraten. Was nicht ermittelbar war, steht unter 'offene_fragen'.
+_erzeugt_am: '2026-08-03'
+project:
+  name: Booking-email-check
+  path: C:\Dev\Repositories\Booking-email-check
+  status: active
+  branch: feat/stornos-sichtbar
+  head: 5c124dd
+  remote: https://github.com/siinanXD/Booking-email-check.git
+technology:
+  frontend:
+  - react
+  - tailwindcss
+  - typescript
+  - vite
+  backend:
+  - flask
+  - python
+  infrastructure:
+  - docker
+  - docker-compose
+  - railway
+package_manager: npm
+tooling:
+  test_runner:
+  - pytest
+  - vitest
+  lint:
+  - black
+  - ruff
+  typecheck:
+  - mypy
+  - tsc
+quality_gates:
+- build_pass
+- format_pass
+- frontend_tests_pass
+- lint_pass
+- tests_pass
+- typecheck_pass
+agents:
+  global_agents_enabled: true
+  local_overrides_enabled: true
+policies:
+  reuse_before_build: required
+  research_before_code: required
+  security_review: required
+  license_review: required
+documentation:
+  source_of_truth:
+  - AGENTS.md
+  - .ai/context
+  - C:\Dev\Knowledge
+offene_fragen: []

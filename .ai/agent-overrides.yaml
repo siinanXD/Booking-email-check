@@ -1,0 +1,24 @@
+# Projektspezifische Anpassungen der globalen Agenten — Booking-email-check
+#
+# Globale Agenten liegen unter C:\Dev\AI\Agents\core und werden hier
+# NICHT veraendert. Sie werden erweitert oder fuer dieses Projekt
+# ueberschrieben.
+#
+# Leer zu lassen ist der Normalfall. Ein Override ist eine Ausnahme und
+# braucht eine Begruendung — sonst laufen die Projekte auseinander und die
+# globale Rolle bedeutet in jedem Projekt etwas anderes.
+
+version: 1
+
+overrides: {}
+  # Beispiel:
+  # code-reviewer:
+  #   additional_rules:
+  #     - "..."
+  #   reason: "..."
+
+disabled_agents: []
+  # Agenten, die in diesem Projekt nicht eingesetzt werden. Mit Grund.
+
+additional_agents: []
+  # Projektspezifische Agenten unter .ai/agents/
