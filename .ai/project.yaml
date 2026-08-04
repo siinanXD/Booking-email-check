@@ -1,12 +1,12 @@
 _hinweis: Erzeugt von bootstrap_project.py aus dem tatsaechlich vorhandenen Bestand (Manifestdateien,
   Lockfiles, Git). Nicht geraten. Was nicht ermittelbar war, steht unter 'offene_fragen'.
-_erzeugt_am: '2026-08-03'
+_erzeugt_am: '2026-08-04'
+_hinweis_branch: 'Branch, HEAD und Arbeitsbaumzustand stehen hier bewusst NICHT. Sie sind dynamisch und
+  wuerden bei jedem Wechsel driften. Zur Laufzeit ermitteln: orchestration/git_state.py'
 project:
   name: Booking-email-check
   path: C:\Dev\Repositories\Booking-email-check
   status: active
-  branch: feat/stornos-sichtbar
-  head: 5c124dd
   remote: https://github.com/siinanXD/Booking-email-check.git
 technology:
   frontend:

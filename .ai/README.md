@@ -1,13 +1,13 @@
 # .ai — Booking-email-check
 
 Projektspezifische Konfiguration fuer das Agent-System.
-Erzeugt am 2026-08-03 von `bootstrap_project.py`.
+Erzeugt am 2026-08-04 von `bootstrap_project.py`.
 
 ## Was hier liegt
 
 | Pfad | Inhalt |
 |---|---|
-| `project.yaml` | erkannter Stack, Branch, Gates — **nicht geraten**, aus dem Bestand |
+| `project.yaml` | erkannter Stack und Gates — **nicht geraten**, aus dem Bestand. Ohne Branch: der ist dynamisch. |
 | `agent-overrides.yaml` | Anpassungen globaler Agenten. Leer ist der Normalfall. |
 | `model-routing.yaml` | Abweichungen von der globalen Modellwahl |
 | `quality-gates.yaml` | Gates dieses Projekts |
@@ -32,12 +32,11 @@ Wer wissen will, wie Agenten hier arbeiten: dieses Verzeichnis.
 
 ## Erkannter Stand
 
-- Branch: `feat/stornos-sichtbar` · HEAD `5c124dd`
 - Remote: https://github.com/siinanXD/Booking-email-check.git
 - Paketmanager: npm
-- Testlaeufer: playwright, pytest, vitest
+- Testlaeufer: pytest, vitest
 - Lint: black, ruff
-- Typpruefung: mypy
+- Typpruefung: mypy, tsc
 
 ## Neu erzeugen
 
