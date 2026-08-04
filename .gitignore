@@ -33,3 +33,6 @@ Thumbs.db
 
 # Design handoff extraction (not committed)
 .design_handoff_tmp/
+
+.pytest_cleanup_run.*
+
