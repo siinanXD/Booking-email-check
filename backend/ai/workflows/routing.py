@@ -49,12 +49,13 @@ def after_classify(
     return "end"
 
 
-def after_validate(
+def after_extract(
     state: EmailWorkflowState,
     *,
     email_repo: EmailRepository,
     alerts: AlertService | None,
-) -> Literal["end", "retrieve"]:
+) -> Literal["end", "draft"]:
+    """Nach Extraktion + Validierung: nur echte Buchungsmails beantworten."""
     errors = state.get("validation_errors") or []
     email = state["email"]
     if errors:
@@ -73,4 +74,4 @@ def after_validate(
             triage_outcome="not_booking_mail",
         )
         return "end"
-    return "retrieve"
+    return "draft"

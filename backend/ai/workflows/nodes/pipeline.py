@@ -166,11 +166,6 @@ class WorkflowNodes(PipelineReviewMixin, TenantWorkflowMixin):
             account_id=email.account_id,
             **relevance_fields(email, extraction),
         )
-        return {"extraction": extraction}
-
-    def validate(self, state: EmailWorkflowState) -> EmailWorkflowState:
-        email = state["email"]
-        extraction = state["extraction"]
         result = self._validation.validate(extraction)
         if result.valid:
             self._email_repo.update_processing_state(
@@ -193,23 +188,17 @@ class WorkflowNodes(PipelineReviewMixin, TenantWorkflowMixin):
                     email.correlation_id, extraction, account_id=email.account_id
                 )
             schedule_cleaning_on_detect(self._cleaning_service, email, extraction)
-        return {"validation_errors": result.errors}
+        return {"extraction": extraction, "validation_errors": result.errors}
 
-    def retrieve(self, state: EmailWorkflowState) -> EmailWorkflowState:
+    def draft(self, state: EmailWorkflowState) -> EmailWorkflowState:
         email = state["email"]
-        extraction = state.get("extraction")
+        extraction = state["extraction"]
         hits = self._retrieval.retrieve(email, extraction, include_similar=True)
         self._email_repo.update_processing_state(
             email.message_id,
             ProcessingState.RETRIEVED,
             account_id=email.account_id,
         )
-        return {"retrieval": hits}
-
-    def draft(self, state: EmailWorkflowState) -> EmailWorkflowState:
-        email = state["email"]
-        extraction = state["extraction"]
-        hits = state.get("retrieval")
         draft = self._response_gen.generate_draft(email, extraction, hits)
         grounding_flag = not draft.grounding_ok
         if grounding_flag and self._alerts:
@@ -221,4 +210,4 @@ class WorkflowNodes(PipelineReviewMixin, TenantWorkflowMixin):
         )
         # Der Review-Datensatz wird im human_review-Node mit vollem Detail
         # (Konfidenz, Signale, Eskalation) gespeichert.
-        return {"draft": draft, "grounding_flag": grounding_flag}
+        return {"retrieval": hits, "draft": draft, "grounding_flag": grounding_flag}
