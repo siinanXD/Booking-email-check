@@ -6,9 +6,7 @@ from typing import Literal
 
 from backend.ai.domain.booking.booking_relevance import (
     classify_booking_mail,
-    has_reservation_request_signals,
-    infer_beds24_intent,
-    is_probable_booking_mail,
+    has_booking_rescue_signals,
 )
 from backend.ai.domain.booking.taxonomy import BookingIntent
 from backend.ai.workflows.state import EmailWorkflowState
@@ -30,21 +28,16 @@ def after_classify(
 ) -> Literal["end", "extract"]:
     """Spart den Extraktions-LLM-Call für klar nicht-buchungsbezogene Mails.
 
-    intent=OTHER wird nur extrahiert, wenn Rettungssignale vorliegen, die
-    enrich_extraction/classify_booking_mail später ohnehin als Buchung werten
-    würden (informelle Anfrage, PMS-Betreff, Buchungs-Heuristik). Sonst sofort
-    verwerfen — bevor der zweite LLM-Call läuft.
+    intent=OTHER wird nur extrahiert, wenn Rettungssignale vorliegen
+    (siehe has_booking_rescue_signals). Sonst sofort verwerfen — bevor der
+    zweite LLM-Call läuft.
     """
     if state.get("workflow_id"):
         return "extract"
     if state.get("intent") != BookingIntent.OTHER:
         return "extract"
     email = state["email"]
-    if (
-        has_reservation_request_signals(email)
-        or is_probable_booking_mail(email)
-        or infer_beds24_intent(email.subject or "") is not None
-    ):
+    if has_booking_rescue_signals(email):
         return "extract"
     email_repo.update_processing_state(
         email.message_id,
