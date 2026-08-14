@@ -59,12 +59,10 @@ Import direction is strictly top-down: `api → features/application → ai → 
 
 `IngestionRouter.ingest()` → `IngestionService` (triage gate) → if relevant, `EmailWorkflow.run()` (LangGraph state machine):
 
-1. **Classify** → `BookingIntent` enum (`backend/ai/domain/booking/taxonomy.py`)
-2. **Extract** → `BookingExtraction` Pydantic model
-3. **Validate** → booking-specific rules
-4. **Retrieve** → semantic similarity search (MongoDB Atlas vector search or in-memory fallback)
-5. **Draft** → LLM response, stored; sent only after approval (human, or tenant-opted-in auto-approve)
-6. **Human interrupt** → `ReviewRouter.approve/reject()` (skipped when auto-approve gates the draft)
+1. **Classify** → `BookingIntent` enum (`backend/ai/domain/booking/taxonomy.py`); tenant custom workflows branch off here into a dedicated `tenant_process` node (extract + validate custom fields, then END — no draft, no review)
+2. **Extract** (node also runs validation) → `BookingExtraction` Pydantic model, then booking-specific rules; non-booking mail is discarded here
+3. **Draft** (node also runs retrieval) → semantic similarity search (MongoDB Atlas vector search or in-memory fallback), then LLM response, stored; sent only after approval (human, or tenant-opted-in auto-approve)
+4. **Human interrupt** → `ReviewRouter.approve/reject()` (skipped when auto-approve gates the draft)
 
 Workflow state lives in `backend/ai/workflows/state.py` (`EmailWorkflowState` TypedDict). The LangGraph graph is compiled in `email_workflow.py` with `MemorySaver` (dev/tests) or `MongoDBSaver` (prod).
 
