@@ -51,8 +51,8 @@ def test_after_classify_extracts_booking_intent() -> None:
     repo.update_processing_state.assert_not_called()
 
 
-def test_after_classify_extracts_tenant_workflow() -> None:
+def test_after_classify_routes_tenant_workflow() -> None:
     repo = MagicMock()
     state = {"email": _email(), "intent": BookingIntent.OTHER, "workflow_id": "wf1"}
-    assert routing.after_classify(state, email_repo=repo) == "extract"
+    assert routing.after_classify(state, email_repo=repo) == "tenant"
     repo.update_processing_state.assert_not_called()

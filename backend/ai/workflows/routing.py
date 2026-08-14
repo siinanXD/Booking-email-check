@@ -25,15 +25,16 @@ def after_classify(
     state: EmailWorkflowState,
     *,
     email_repo: EmailRepository,
-) -> Literal["end", "extract"]:
+) -> Literal["end", "extract", "tenant"]:
     """Spart den Extraktions-LLM-Call für klar nicht-buchungsbezogene Mails.
 
-    intent=OTHER wird nur extrahiert, wenn Rettungssignale vorliegen
-    (siehe has_booking_rescue_signals). Sonst sofort verwerfen — bevor der
-    zweite LLM-Call läuft.
+    Custom-Workflows verzweigen in den Tenant-Pfad. intent=OTHER wird nur
+    extrahiert, wenn Rettungssignale vorliegen (siehe
+    has_booking_rescue_signals). Sonst sofort verwerfen — bevor der zweite
+    LLM-Call läuft.
     """
     if state.get("workflow_id"):
-        return "extract"
+        return "tenant"
     if state.get("intent") != BookingIntent.OTHER:
         return "extract"
     email = state["email"]
@@ -62,8 +63,6 @@ def after_validate(
                 email.correlation_id,
                 "; ".join(errors),
             )
-        return "end"
-    if state.get("workflow_id"):
         return "end"
     extraction = state.get("extraction")
     if not classify_booking_mail(email, extraction).is_booking:

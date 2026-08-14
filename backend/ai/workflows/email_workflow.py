@@ -133,6 +133,7 @@ class EmailWorkflow:
         graph: StateGraph[EmailWorkflowState] = StateGraph(EmailWorkflowState)
         graph.add_node("ingest", self._nodes.ingest)
         graph.add_node("classify", self._nodes.classify)
+        graph.add_node("tenant_process", self._nodes.tenant_process)
         graph.add_node("extract", self._nodes.extract)
         graph.add_node("validate", self._nodes.validate)
         graph.add_node("retrieve", self._nodes.retrieve)
@@ -149,8 +150,9 @@ class EmailWorkflow:
         graph.add_conditional_edges(
             "classify",
             lambda state: after_classify(state, email_repo=self._email_repo),
-            {"end": END, "extract": "extract"},
+            {"end": END, "extract": "extract", "tenant": "tenant_process"},
         )
+        graph.add_edge("tenant_process", END)
         graph.add_edge("extract", "validate")
         graph.add_conditional_edges(
             "validate",
