@@ -9,7 +9,7 @@ from backend.ai.domain.booking.booking_relevance import (
 from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.extraction_enrichment import enrich_extraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
-from backend.ai.domain.booking.triage import TriageOutcome, TriageResult
+from backend.ai.domain.booking.triage import TriageOutcome
 from backend.ai.services.classification import ClassificationService
 from backend.ai.services.extraction import ExtractionService
 from backend.ai.services.indexing import IndexingService
@@ -41,16 +41,6 @@ from backend.infrastructure.repositories.review_repository import ReviewReposito
 from backend.infrastructure.repositories.tenant_workflow_repository import (
     TenantWorkflowRepository,
 )
-
-
-def triage_from_email(email: StoredEmail) -> TriageResult:
-    outcome = TriageOutcome.RELEVANT
-    if email.triage_outcome:
-        try:
-            outcome = TriageOutcome(email.triage_outcome)
-        except ValueError:
-            outcome = TriageOutcome.UNKNOWN_DOMAIN
-    return TriageResult(outcome=outcome, reason="ingested")
 
 
 class WorkflowNodes(PipelineReviewMixin):
@@ -108,7 +98,6 @@ class WorkflowNodes(PipelineReviewMixin):
                 "email": raw,
                 "ingest_duplicate": True,
                 "ingest_discarded": False,
-                "triage": triage_from_email(raw),
             }
         else:
             msg = "email must be IncomingEmail or StoredEmail"
@@ -121,14 +110,6 @@ class WorkflowNodes(PipelineReviewMixin):
             "email": email,
             "ingest_duplicate": result.duplicate,
             "ingest_discarded": discarded,
-            "triage": (
-                triage_from_email(email)
-                if not discarded
-                else TriageResult(
-                    outcome=TriageOutcome.SPAM_PHISHING,
-                    reason=result.triage_reason or "spam",
-                )
-            ),
         }
 
     def classify(self, state: EmailWorkflowState) -> EmailWorkflowState:
@@ -291,9 +272,3 @@ class WorkflowNodes(PipelineReviewMixin):
         # Der Review-Datensatz wird im human_review-Node mit vollem Detail
         # (Konfidenz, Signale, Eskalation) gespeichert.
         return {"draft": draft, "grounding_flag": grounding_flag}
-
-
-def _intent_str(intent_val: object | None) -> str | None:
-    if intent_val is None:
-        return None
-    return intent_val.value if hasattr(intent_val, "value") else str(intent_val)

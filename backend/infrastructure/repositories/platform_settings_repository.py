@@ -33,12 +33,6 @@ class AutoApproveSettings(BaseModel):
     threshold: int = Field(default=97, ge=90, le=100)
     per_intent: dict[str, bool] = Field(default_factory=_default_auto_approve_intents)
 
-    def allows(self, intent: str | None) -> bool:
-        """True, wenn dieser Intent für die Auto-Freigabe aktiviert ist."""
-        if not self.enabled or not intent:
-            return False
-        return bool(self.per_intent.get(intent, False))
-
 
 class PlatformSettingsRecord(BaseModel):
     """Vom Benutzer konfigurierbare Einstellungen (überschreiben .env zur Laufzeit)."""
