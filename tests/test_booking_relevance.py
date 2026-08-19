@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from backend.ai.domain.booking.booking_relevance import (
     classify_booking_mail,
     effective_booking_intent,
+    has_booking_rescue_signals,
     has_reservation_request_signals,
     has_text_booking_signals,
     is_booking_relevant,
@@ -141,3 +142,28 @@ def test_reservation_request_without_extraction() -> None:
     verdict = classify_booking_mail(email, None)
     assert verdict.is_booking
     assert verdict.reason == "reservation_request_heuristic"
+
+
+def test_rescue_signals_pms_subject() -> None:
+    """PMS-Betreff rettet eine LLM-Klassifikation als OTHER."""
+    email = StoredEmail(
+        message_id="m-rescue",
+        from_address="office@hotel.example",
+        subject="Stornierung: 12345",
+        body_text="",
+        received_at=datetime.now(UTC),
+        correlation_id="c-rescue",
+    )
+    assert has_booking_rescue_signals(email)
+
+
+def test_rescue_signals_absent_for_plain_mail() -> None:
+    email = StoredEmail(
+        message_id="m-plain",
+        from_address="someone@example.org",
+        subject="Hallo",
+        body_text="Allgemeine Frage zu Ihrem Unternehmen.",
+        received_at=datetime.now(UTC),
+        correlation_id="c-plain",
+    )
+    assert not has_booking_rescue_signals(email)

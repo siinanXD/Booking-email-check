@@ -6,10 +6,9 @@ from backend.ai.domain.booking.booking_relevance import (
     is_booking_relevant,
     relevance_fields,
 )
-from backend.ai.domain.booking.extraction import BookingExtraction
 from backend.ai.domain.booking.extraction_enrichment import enrich_extraction
 from backend.ai.domain.booking.taxonomy import BookingIntent
-from backend.ai.domain.booking.triage import TriageOutcome, TriageResult
+from backend.ai.domain.booking.triage import TriageOutcome
 from backend.ai.services.classification import ClassificationService
 from backend.ai.services.extraction import ExtractionService
 from backend.ai.services.indexing import IndexingService
@@ -23,6 +22,7 @@ from backend.ai.services.tenant_workflow_runtime import (
 from backend.ai.services.validation import ValidationService
 from backend.ai.workflows.nodes.cleaning_hook import schedule_cleaning_on_detect
 from backend.ai.workflows.nodes.pipeline_review import PipelineReviewMixin
+from backend.ai.workflows.nodes.tenant import TenantWorkflowMixin
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.email import IncomingEmail, ProcessingState, StoredEmail
 from backend.features.cleaning.service import CleaningScheduleService
@@ -43,17 +43,7 @@ from backend.infrastructure.repositories.tenant_workflow_repository import (
 )
 
 
-def triage_from_email(email: StoredEmail) -> TriageResult:
-    outcome = TriageOutcome.RELEVANT
-    if email.triage_outcome:
-        try:
-            outcome = TriageOutcome(email.triage_outcome)
-        except ValueError:
-            outcome = TriageOutcome.UNKNOWN_DOMAIN
-    return TriageResult(outcome=outcome, reason="ingested")
-
-
-class WorkflowNodes(PipelineReviewMixin):
+class WorkflowNodes(PipelineReviewMixin, TenantWorkflowMixin):
     """Node callables bound to workflow services."""
 
     def __init__(
@@ -108,7 +98,6 @@ class WorkflowNodes(PipelineReviewMixin):
                 "email": raw,
                 "ingest_duplicate": True,
                 "ingest_discarded": False,
-                "triage": triage_from_email(raw),
             }
         else:
             msg = "email must be IncomingEmail or StoredEmail"
@@ -121,14 +110,6 @@ class WorkflowNodes(PipelineReviewMixin):
             "email": email,
             "ingest_duplicate": result.duplicate,
             "ingest_discarded": discarded,
-            "triage": (
-                triage_from_email(email)
-                if not discarded
-                else TriageResult(
-                    outcome=TriageOutcome.SPAM_PHISHING,
-                    reason=result.triage_reason or "spam",
-                )
-            ),
         }
 
     def classify(self, state: EmailWorkflowState) -> EmailWorkflowState:
@@ -158,37 +139,6 @@ class WorkflowNodes(PipelineReviewMixin):
 
     def extract(self, state: EmailWorkflowState) -> EmailWorkflowState:
         email = state["email"]
-        workflow_id = state.get("workflow_id")
-        if (
-            workflow_id
-            and self._tenant_workflow_repo is not None
-            and self._tenant_executor is not None
-        ):
-            workflow = self._tenant_workflow_repo.get(
-                email.account_id or "", workflow_id
-            )
-            if workflow is not None:
-                custom = self._tenant_executor.extract_fields(workflow, email)
-                extraction = BookingExtraction(
-                    intent=BookingIntent.OTHER,
-                    confidence=float(custom.get("confidence", 0.9) or 0.9),
-                )
-                self._extraction_repo.save(
-                    email.correlation_id,
-                    email.message_id,
-                    extraction,
-                    account_id=email.account_id,
-                    workflow_id=workflow.id,
-                    workflow_slug=workflow.slug,
-                    custom_fields=custom,
-                )
-                self._email_repo.update_processing_state(
-                    email.message_id,
-                    ProcessingState.EXTRACTED,
-                    account_id=email.account_id,
-                    **relevance_fields(email, extraction),
-                )
-                return {"extraction": extraction, "custom_extraction": custom}
         intent = state.get("intent")
         db = self._email_repo._col.database
         hints: list[str] | None = None
@@ -216,30 +166,6 @@ class WorkflowNodes(PipelineReviewMixin):
             account_id=email.account_id,
             **relevance_fields(email, extraction),
         )
-        return {"extraction": extraction}
-
-    def validate(self, state: EmailWorkflowState) -> EmailWorkflowState:
-        email = state["email"]
-        workflow_id = state.get("workflow_id")
-        if (
-            workflow_id
-            and self._tenant_workflow_repo is not None
-            and self._tenant_executor is not None
-        ):
-            workflow = self._tenant_workflow_repo.get(
-                email.account_id or "", workflow_id
-            )
-            custom = state.get("custom_extraction") or {}
-            if workflow is not None and isinstance(custom, dict):
-                errors = self._tenant_executor.validate_fields(workflow, custom)
-                if not errors:
-                    self._email_repo.update_processing_state(
-                        email.message_id,
-                        ProcessingState.VALIDATED,
-                        account_id=email.account_id,
-                    )
-                return {"validation_errors": errors}
-        extraction = state["extraction"]
         result = self._validation.validate(extraction)
         if result.valid:
             self._email_repo.update_processing_state(
@@ -262,23 +188,17 @@ class WorkflowNodes(PipelineReviewMixin):
                     email.correlation_id, extraction, account_id=email.account_id
                 )
             schedule_cleaning_on_detect(self._cleaning_service, email, extraction)
-        return {"validation_errors": result.errors}
+        return {"extraction": extraction, "validation_errors": result.errors}
 
-    def retrieve(self, state: EmailWorkflowState) -> EmailWorkflowState:
+    def draft(self, state: EmailWorkflowState) -> EmailWorkflowState:
         email = state["email"]
-        extraction = state.get("extraction")
+        extraction = state["extraction"]
         hits = self._retrieval.retrieve(email, extraction, include_similar=True)
         self._email_repo.update_processing_state(
             email.message_id,
             ProcessingState.RETRIEVED,
             account_id=email.account_id,
         )
-        return {"retrieval": hits}
-
-    def draft(self, state: EmailWorkflowState) -> EmailWorkflowState:
-        email = state["email"]
-        extraction = state["extraction"]
-        hits = state.get("retrieval")
         draft = self._response_gen.generate_draft(email, extraction, hits)
         grounding_flag = not draft.grounding_ok
         if grounding_flag and self._alerts:
@@ -290,10 +210,4 @@ class WorkflowNodes(PipelineReviewMixin):
         )
         # Der Review-Datensatz wird im human_review-Node mit vollem Detail
         # (Konfidenz, Signale, Eskalation) gespeichert.
-        return {"draft": draft, "grounding_flag": grounding_flag}
-
-
-def _intent_str(intent_val: object | None) -> str | None:
-    if intent_val is None:
-        return None
-    return intent_val.value if hasattr(intent_val, "value") else str(intent_val)
+        return {"retrieval": hits, "draft": draft, "grounding_flag": grounding_flag}

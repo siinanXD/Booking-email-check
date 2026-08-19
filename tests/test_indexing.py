@@ -138,8 +138,8 @@ def test_index_async_alerts_on_failure(mock_db) -> None:
     assert args[1].startswith("indexing:")
 
 
-def test_validate_indexes_only_booking_relevant(monkeypatch) -> None:
-    """Validate-Node indexiert nur buchungsrelevante Mails (Korpus-Qualität)."""
+def test_extract_indexes_only_booking_relevant(monkeypatch) -> None:
+    """Extract-Node indexiert nur buchungsrelevante Mails (Korpus-Qualität)."""
     from datetime import UTC, datetime
 
     from backend.ai.domain.booking.extraction import BookingExtraction
@@ -148,13 +148,16 @@ def test_validate_indexes_only_booking_relevant(monkeypatch) -> None:
     from backend.ai.workflows.nodes.pipeline import WorkflowNodes
     from backend.core.models.email import StoredEmail
 
+    ext = BookingExtraction(intent=BookingIntent.OTHER)
     indexing = MagicMock()
     validation = MagicMock()
     validation.validate.return_value = MagicMock(valid=True, errors=[])
+    extraction_svc = MagicMock()
+    extraction_svc.extract.return_value = ext
     nodes = WorkflowNodes(
         ingestion=MagicMock(),
         classification=MagicMock(),
-        extraction=MagicMock(),
+        extraction=extraction_svc,
         validation=validation,
         retrieval=MagicMock(),
         response_gen=MagicMock(),
@@ -172,16 +175,14 @@ def test_validate_indexes_only_booking_relevant(monkeypatch) -> None:
         body_text="Details",
         received_at=datetime.now(UTC),
         correlation_id="corr-idx",
-        account_id="acc-1",
     )
-    ext = BookingExtraction(intent=BookingIntent.OTHER)
-    state = {"email": email, "extraction": ext}
+    state = {"email": email, "intent": BookingIntent.OTHER}
 
     monkeypatch.setattr(pipeline_mod, "is_booking_relevant", lambda e, x: True)
-    nodes.validate(state)
+    nodes.extract(state)
     assert indexing.schedule_index.called
 
     indexing.reset_mock()
     monkeypatch.setattr(pipeline_mod, "is_booking_relevant", lambda e, x: False)
-    nodes.validate(state)
+    nodes.extract(state)
     assert not indexing.schedule_index.called

@@ -25,8 +25,8 @@ from backend.ai.workflows.helpers import finalize_mail_cost
 from backend.ai.workflows.nodes.pipeline import WorkflowNodes
 from backend.ai.workflows.routing import (
     after_classify,
+    after_extract,
     after_ingest,
-    after_validate,
 )
 from backend.ai.workflows.state import EmailWorkflowState
 from backend.core.models.response import ReviewStatus
@@ -133,9 +133,8 @@ class EmailWorkflow:
         graph: StateGraph[EmailWorkflowState] = StateGraph(EmailWorkflowState)
         graph.add_node("ingest", self._nodes.ingest)
         graph.add_node("classify", self._nodes.classify)
+        graph.add_node("tenant_process", self._nodes.tenant_process)
         graph.add_node("extract", self._nodes.extract)
-        graph.add_node("validate", self._nodes.validate)
-        graph.add_node("retrieve", self._nodes.retrieve)
         graph.add_node("draft_response", self._nodes.draft)
         graph.add_node("human_review", self._nodes.human_review)
         graph.add_node("finalize", self._nodes.finalize)
@@ -149,19 +148,18 @@ class EmailWorkflow:
         graph.add_conditional_edges(
             "classify",
             lambda state: after_classify(state, email_repo=self._email_repo),
-            {"end": END, "extract": "extract"},
+            {"end": END, "extract": "extract", "tenant": "tenant_process"},
         )
-        graph.add_edge("extract", "validate")
+        graph.add_edge("tenant_process", END)
         graph.add_conditional_edges(
-            "validate",
-            lambda state: after_validate(
+            "extract",
+            lambda state: after_extract(
                 state,
                 email_repo=self._email_repo,
                 alerts=self._alerts,
             ),
-            {"end": END, "retrieve": "retrieve"},
+            {"end": END, "draft": "draft_response"},
         )
-        graph.add_edge("retrieve", "draft_response")
         graph.add_edge("draft_response", "human_review")
         graph.add_edge("human_review", "finalize")
         graph.add_edge("finalize", END)

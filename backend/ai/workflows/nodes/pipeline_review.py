@@ -39,6 +39,14 @@ def _intent_str(intent_val: object | None) -> str | None:
     return intent_val.value if hasattr(intent_val, "value") else str(intent_val)
 
 
+def _proc_for_status(status: str) -> ProcessingState:
+    if status == "approved":
+        return ProcessingState.APPROVED
+    if status == "rejected":
+        return ProcessingState.REJECTED
+    return ProcessingState.PENDING_REVIEW
+
+
 class PipelineReviewMixin:
     """Review gate and post-approval finalization."""
 
@@ -119,14 +127,10 @@ class PipelineReviewMixin:
                     escalated=escalated,
                     source_flags=source_flags,
                 )
-        if review.status == "approved":
-            proc = ProcessingState.APPROVED
-        elif review.status == "rejected":
-            proc = ProcessingState.REJECTED
-        else:
-            proc = ProcessingState.PENDING_REVIEW
         self._email_repo.update_processing_state(
-            email.message_id, proc, account_id=email.account_id
+            email.message_id,
+            _proc_for_status(review.status),
+            account_id=email.account_id,
         )
         result: EmailWorkflowState = {"review": review}
         if auto_approve:
@@ -138,14 +142,10 @@ class PipelineReviewMixin:
         email = state["email"]
         review = state.get("review")
         status = review.status if review else "approved"
-        if status == "approved":
-            proc = ProcessingState.APPROVED
-        elif status == "rejected":
-            proc = ProcessingState.REJECTED
-        else:
-            proc = ProcessingState.PENDING_REVIEW
         self._email_repo.update_processing_state(
-            email.message_id, proc, account_id=email.account_id
+            email.message_id,
+            _proc_for_status(status),
+            account_id=email.account_id,
         )
         if status == "approved":
             extraction = state.get("extraction")

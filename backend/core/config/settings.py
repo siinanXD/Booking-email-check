@@ -40,7 +40,6 @@ class Settings(WhatsAppSettingsMixin):
 
     app_env: str = Field(default="development", alias="APP_ENV")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
-    human_review_required: bool = Field(default=True, alias="HUMAN_REVIEW_REQUIRED")
 
     openai_model_classify: str = Field(
         default="gpt-4o-mini",

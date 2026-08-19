@@ -144,6 +144,20 @@ def has_booking_signals(
     return False
 
 
+def has_booking_rescue_signals(email: EmailLike) -> bool:
+    """Signale, die eine LLM-Klassifikation als OTHER überstimmen würden.
+
+    Einzige Quelle für das Pre-Extract-Gate: dieselben Signale, die
+    enrich_extraction/classify_booking_mail später ohnehin als Buchung werten
+    (informelle Anfrage, Buchungs-Heuristik, eindeutiger PMS-Betreff).
+    """
+    return (
+        has_reservation_request_signals(email)
+        or is_probable_booking_mail(email)
+        or infer_beds24_intent(email.subject or "") is not None
+    )
+
+
 def infer_beds24_intent(subject: str) -> BookingIntent | None:
     """Leitet Intent aus typischen Beds24-Betreffzeilen ab (Fallback bei LLM=other)."""
     subject_line = (subject or "").strip()

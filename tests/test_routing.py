@@ -24,9 +24,7 @@ def _email() -> StoredEmail:
 
 def test_after_classify_skips_extraction_for_clear_non_booking(monkeypatch) -> None:
     """intent=OTHER ohne Rettungssignale → verwerfen, keine Extraktion."""
-    monkeypatch.setattr(routing, "has_reservation_request_signals", lambda e: False)
-    monkeypatch.setattr(routing, "is_probable_booking_mail", lambda e: False)
-    monkeypatch.setattr(routing, "infer_beds24_intent", lambda s: None)
+    monkeypatch.setattr(routing, "has_booking_rescue_signals", lambda e: False)
     repo = MagicMock()
     state = {"email": _email(), "intent": BookingIntent.OTHER}
     assert routing.after_classify(state, email_repo=repo) == "end"
@@ -38,10 +36,8 @@ def test_after_classify_skips_extraction_for_clear_non_booking(monkeypatch) -> N
 
 
 def test_after_classify_extracts_informal_booking(monkeypatch) -> None:
-    """intent=OTHER + Reservierungssignal → extrahieren (enrich rettet später)."""
-    monkeypatch.setattr(routing, "has_reservation_request_signals", lambda e: True)
-    monkeypatch.setattr(routing, "is_probable_booking_mail", lambda e: False)
-    monkeypatch.setattr(routing, "infer_beds24_intent", lambda s: None)
+    """intent=OTHER + Rettungssignal → extrahieren (enrich rettet später)."""
+    monkeypatch.setattr(routing, "has_booking_rescue_signals", lambda e: True)
     repo = MagicMock()
     state = {"email": _email(), "intent": BookingIntent.OTHER}
     assert routing.after_classify(state, email_repo=repo) == "extract"
@@ -55,8 +51,8 @@ def test_after_classify_extracts_booking_intent() -> None:
     repo.update_processing_state.assert_not_called()
 
 
-def test_after_classify_extracts_tenant_workflow() -> None:
+def test_after_classify_routes_tenant_workflow() -> None:
     repo = MagicMock()
     state = {"email": _email(), "intent": BookingIntent.OTHER, "workflow_id": "wf1"}
-    assert routing.after_classify(state, email_repo=repo) == "extract"
+    assert routing.after_classify(state, email_repo=repo) == "tenant"
     repo.update_processing_state.assert_not_called()
