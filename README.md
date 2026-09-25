@@ -2,7 +2,7 @@
 
 AI-powered processing of incoming booking emails with human approval — no automatic sending. Built for vacation rental hosts (Airbnb, Booking.com, Expedia, VRBO, direct bookings).
 
-**Live:** [booking-email-check-production.up.railway.app](https://booking-email-check-production.up.railway.app)
+**Demo:** run locally with `docker compose up` (see Setup below). The public Railway deployment was taken down in September 2026.
 
 ---
 
