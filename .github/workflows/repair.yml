@@ -1,0 +1,110 @@
+# Reparatur-Schleife (SIN-207, ausgerollt mit SIN-208): Wenn `ci` auf einem PR-Branch rot wird, versucht
+# Claude, die Ursache zu beheben. Höchstens 3 Runden pro PR (Labels repair:1..3),
+# danach Label `needs-human` und ein Kommentar für Sinan (Stopp-Regel aus AGENTS.md).
+#
+# Nur für PRs aus diesem Repo, nie für Forks. Braucht das Secret
+# CLAUDE_CODE_OAUTH_TOKEN und die Claude GitHub App (pusht als App, damit `ci` neu läuft).
+name: repair
+
+on:
+  workflow_run:
+    workflows: [CI, ci]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+  id-token: write
+
+concurrency:
+  group: repair-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Runde zählen
+        id: round
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const { owner, repo } = context.repo;
+            let number = run.pull_requests?.[0]?.number;
+            if (!number) {
+              const { data } = await github.rest.pulls.list({
+                owner, repo, state: "open", head: `${owner}:${run.head_branch}`,
+              });
+              number = data[0]?.number;
+            }
+            if (!number) { core.info("Kein offener PR gefunden."); core.setOutput("go", "false"); return; }
+
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+            if (pr.state !== "open" || pr.head.sha !== run.head_sha) {
+              core.info("PR geschlossen oder schon neuer Commit da: nichts zu tun.");
+              core.setOutput("go", "false");
+              return;
+            }
+            const labels = pr.labels.map((l) => l.name);
+            if (labels.includes("needs-human") || labels.includes("no-autorepair")) {
+              core.setOutput("go", "false");
+              return;
+            }
+            const done = [1, 2, 3].filter((n) => labels.includes(`repair:${n}`)).length;
+            if (done >= 3) {
+              try { await github.rest.issues.createLabel({ owner, repo, name: "needs-human", color: "D93F0B", description: "Automatische Reparatur gestoppt" }); }
+              catch (e) { if (e.status !== 422) throw e; }
+              await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: ["needs-human"] });
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: number,
+                body: `**Reparatur gestoppt:** 3 automatische Runden, \`ci\` ist immer noch rot ([Lauf](${run.html_url})). Bitte schau drauf, @${owner}.`,
+              });
+              core.setOutput("go", "false");
+              return;
+            }
+            const next = done + 1;
+            try { await github.rest.issues.createLabel({ owner, repo, name: `repair:${next}`, color: "C5DEF5", description: "Automatische CI-Reparatur" }); }
+            catch (e) { if (e.status !== 422) throw e; }
+            await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: [`repair:${next}`] });
+            core.setOutput("go", "true");
+            core.setOutput("number", String(number));
+            core.setOutput("round", String(next));
+            core.setOutput("title", pr.title);
+
+      - uses: actions/checkout@v4
+        if: steps.round.outputs.go == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+
+      - name: Claude repariert die CI
+        if: steps.round.outputs.go == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          claude_args: >-
+            --model claude-sonnet-5-5
+            --max-turns 40
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(python:*),Bash(python3:*),Bash(pip:*),Bash(pytest:*),Bash(ruff:*),Bash(gh run view:*),Bash(gh pr view:*)"
+          prompt: |
+            Du reparierst die rote CI im Pull Request #${{ steps.round.outputs.number }}
+            (Branch `${{ github.event.workflow_run.head_branch }}`), Runde ${{ steps.round.outputs.round }} von 3.
+
+            1. Lies AGENTS.md.
+            2. Lies die Logs des fehlgeschlagenen Laufs: `gh run view ${{ github.event.workflow_run.id }} --log-failed`
+            3. Behebe nur die Ursache. Verboten: Tests, Lint-Regeln oder Barrierefreiheits-Tests abschalten oder abschwächen,
+               Workflows unter .github/ ändern, Secrets anfassen.
+            4. Prüfe lokal, soweit möglich, mit den Befehlen aus AGENTS.md bzw. aus dem fehlgeschlagenen CI-Job.
+            5. Ein Commit, Conventional Commit mit derselben Linear-ID wie der PR-Titel
+               („${{ steps.round.outputs.title }}“), z. B. `fix(ci): … (SIN-123)`. Dann auf den Branch pushen.
+            6. Wenn du die Ursache nicht beheben kannst: nichts pushen, sondern im PR kurz den Blocker beschreiben.
