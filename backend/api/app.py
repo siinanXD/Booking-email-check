@@ -23,43 +23,11 @@ from backend.api.background_jobs import (
 )
 from backend.api.blueprints import register_api_blueprints
 from backend.api.rate_limit import limiter
+from backend.api.sentry_setup import _init_sentry
 from backend.core.config.factory import AppContext, build_app_context
 from backend.core.config.settings import Settings, get_settings
 
 logger = logging.getLogger(__name__)
-
-
-def _scrub_sentry_event(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:
-    """Maskiert E-Mail/Telefon in Sentry-Messages/Exceptions (PII-Schutz)."""
-    from backend.core.utils.pii import mask_pii
-
-    try:
-        if event.get("message"):
-            event["message"] = mask_pii(str(event["message"]))
-        for exc in (event.get("exception") or {}).get("values") or []:
-            if exc.get("value"):
-                exc["value"] = mask_pii(str(exc["value"]))
-    except Exception:  # noqa: BLE001 - Scrubbing darf den Report nie blockieren
-        pass
-    return event
-
-
-def _init_sentry(cfg: Settings) -> None:
-    """Initialisiert Sentry nur, wenn ein DSN gesetzt ist (sonst no-op)."""
-    if not cfg.sentry_dsn:
-        return
-    import sentry_sdk
-    from sentry_sdk.integrations.flask import FlaskIntegration
-
-    sentry_sdk.init(
-        dsn=cfg.sentry_dsn,
-        environment=cfg.app_env,
-        integrations=[FlaskIntegration()],
-        send_default_pii=False,
-        traces_sample_rate=cfg.sentry_traces_sample_rate,
-        before_send=_scrub_sentry_event,  # type: ignore[arg-type, unused-ignore]
-    )
-    logger.info("Sentry error tracking aktiv (env=%s)", cfg.app_env)
 
 
 def _poll_stale(

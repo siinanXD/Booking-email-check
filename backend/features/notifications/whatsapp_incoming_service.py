@@ -131,12 +131,10 @@ class WhatsAppIncomingService:
                 timeout=15.0,
             )
             resp.raise_for_status()
-            logger.info(
-                "WhatsApp-Antwort von %s an Host %s weitergeleitet",
-                sender_phone,
-                host_phone,
-            )
+            logger.info("WhatsApp-Antwort für Account %s weitergeleitet", account_id)
             return True
         except Exception:
-            logger.exception("Weiterleitung an Host %s fehlgeschlagen", host_phone)
+            logger.exception(
+                "Weiterleitung an Host fehlgeschlagen (Account %s)", account_id
+            )
             return False
