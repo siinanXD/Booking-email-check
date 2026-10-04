@@ -184,7 +184,7 @@ python scripts/check_max_file_lines.py # 300-line limit
 ruff check . && black --check . && mypy .
 ```
 
-CI runs on every push: Ruff, Black, MyPy, Pytest, TypeScript build.
+CI runs on every pull request (Ruff, Black, MyPy, Pytest, TypeScript build) and again on `main` after each merge. Auto-merges are handled by `.github/workflows/post-merge.yml`: it starts CI and Release via `workflow_dispatch` and closes the linked issues.
 
 ---
 
