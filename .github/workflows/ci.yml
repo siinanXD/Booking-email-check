@@ -8,6 +8,8 @@ on:
     branches: [main]
   push:
     branches: [main]
+  # Startet post-merge.yml nach einem Auto-Merge (SIN-213).
+  workflow_dispatch:
 
 jobs:
   quality:
