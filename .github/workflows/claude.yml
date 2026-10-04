@@ -1,0 +1,54 @@
+# Claude als Ersatz-Agent (SIN-205): Cursor zuerst, Claude wenn Cursor kein Guthaben hat.
+# Auslöser: @claude in Issue-/PR-Kommentaren und Reviews, oder Label "claude" auf einem Issue.
+# Es läuft nur für Nutzer mit Schreibrechten (Standard der Action).
+# Kein github_token: die Action nutzt die Claude-GitHub-App, damit CI auf Claudes Commits läuft.
+# Bei Aufträgen aus einem Issue öffnet Claude den PR selbst (gh pr create mit dem App-Token).
+# Danach entscheidet pr-gate: risk:low/medium mergt automatisch, risk:high wartet auf `freigegeben`.
+
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude'))
+      || (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+      || (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+      || (github.event_name == 'issues' && github.event.label.name == 'claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          label_trigger: claude
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 40
+            --allowedTools "Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*)"
+            --append-system-prompt "PR-Regel (SIN-205): Wurdest du auf einem Issue ausgelöst und hast Commits auf deinen eigenen Branch gepusht, öffne den Pull Request selbst mit: gh pr create --head <dein Branch> --base <Default-Branch> --title <Titel> --body <Text>. Kein Draft. Titel als Conventional Commit mit Linear-ID, z. B. docs(readme): Hinweis ergänzen (SIN-123). Body beginnt mit 'Closes #<Issue-Nummer>' und sagt in zwei Sätzen, was geändert wurde. Prüfe vorher mit gh pr list --head <dein Branch>, ob es schon einen PR gibt. Schreib danach den Link zum PR in deinen Kommentar statt des Create-PR-Links. Nie mergen, nie Labels setzen oder entfernen. Wurdest du auf einem PR ausgelöst, öffne keinen neuen PR."
