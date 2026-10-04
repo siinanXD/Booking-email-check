@@ -65,7 +65,7 @@ class MetaTextSender:
             resp.raise_for_status()
             return True
         except Exception:
-            logger.exception("Echo-Versand an %s fehlgeschlagen", recipient_wa_id)
+            logger.exception("Echo-Versand fehlgeschlagen")
             return False
 
 
@@ -88,5 +88,5 @@ class WhatsAppEchoService:
         echo_text = f"\U0001f501 *Echo an {sender_name}:*\n\n{text[:_ECHO_MAX_CHARS]}"
         sent = self._sender.send_text(sender_phone, echo_text)
         if sent:
-            logger.info("Echo an %s gesendet (%d Zeichen)", sender_phone, len(text))
+            logger.info("Echo gesendet (%d Zeichen)", len(text))
         return sent

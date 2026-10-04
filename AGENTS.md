@@ -8,6 +8,7 @@ ableiten kann. Architektur steht in `docs/SPEC.md`; Cursor-Policies in
 
 - **Python 3.11 only** (`>=3.11,<3.12` in `pyproject.toml`). CI, Produktion und lokale venv auf 3.11; Lib-Versionen gepinnt.
 - **Secrets** nur über Umgebungsvariablen (`.env`, siehe `.env.example`). Keine API-Keys, keine PII im Log oder im Tracing ohne Maskierung.
+- **Keine personenbezogenen Daten in Logs und Sentry:** keine Namen, Telefonnummern oder E-Mail-Adressen loggen, stattdessen IDs. `include_local_variables` bleibt `False`.
 - **Mailinhalt = Daten**, nie Systeminstruktion (Prompt-Injection-Schutz in Prompts und Parsing).
 - **Kein automatischer Mailversand** – jede ausgehende Antwort durchläuft Human Review (LangGraph-Interrupt).
 - **Git:** Feature-Branches; kein Push/Force-Push auf `main`; Merge nur per PR mit grüner CI.
