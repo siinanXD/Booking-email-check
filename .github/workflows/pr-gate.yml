@@ -1,0 +1,262 @@
+# PR-Gate (SIN-207, ausgerollt mit SIN-208): prüft den PR-Titel, setzt das
+# Risiko-Label automatisch und schaltet Auto-Merge ein.
+#
+#   risk:low / risk:medium → Auto-Merge (Squash), sobald alle Pflicht-Checks grün sind
+#   risk:high              → Check `merge-gate` bleibt rot, bis Sinan das Label
+#                            `freigegeben` setzt.
+#
+# Die Freigabe gilt nur für den Commit, auf dem sie gesetzt wurde. Das Gate merkt
+# sich diesen Commit (SHA) im eigenen Kommentar und prüft bei jedem Lauf den
+# aktuellen Stand des PRs, nicht das auslösende Ereignis. Neuer Commit = Label weg.
+# Nur der Repo-Owner kann freigeben; ein Label von einem Bot oder Agenten zählt nicht.
+#
+# Läuft auf `pull_request` (nicht `pull_request_target`) und checkt keinen PR-Code
+# aus. PRs aus Forks bekommen nur ein Lese-Token und sind immer risk:high.
+# Diese Datei ist in allen Repos gleich. Änderungen zuerst in der Vorlage (SIN-202).
+name: pr-gate
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+# Kein cancel-in-progress: Ein abgebrochener Lauf darf keine Entscheidung verschlucken.
+concurrency:
+  group: pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: PR-Titel prüfen
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [ "$AUTHOR" = "dependabot[bot]" ]; then
+            echo "Dependabot-PR: Titelprüfung übersprungen."
+            exit 0
+          fi
+          pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+'
+          if ! printf '%s' "$TITLE" | grep -Eq "$pattern"; then
+            echo "::error::PR-Titel ist kein Conventional Commit. Beispiel: feat(api): Export als CSV (SIN-123)"
+            exit 1
+          fi
+          if ! printf '%s' "$TITLE" | grep -Eq 'SIN-[0-9]+'; then
+            echo "::error::PR-Titel braucht die Linear-ID, z. B. (SIN-123)."
+            exit 1
+          fi
+          echo "PR-Titel ok."
+
+  merge-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Risiko bestimmen, Label setzen, Auto-Merge steuern
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const action = context.payload.action;
+            const sender = context.payload.sender?.login;
+            const eventSha = context.payload.pull_request.head.sha;
+            const MARKER = "<!-- pr-gate -->";
+            const SHA_RE = /<!-- pr-gate approved-sha: ([0-9a-f]{40}) -->/;
+            const BOT = "github-actions[bot]";
+            // Wer freigeben darf. Labels von Bots/Agenten (z. B. claude[bot]) zählen nicht.
+            const APPROVERS = [owner];
+            // Freigabe-Labels: `freigegeben` ist der Standard, `owner-approved` bleibt aus dem
+            // älteren Merge-Gate (document-intelligence-mvp) gültig.
+            const APPROVALS = ["freigegeben", "owner-approved"];
+            const FORCE_HIGH = ["owner-approval-required"];
+            const NO_AUTOMERGE = "no-automerge";
+            const RISK_LABELS = {
+              "risk:low": { color: "0E8A16", description: "Automatisch: nur Doku/Tests/Assets" },
+              "risk:medium": { color: "FBCA04", description: "Automatisch: normaler Code" },
+              "risk:high": { color: "B60205", description: "Automatisch: braucht Freigabe von Sinan" },
+            };
+
+            // Regeln je Datei: HIGH vor LOW, alles andere ist medium.
+            const HIGH = [
+              /^\.github\//,
+              /(^|\/)migrations\//,
+              /(^|\/)alembic(\.ini$|\/)/,
+              /(^|\/)(middleware|proxy)\.(ts|js)$/,
+              /(^|\/)auth(\/|\.|-|_)/i,
+              /(secret|credential|token|password)/i,
+              /(^|\/)\.env/,
+              /^(vercel\.json|netlify\.toml)$/,
+              /^netlify\/functions\//,
+              /(^|\/)next\.config\./,
+              /(^|\/)Dockerfile/,
+              /(^|\/)docker-compose/,
+              /^deploy\//,
+              /^src\/lib\/storage\//,
+              /(billing|payment|stripe|checkout)/i,
+            ];
+            const LOW = [
+              /^docs\//,
+              /\.md$/i,
+              /(^|\/)e2e\//,
+              /(^|\/)tests?\//,
+              /\.test\.(ts|tsx|js|jsx)$/,
+              /(^|\/)test_[^/]+\.py$/,
+              /^public\//,
+            ];
+            const ORDER = { "risk:low": 0, "risk:medium": 1, "risk:high": 2 };
+
+            // Immer den aktuellen Stand des PRs lesen, nicht den Payload des Ereignisses.
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo, pull_number: context.payload.pull_request.number,
+            });
+            if (pr.state !== "open") {
+              core.info("PR ist nicht mehr offen.");
+              return;
+            }
+            if (pr.head.sha !== eventSha) {
+              // Ein neuerer Commit ist da; sein eigener Lauf entscheidet. Dieser Lauf zählt nicht.
+              core.setFailed(`Veralteter Lauf (${eventSha.slice(0, 7)}), aktueller Commit ist ${pr.head.sha.slice(0, 7)}.`);
+              return;
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: pr.number, per_page: 100,
+            });
+
+            const reasons = [];
+            let risk = "risk:low";
+            const raise = (level, why) => {
+              if (ORDER[level] > ORDER[risk]) risk = level;
+              if (level === "risk:high") reasons.push(why);
+            };
+
+            const isFork = pr.head.repo?.full_name !== `${owner}/${repo}`;
+            if (isFork) raise("risk:high", "PR kommt aus einem Fork");
+            let labels = pr.labels.map((l) => l.name);
+            for (const l of FORCE_HIGH.filter((l) => labels.includes(l))) {
+              raise("risk:high", `Label \`${l}\``);
+            }
+            for (const f of files) {
+              const paths = [f.filename, f.previous_filename].filter(Boolean);
+              for (const p of paths) {
+                if (HIGH.some((r) => r.test(p))) raise("risk:high", `\`${p}\``);
+                else if (!LOW.some((r) => r.test(p))) raise("risk:medium", p);
+              }
+            }
+            const changedLines = files.reduce((n, f) => n + f.additions + f.deletions, 0);
+            if (changedLines > 1500 || files.length > 60) {
+              raise("risk:high", `sehr großer PR (${files.length} Dateien, ${changedLines} Zeilen)`);
+            }
+
+            core.summary.addHeading(`Risiko: ${risk}`, 3)
+              .addRaw(`${files.length} Dateien, ${changedLines} Zeilen geändert.`).addEOL();
+            if (reasons.length) core.summary.addList([...new Set(reasons)].slice(0, 15));
+            await core.summary.write();
+
+            if (isFork) {
+              core.setFailed("PR aus einem Fork: wird nie automatisch gemerged.");
+              return;
+            }
+
+            // Labels anlegen (falls neu) und genau ein Risiko-Label setzen.
+            for (const [name, meta] of Object.entries({ ...RISK_LABELS,
+              freigegeben: { color: "1D76DB", description: "Sinan hat einen risk:high-PR freigegeben" } })) {
+              try { await github.rest.issues.createLabel({ owner, repo, name, ...meta }); }
+              catch (e) { if (e.status !== 422) throw e; }
+            }
+            for (const l of labels.filter((l) => l in RISK_LABELS && l !== risk)) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: l });
+            }
+            if (!labels.includes(risk)) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: [risk] });
+            }
+
+            const removeApprovals = async () => {
+              for (const l of APPROVALS.filter((l) => labels.includes(l))) {
+                try { await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: l }); }
+                catch (e) { if (e.status !== 404) throw e; }
+              }
+              labels = labels.filter((l) => !APPROVALS.includes(l));
+            };
+
+            // Freigabe an den Commit binden: gemerkter SHA steht im Kommentar des Gates.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: pr.number, per_page: 100,
+            });
+            const mine = comments.find((c) => c.user?.login === BOT && c.body?.includes(MARKER));
+            let approvedSha = mine?.body?.match(SHA_RE)?.[1] ?? null;
+            let note = "";
+
+            const labelEvent = action === "labeled" && APPROVALS.includes(context.payload.label?.name);
+            if (labelEvent) {
+              if (APPROVERS.includes(sender)) {
+                approvedSha = pr.head.sha;
+              } else {
+                note = `Freigabe-Label von \`${sender}\` zählt nicht. Nur ${APPROVERS.join(", ")} darf freigeben.`;
+                core.warning(note);
+                if (approvedSha !== pr.head.sha) await removeApprovals();
+              }
+            }
+            if (!APPROVALS.some((l) => labels.includes(l))) approvedSha = null;
+
+            let approved = false;
+            if (risk === "risk:high") {
+              const hasLabel = APPROVALS.some((l) => labels.includes(l));
+              approved = hasLabel && approvedSha === pr.head.sha;
+              if (hasLabel && !approved) {
+                await removeApprovals();
+                approvedSha = null;
+                note = note || "Die Freigabe galt für einen älteren Stand. Bitte `freigegeben` neu setzen.";
+              }
+            }
+            const allowAutoMerge = !pr.draft && !labels.includes(NO_AUTOMERGE)
+              && (risk !== "risk:high" || approved);
+
+            // Hinweis-Kommentar nur bei risk:high (ein Kommentar, wird aktualisiert).
+            if (risk === "risk:high") {
+              const body = [
+                MARKER,
+                ...(approved ? [`<!-- pr-gate approved-sha: ${approvedSha} -->`] : []),
+                approved
+                  ? `**risk:high – freigegeben für \`${approvedSha.slice(0, 7)}\`.** Merged automatisch, sobald alle Checks grün sind. Ein neuer Commit hebt die Freigabe auf.`
+                  : "**risk:high – wartet auf Freigabe von Sinan.** Zum Freigeben das Label `freigegeben` setzen.",
+                ...(note ? ["", note] : []),
+                "",
+                "Gründe:",
+                ...[...new Set(reasons)].slice(0, 15).map((r) => `- ${r}`),
+              ].join("\n");
+              if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+              else await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+            } else if (mine) {
+              await github.rest.issues.deleteComment({ owner, repo, comment_id: mine.id });
+            }
+
+            // Auto-Merge an- oder ausschalten (GraphQL, Squash).
+            const autoOn = Boolean(pr.auto_merge);
+            try {
+              if (allowAutoMerge && !autoOn) {
+                await github.graphql(
+                  `mutation($id: ID!) { enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: SQUASH }) { clientMutationId } }`,
+                  { id: pr.node_id },
+                );
+                core.info("Auto-Merge eingeschaltet.");
+              } else if (!allowAutoMerge && autoOn) {
+                await github.graphql(
+                  `mutation($id: ID!) { disablePullRequestAutoMerge(input: { pullRequestId: $id }) { clientMutationId } }`,
+                  { id: pr.node_id },
+                );
+                core.info("Auto-Merge ausgeschaltet.");
+              }
+            } catch (e) {
+              core.warning(`Auto-Merge nicht geändert: ${e.message}. Ist „Allow auto-merge“ in den Repo-Einstellungen an und gibt es Pflicht-Checks?`);
+            }
+
+            if (risk === "risk:high" && !approved) {
+              core.setFailed("risk:high: wartet auf das Label `freigegeben` von Sinan.");
+            }
