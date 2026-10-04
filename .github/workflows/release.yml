@@ -1,7 +1,12 @@
 # Automatische Versionierung: laeuft NACH erfolgreichem Merge auf 'main'.
 # python-semantic-release liest die Conventional-Commit-History, bestimmt die
-# naechste SemVer-Version, setzt den Git-Tag, schreibt das CHANGELOG und legt
-# einen GitHub-Release an. Niemand pflegt Versionsnummern von Hand.
+# naechste SemVer-Version, setzt den Git-Tag und legt einen GitHub-Release mit
+# Release-Notes an. Niemand pflegt Versionsnummern von Hand.
+#
+# Nur Tag, kein Versions-Commit (SIN-211): 'main' ist per Ruleset geschuetzt und
+# hat keinen Bypass. Ein Commit auf 'main' waere dort verboten, ein Tag nicht.
+# CHANGELOG.md und die Version in pyproject.toml werden deshalb nicht mehr
+# fortgeschrieben. Die Release-Notes stehen im GitHub-Release.
 name: Release
 
 on:
@@ -34,3 +39,5 @@ jobs:
         uses: python-semantic-release/python-semantic-release@v10
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          commit: "false"
+          changelog: "false"
