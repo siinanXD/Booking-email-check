@@ -7,6 +7,8 @@ name: Release
 on:
   push:
     branches: [main]
+  # Startet post-merge.yml nach einem Auto-Merge (SIN-213).
+  workflow_dispatch:
 
 concurrency:
   group: release

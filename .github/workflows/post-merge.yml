@@ -1,0 +1,216 @@
+# Nach dem Merge (SIN-213): merged freigegebene PRs und holt nach, was GitHub
+# nach einem Auto-Merge auslässt.
+#
+# Problem: pr-gate schaltet den Auto-Merge mit dem GITHUB_TOKEN ein. Dann merged
+# GitHub als github-actions[bot], und für Ereignisse dieses Tokens startet GitHub
+# keine Workflows. Ohne diesen Job laufen CI und Release auf dem Default-Branch
+# nicht, und `Closes #N` schließt das Issue nicht.
+#
+# Ablauf nach jedem grünen Lauf von pr-gate, CI oder Eval auf einem PR:
+#   1. PR offen, Auto-Merge von pr-gate an, Pflicht-Checks grün → mergen (Squash).
+#   2. Hat github-actions[bot] gemerged: jeden Workflow mit `push` und
+#      `workflow_dispatch` auf dem Default-Branch starten (workflow_dispatch darf
+#      der GITHUB_TOKEN auslösen) und die Issues aus `Closes #N` schließen.
+#   3. Kommentar mit dem Marker post-merge am PR, damit nichts doppelt passiert.
+#
+# Sicherheit: workflow_run läuft immer in der Fassung vom Default-Branch. Ein PR
+# kann diese Datei also nicht für seinen eigenen Merge ändern. Die Sperre bleibt
+# der Ruleset: Ohne grüne Pflicht-Checks (auch `merge-gate`) lehnt GitHub den
+# Merge ab. Gemerged wird nur, wenn pr-gate den Auto-Merge eingeschaltet hat.
+# Diese Datei ist in allen Repos gleich. Änderungen zuerst in der Vorlage (SIN-202).
+name: post-merge
+
+on:
+  workflow_run:
+    workflows: [pr-gate, CI, ci, Eval]
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: post-merge-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  post-merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Mergen, CI und Release starten, Issues schließen
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const run = context.payload.workflow_run;
+            const BOT = "github-actions[bot]";
+            // Marker ohne wörtliches "<!-" + "-": Agenten entfernen HTML-Kommentare beim Kopieren.
+            const MARKER = ["<!", "-- post-merge --", ">"].join("");
+            const SELF = ".github/workflows/post-merge.yml";
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+            // Welche Ereignisse startet ein Workflow? Liest nur den `on:`-Block.
+            const triggersOf = (text) => {
+              const lines = text.split(/\r?\n/);
+              const out = new Set();
+              const i = lines.findIndex((l) => /^["']?on["']?\s*:/.test(l));
+              if (i < 0) return out;
+              const inline = lines[i].replace(/^[^:]+:/, "").replace(/#.*/, "").trim();
+              if (inline) {
+                inline.replace(/[[\]]/g, "").split(",").map((s) => s.trim()).filter(Boolean)
+                  .forEach((s) => out.add(s));
+                return out;
+              }
+              let indent = null;
+              for (const l of lines.slice(i + 1)) {
+                if (!l.trim() || l.trim().startsWith("#")) continue;
+                if (/^\S/.test(l)) break;
+                const ind = l.match(/^ */)[0].length;
+                if (indent === null) indent = ind;
+                if (ind !== indent) continue;
+                const m = l.trim().match(/^(?:-\s*)?([A-Za-z_]+)/);
+                if (m) out.add(m[1]);
+              }
+              return out;
+            };
+
+            // 1. PR zu diesem Lauf finden (nach dem Merge ist pull_requests oft leer).
+            let number = run.pull_requests?.[0]?.number;
+            if (!number) {
+              const { data } = await github.rest.pulls.list({
+                owner, repo, state: "all", head: `${owner}:${run.head_branch}`,
+                sort: "updated", direction: "desc", per_page: 10,
+              });
+              number = data.find((p) => p.head.sha === run.head_sha)?.number;
+            }
+            if (!number) { core.info("Kein PR zu diesem Lauf."); return; }
+
+            const getPr = async () =>
+              (await github.rest.pulls.get({ owner, repo, pull_number: number })).data;
+            let pr = await getPr();
+            if (pr.head.sha !== run.head_sha) {
+              core.info("Der PR hat einen neueren Commit. Dessen Läufe entscheiden.");
+              return;
+            }
+
+            // 2. Offen: nur mergen, wenn pr-gate den Auto-Merge eingeschaltet hat.
+            if (pr.state === "open") {
+              if (pr.draft || !pr.auto_merge) {
+                core.info("Auto-Merge ist nicht an (Draft, risk:high ohne Freigabe oder no-automerge).");
+                return;
+              }
+              for (let i = 0; i < 4 && pr.state === "open" && (pr.mergeable === null || pr.mergeable_state === "unknown"); i++) {
+                await sleep(5000);
+                pr = await getPr();
+              }
+              if (pr.state === "open") {
+                if (!["clean", "unstable", "has_hooks"].includes(pr.mergeable_state)) {
+                  core.info(`Noch nicht mergebar (${pr.mergeable_state}). Der nächste Lauf prüft erneut.`);
+                  return;
+                }
+                try {
+                  await github.rest.pulls.merge({
+                    owner, repo, pull_number: number, sha: pr.head.sha,
+                    merge_method: "squash", commit_title: `${pr.title} (#${number})`,
+                  });
+                  core.info("Gemerged.");
+                } catch (e) {
+                  if (![405, 409, 422].includes(e.status)) throw e;
+                  core.info(`Merge abgelehnt (${e.status}): ${e.message}`);
+                }
+                pr = await getPr();
+              }
+            }
+
+            if (!pr.merged) { core.info("PR ist nicht gemerged."); return; }
+            if (pr.merged_by?.login !== BOT) {
+              core.info(`Gemerged von ${pr.merged_by?.login}: GitHub startet die Push-Workflows selbst.`);
+              return;
+            }
+            const { data: repoInfo } = await github.rest.repos.get({ owner, repo });
+            const base = pr.base.ref;
+            if (base !== repoInfo.default_branch) {
+              core.info(`Ziel ist ${base}, nicht der Default-Branch: nichts nachzuholen.`);
+              return;
+            }
+
+            // 3. Schon erledigt?
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: number, per_page: 100,
+            });
+            if (comments.some((c) => c.user?.login === BOT && c.body?.includes(MARKER))) {
+              core.info("Nach-Merge-Schritte sind schon gelaufen.");
+              return;
+            }
+
+            // 4. Push-Workflows per workflow_dispatch starten.
+            const workflows = await github.paginate(github.rest.actions.listRepoWorkflows, {
+              owner, repo, per_page: 100,
+            });
+            const started = [];
+            const skipped = [];
+            for (const wf of workflows) {
+              if (wf.state !== "active" || !wf.path.startsWith(".github/workflows/") || wf.path === SELF) continue;
+              let text;
+              try {
+                const { data } = await github.rest.repos.getContent({ owner, repo, path: wf.path, ref: base });
+                text = Buffer.from(data.content, "base64").toString("utf8");
+              } catch (e) {
+                if (e.status === 404) continue;
+                throw e;
+              }
+              const t = triggersOf(text);
+              if (!t.has("push")) continue;
+              if (!t.has("workflow_dispatch")) { skipped.push(wf.name); continue; }
+              await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: wf.id, ref: base });
+              started.push(wf.name);
+            }
+            if (skipped.length) {
+              core.warning(`Ohne workflow_dispatch, daher nicht gestartet: ${skipped.join(", ")}`);
+            }
+
+            // 5. Issues schließen, die der PR schließen soll (Closes/Fixes/Resolves #N).
+            const numbers = new Set();
+            const KEYWORDS = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#(\d+)\b/gi;
+            for (const m of (pr.body ?? "").matchAll(KEYWORDS)) numbers.add(Number(m[1]));
+            try {
+              const q = await github.graphql(
+                `query($owner: String!, $repo: String!, $n: Int!) {
+                  repository(owner: $owner, name: $repo) { pullRequest(number: $n) {
+                    closingIssuesReferences(first: 25) { nodes { number repository { nameWithOwner } } } } } }`,
+                { owner, repo, n: number },
+              );
+              for (const is of q.repository.pullRequest.closingIssuesReferences.nodes) {
+                if (is.repository.nameWithOwner.toLowerCase() === `${owner}/${repo}`.toLowerCase()) numbers.add(is.number);
+              }
+            } catch (e) {
+              core.warning(`Verknüpfte Issues nicht lesbar: ${e.message}`);
+            }
+            const closed = [];
+            for (const n of numbers) {
+              let issue;
+              try { issue = (await github.rest.issues.get({ owner, repo, issue_number: n })).data; }
+              catch (e) { if (e.status === 404 || e.status === 410) continue; throw e; }
+              if (issue.pull_request || issue.state !== "open") continue;
+              await github.rest.issues.createComment({ owner, repo, issue_number: n, body: `Erledigt mit #${number}.` });
+              await github.rest.issues.update({ owner, repo, issue_number: n, state: "closed", state_reason: "completed" });
+              closed.push(`#${n}`);
+            }
+
+            // 6. Am PR festhalten, was passiert ist (verhindert doppelte Läufe).
+            const body = [
+              MARKER,
+              `Nach dem Merge gestartet: ${started.length ? started.join(", ") : "nichts"}.`,
+              closed.length ? `Geschlossen: ${closed.join(", ")}.` : "",
+              skipped.length ? `Nicht gestartet (ohne \`workflow_dispatch\`): ${skipped.join(", ")}.` : "",
+            ].filter(Boolean).join("\n");
+            await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
+            core.summary.addRaw(body.replace(MARKER, "")).addEOL();
+            await core.summary.write();
