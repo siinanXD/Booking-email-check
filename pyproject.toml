@@ -8,7 +8,7 @@ version = "1.29.1"                       # eingefroren seit SIN-211, die aktuell
 description = "AI Email Processing Platform (Booking-Domäne, branchenoffen)"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "pydantic==2.13.4",
+    "pydantic==2.13.5",
     "pydantic-settings==2.14.1",
     "langgraph==0.6.11",
     "langgraph-checkpoint-mongodb==0.2.2",
