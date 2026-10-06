@@ -21,7 +21,7 @@ dependencies = [
     "google-genai==2.13.0",
     "python-dotenv==1.2.2",
     "tenacity==9.1.4",                 # Retry/Backoff für externe Aufrufe
-    "msal==1.37.0",                    # Microsoft Graph (delegated + application)
+    "msal==1.39.0",                    # Microsoft Graph (delegated + application)
     "flask==3.1.3",
     "flask-cors==6.0.5",
     "flask-limiter==4.1.1",
