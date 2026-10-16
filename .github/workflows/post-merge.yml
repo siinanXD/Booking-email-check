@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Mergen, CI und Release starten, Issues schließen
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;
