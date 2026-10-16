@@ -79,7 +79,7 @@ jobs:
             core.setOutput("round", String(next));
             core.setOutput("title", pr.title);
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.round.outputs.go == 'true'
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
