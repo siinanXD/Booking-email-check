@@ -35,14 +35,14 @@ def main() -> int:
         lookup_key = f"booking_email_{plan_id}_monthly"
         existing = stripe.Price.list(lookup_keys=[lookup_key], active=True, limit=1)
         if existing.data:
-            price_id = existing.data[0]["id"]
+            price_id = existing.data[0].id
         else:
             products = stripe.Product.list(active=True, limit=100)
             product = next(
                 (
                     p
                     for p in products.data
-                    if p.get("metadata", {}).get("plan_id") == plan_id
+                    if p.to_dict().get("metadata", {}).get("plan_id") == plan_id
                 ),
                 None,
             )
@@ -52,7 +52,7 @@ def main() -> int:
                     metadata={"plan_id": plan_id},
                 )
             price = stripe.Price.create(
-                product=product["id"],
+                product=product.id,
                 unit_amount=plan.price_eur_monthly * 100,
                 currency="eur",
                 recurring={"interval": "month"},
@@ -60,7 +60,7 @@ def main() -> int:
                 transfer_lookup_key=True,
                 metadata={"plan_id": plan_id},
             )
-            price_id = price["id"]
+            price_id = price.id
         env_key = price_env_keys[plan_id]
         print(
             f"{env_key}={price_id}  # {plan.display_name} ({plan.price_eur_monthly} EUR/Monat)"

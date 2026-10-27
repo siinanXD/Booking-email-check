@@ -5,6 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+import stripe
 
 from backend.core.config.settings import Settings
 from backend.features.billing.stripe_service import StripeBillingError, StripeService
@@ -13,6 +14,11 @@ from backend.infrastructure.repositories.subscription_repository import (
     SubscriptionRepository,
 )
 from backend.infrastructure.repositories.user_repository import UserRepository
+
+
+def _stripe_obj(cls: type[stripe.StripeObject], data: dict[str, object]) -> object:
+    """Echtes SDK-Objekt (ab stripe 15 kein dict mehr) statt eines Plain-dicts."""
+    return cls.construct_from(data, "sk_test_x")
 
 
 def _settings(**overrides: object) -> Settings:
@@ -50,7 +56,9 @@ def test_ensure_customer_idempotent(mock_db: object) -> None:
 
     svc = StripeService(_settings(), subs, accounts, users)
     with patch("backend.features.billing.stripe_service.stripe") as mock_stripe:
-        mock_stripe.Customer.create.return_value = {"id": "cus_123"}
+        mock_stripe.Customer.create.return_value = _stripe_obj(
+            stripe.Customer, {"id": "cus_123"}
+        )
         first = svc.ensure_customer(account.id)
         second = svc.ensure_customer(account.id)
     assert first == "cus_123"
@@ -85,10 +93,12 @@ def test_create_checkout_session_returns_url(mock_db: object) -> None:
     subs.create_trial(account.id)
     svc = StripeService(_settings(), subs, accounts, users)
     with patch("backend.features.billing.stripe_service.stripe") as mock_stripe:
-        mock_stripe.Customer.create.return_value = {"id": "cus_123"}
-        mock_stripe.checkout.Session.create.return_value = {
-            "url": "https://checkout.stripe.test/session"
-        }
+        mock_stripe.Customer.create.return_value = _stripe_obj(
+            stripe.Customer, {"id": "cus_123"}
+        )
+        mock_stripe.checkout.Session.create.return_value = _stripe_obj(
+            stripe.checkout.Session, {"url": "https://checkout.stripe.test/session"}
+        )
         url = svc.create_checkout_session(account.id, "standard")
     assert url == "https://checkout.stripe.test/session"
     mock_stripe.checkout.Session.create.assert_called_once()
@@ -154,9 +164,9 @@ def test_create_checkout_allowed_after_cancellation(mock_db: object) -> None:
     subs.set_status(account.id, "canceled")
     svc = StripeService(_settings(), subs, accounts, users)
     with patch("backend.features.billing.stripe_service.stripe") as mock_stripe:
-        mock_stripe.checkout.Session.create.return_value = {
-            "url": "https://checkout.stripe.test/session"
-        }
+        mock_stripe.checkout.Session.create.return_value = _stripe_obj(
+            stripe.checkout.Session, {"url": "https://checkout.stripe.test/session"}
+        )
         url = svc.create_checkout_session(account.id, "standard")
     assert url == "https://checkout.stripe.test/session"
 

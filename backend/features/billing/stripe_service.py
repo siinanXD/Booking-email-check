@@ -66,7 +66,7 @@ class StripeService:
             name=account.display_name,
             metadata={"account_id": account_id},
         )
-        customer_id = str(customer["id"])
+        customer_id = str(customer.id)
         if sub is None:
             self._subscription_repo.create_trial(account_id)
         self._subscription_repo.set_stripe_ids(account_id, customer_id=customer_id)
@@ -99,7 +99,7 @@ class StripeService:
             cancel_url=stripe_checkout_cancel_url(self._settings),
             metadata={"account_id": account_id, "plan_id": plan_id},
         )
-        url = session.get("url")
+        url = getattr(session, "url", None)
         if not url:
             raise StripeBillingError("Checkout-URL fehlt")
         return str(url)
@@ -114,14 +114,18 @@ class StripeService:
             customer=customer_id,
             return_url=stripe_portal_return_url(self._settings),
         )
-        url = session.get("url")
+        url = getattr(session, "url", None)
         if not url:
             raise StripeBillingError("Portal-URL fehlt")
         return str(url)
 
-    def construct_event(self, payload: bytes, sig_header: str) -> Any:
+    def construct_event(self, payload: bytes, sig_header: str) -> dict[str, Any]:
         """Verifiziert Webhook-Signatur und liefert Stripe-Event."""
         secret = self._settings.stripe_webhook_secret.strip()
         if not secret:
             raise StripeBillingError("Webhook-Secret nicht konfiguriert")
-        return stripe.Webhook.construct_event(payload, sig_header, secret)  # type: ignore[no-untyped-call]
+        event = stripe.Webhook.construct_event(payload, sig_header, secret)
+        # Ab stripe-python 15 erbt StripeObject nicht mehr von dict (kein .get()).
+        # Der Handler arbeitet auf nativen Python-Typen.
+        data: dict[str, Any] = event.to_dict()
+        return data
