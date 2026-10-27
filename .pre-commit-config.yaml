@@ -27,7 +27,7 @@ repos:
           - stripe==11.6.0
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.29.1
+    rev: v4.13.9
     hooks:
       - id: commitizen
         stages: [commit-msg]
